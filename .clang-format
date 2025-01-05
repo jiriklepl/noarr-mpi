@@ -1,0 +1,32 @@
+# .clang-format configuration file
+
+# General
+BasedOnStyle: LLVM
+IndentWidth: 4
+TabWidth: 4
+ColumnLimit: 120
+LineEnding: LF
+
+# C++
+Language: Cpp
+
+UseTab: AlignWithSpaces
+
+SortIncludes: true
+
+BreakBeforeBraces: Attach
+BreakTemplateDeclarations: Yes
+SpaceAfterTemplateKeyword: false
+BreakAfterAttributes: Always
+
+IndentAccessModifiers: false
+AccessModifierOffset: -4
+IndentCaseLabels: false
+IndentRequiresClause: false
+IndentPPDirectives: AfterHash
+
+InsertBraces: true
+
+AllowShortFunctionsOnASingleLine: Empty
+
+SeparateDefinitionBlocks: Always

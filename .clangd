@@ -1,0 +1,14 @@
+CompileFlags:
+    Add: [-std=c++23, -Wall, -Wextra, -Wpedantic, -Wdeprecated]
+
+CompilationDatabase:
+    Path: build
+
+Index:
+    Background: Build
+
+Diagnostics:
+    ClangTidy:
+        Add: [readability-*, bugprone-*, performance-*, modernize-*, cppcoreguidelines-*, misc-*, portability-*, clang-analyzer-*, hicpp-*, mpi-*]
+        Remove: [cppcoreguidelines-avoid-do-while, readability-identifier-length]
+        FastCheckFilter: None
