@@ -8,7 +8,6 @@
 #include <memory>
 #include <optional>
 #include <set>
-#include <stack>
 #include <type_traits>
 #include <variant>
 #include <vector>
@@ -20,11 +19,12 @@
 #include <noarr/traversers.hpp>
 
 #include "noarr/structures/base/structs_common.hpp"
+#include "noarr/structures/base/utility.hpp"
 #include "noarr/tokenizer.hpp"
 
 #define MPICHK(...)                                                                                                    \
 	do {                                                                                                               \
-		const decltype(MPI_SUCCESS) mpi_result = (__VA_ARGS__);                                                              \
+		const decltype(MPI_SUCCESS) mpi_result = (__VA_ARGS__);                                                        \
 		if (mpi_result != MPI_SUCCESS) {                                                                               \
 			std::array<char, MPI_MAX_ERROR_STRING> error_string{};                                                     \
 			int error_string_length;                                                                                   \
@@ -51,9 +51,7 @@ public:
 	auto operator=(const MPI_custom_type &) -> MPI_custom_type & = delete;
 
 	// leaves the other in a valid but unspecified state
-	MPI_custom_type(MPI_custom_type &&other) noexcept : value(other.value) {
-		other.value = MPI_DATATYPE_NULL;
-	}
+	MPI_custom_type(MPI_custom_type &&other) noexcept : value(other.value) { other.value = MPI_DATATYPE_NULL; }
 
 	// leaves the other in a valid but unspecified state
 	auto operator=(MPI_custom_type &&other) noexcept -> MPI_custom_type & {
@@ -74,13 +72,9 @@ public:
 		this->value = value;
 	}
 
-	~MPI_custom_type() {
-		reset(MPI_DATATYPE_NULL);
-	}
+	~MPI_custom_type() { reset(MPI_DATATYPE_NULL); }
 
-	explicit operator MPI_Datatype() const {
-		return value;
-	}
+	explicit operator MPI_Datatype() const { return value; }
 };
 
 class MPI_session {
@@ -90,9 +84,7 @@ public:
 		MPICHK(MPI_Init(nullptr, nullptr));
 	}
 
-	~MPI_session() {
-		MPICHK(MPI_Finalize());
-	}
+	~MPI_session() { MPICHK(MPI_Finalize()); }
 
 	MPI_session(const MPI_session &) = delete;
 	auto operator=(const MPI_session &) -> MPI_session & = delete;
@@ -113,201 +105,147 @@ constexpr auto choose_mpi_type_v() -> MPI_Datatype {
 
 template<>
 struct choose_mpi_type<char> {
-	static constexpr auto value() -> MPI_Datatype {
-		return MPI_CHAR;
-	}
+	static constexpr auto value() -> MPI_Datatype { return MPI_CHAR; }
 };
 
 template<>
 struct choose_mpi_type<signed char> {
-	static constexpr auto value() -> MPI_Datatype {
-		return MPI_SIGNED_CHAR;
-	}
+	static constexpr auto value() -> MPI_Datatype { return MPI_SIGNED_CHAR; }
 };
 
 template<>
 struct choose_mpi_type<unsigned char> {
-	static constexpr auto value() -> MPI_Datatype {
-		return MPI_UNSIGNED_CHAR;
-	}
+	static constexpr auto value() -> MPI_Datatype { return MPI_UNSIGNED_CHAR; }
 };
 
 template<>
 struct choose_mpi_type<wchar_t> {
-	static constexpr auto value() -> MPI_Datatype {
-		return MPI_WCHAR;
-	}
+	static constexpr auto value() -> MPI_Datatype { return MPI_WCHAR; }
 };
 
 template<>
 struct choose_mpi_type<short> {
-	static constexpr auto value() -> MPI_Datatype {
-		return MPI_SHORT;
-	}
+	static constexpr auto value() -> MPI_Datatype { return MPI_SHORT; }
 };
 
 template<>
 struct choose_mpi_type<unsigned short> {
-	static constexpr auto value() -> MPI_Datatype {
-		return MPI_UNSIGNED_SHORT;
-	}
+	static constexpr auto value() -> MPI_Datatype { return MPI_UNSIGNED_SHORT; }
 };
 
 template<>
 struct choose_mpi_type<int> {
-	static constexpr auto value() -> MPI_Datatype {
-		return MPI_INT;
-	}
+	static constexpr auto value() -> MPI_Datatype { return MPI_INT; }
 };
 
 template<>
 struct choose_mpi_type<unsigned int> {
-	static constexpr auto value() -> MPI_Datatype {
-		return MPI_UNSIGNED;
-	}
+	static constexpr auto value() -> MPI_Datatype { return MPI_UNSIGNED; }
 };
 
 template<>
 struct choose_mpi_type<long> {
-	static constexpr auto value() -> MPI_Datatype {
-		return MPI_LONG;
-	}
+	static constexpr auto value() -> MPI_Datatype { return MPI_LONG; }
 };
 
 template<>
 struct choose_mpi_type<unsigned long> {
-	static constexpr auto value() -> MPI_Datatype {
-		return MPI_UNSIGNED_LONG;
-	}
+	static constexpr auto value() -> MPI_Datatype { return MPI_UNSIGNED_LONG; }
 };
 
 template<>
 struct choose_mpi_type<long long> {
-	static constexpr auto value() -> MPI_Datatype {
-		return MPI_LONG_LONG;
-	}
+	static constexpr auto value() -> MPI_Datatype { return MPI_LONG_LONG; }
 };
 
 template<>
 struct choose_mpi_type<unsigned long long> {
-	static constexpr auto value() -> MPI_Datatype {
-		return MPI_UNSIGNED_LONG_LONG;
-	}
+	static constexpr auto value() -> MPI_Datatype { return MPI_UNSIGNED_LONG_LONG; }
 };
 
 template<>
 struct choose_mpi_type<float> {
-	static constexpr auto value() -> MPI_Datatype {
-		return MPI_FLOAT;
-	}
+	static constexpr auto value() -> MPI_Datatype { return MPI_FLOAT; }
 };
 
 template<>
 struct choose_mpi_type<double> {
-	static constexpr auto value() -> MPI_Datatype {
-		return MPI_DOUBLE;
-	}
+	static constexpr auto value() -> MPI_Datatype { return MPI_DOUBLE; }
 };
 
 template<>
 struct choose_mpi_type<long double> {
-	static constexpr auto value() -> MPI_Datatype {
-		return MPI_LONG_DOUBLE;
-	}
+	static constexpr auto value() -> MPI_Datatype { return MPI_LONG_DOUBLE; }
 };
 
 template<class T>
 requires std::same_as<T, int8_t>
 struct choose_mpi_type<T> {
-	static constexpr auto value() -> MPI_Datatype {
-		return MPI_INT8_T;
-	}
+	static constexpr auto value() -> MPI_Datatype { return MPI_INT8_T; }
 };
 
 template<class T>
 requires std::same_as<T, int16_t>
 struct choose_mpi_type<T> {
-	static constexpr auto value() -> MPI_Datatype {
-		return MPI_INT16_T;
-	}
+	static constexpr auto value() -> MPI_Datatype { return MPI_INT16_T; }
 };
 
 template<class T>
 requires std::same_as<T, int32_t>
 struct choose_mpi_type<T> {
-	static constexpr auto value() -> MPI_Datatype {
-		return MPI_INT32_T;
-	}
+	static constexpr auto value() -> MPI_Datatype { return MPI_INT32_T; }
 };
 
 template<class T>
 requires std::same_as<T, int64_t>
 struct choose_mpi_type<T> {
-	static constexpr auto value() -> MPI_Datatype {
-		return MPI_INT64_T;
-	}
+	static constexpr auto value() -> MPI_Datatype { return MPI_INT64_T; }
 };
 
 template<class T>
 requires std::same_as<T, uint8_t>
 struct choose_mpi_type<T> {
-	static constexpr auto value() -> MPI_Datatype {
-		return MPI_UINT8_T;
-	}
+	static constexpr auto value() -> MPI_Datatype { return MPI_UINT8_T; }
 };
 
 template<class T>
 requires std::same_as<T, uint16_t>
 struct choose_mpi_type<T> {
-	static constexpr auto value() -> MPI_Datatype {
-		return MPI_UINT16_T;
-	}
+	static constexpr auto value() -> MPI_Datatype { return MPI_UINT16_T; }
 };
 
 template<class T>
 requires std::same_as<T, uint32_t>
 struct choose_mpi_type<T> {
-	static constexpr auto value() -> MPI_Datatype {
-		return MPI_UINT32_T;
-	}
+	static constexpr auto value() -> MPI_Datatype { return MPI_UINT32_T; }
 };
 
 template<class T>
 requires std::same_as<T, uint64_t>
 struct choose_mpi_type<T> {
-	static constexpr auto value() -> MPI_Datatype {
-		return MPI_UINT64_T;
-	}
+	static constexpr auto value() -> MPI_Datatype { return MPI_UINT64_T; }
 };
 
 // TODO: not sure about the following types
 
 template<>
 struct choose_mpi_type<bool> {
-	static constexpr auto value() -> MPI_Datatype {
-		return MPI_C_BOOL;
-	}
+	static constexpr auto value() -> MPI_Datatype { return MPI_C_BOOL; }
 };
 
 template<>
 struct choose_mpi_type<std::complex<float>> {
-	static constexpr auto value() -> MPI_Datatype {
-		return MPI_COMPLEX;
-	}
+	static constexpr auto value() -> MPI_Datatype { return MPI_COMPLEX; }
 };
 
 template<>
 struct choose_mpi_type<std::complex<double>> {
-	static constexpr auto value() -> MPI_Datatype {
-		return MPI_DOUBLE_COMPLEX;
-	}
+	static constexpr auto value() -> MPI_Datatype { return MPI_DOUBLE_COMPLEX; }
 };
 
 template<>
 struct choose_mpi_type<std::complex<long double>> {
-	static constexpr auto value() -> MPI_Datatype {
-		return MPI_C_LONG_DOUBLE_COMPLEX;
-	}
+	static constexpr auto value() -> MPI_Datatype { return MPI_C_LONG_DOUBLE_COMPLEX; }
 };
 
 template<>
@@ -420,25 +358,19 @@ class translate {};
 template<class T>
 class translate<noarr::scalar<T>> {
 public:
-	static auto get() -> erasure {
-		return erasure::get<noarr::scalar<T>>();
-	}
+	static auto get() -> erasure { return erasure::get<noarr::scalar<T>>(); }
 };
 
 template<auto Dim, class T>
 class translate<noarr::vector_t<Dim, T>> {
 public:
-	static auto get() -> erasure {
-		return erasure::get<noarr::dim<Dim>>();
-	}
+	static auto get() -> erasure { return erasure::get<noarr::dim<Dim>>(); }
 };
 
 template<auto Dim, class T, class LenT>
 class translate<noarr::set_length_t<Dim, T, LenT>> {
 public:
-	static auto get() -> erasure {
-		return erasure::get<noarr::dim<Dim>>();
-	}
+	static auto get() -> erasure { return erasure::get<noarr::dim<Dim>>(); }
 };
 
 template<auto OldDim, auto DimMajor, auto DimMinor, class T>
@@ -453,49 +385,37 @@ public:
 template<auto Dim, class T>
 class translate<noarr::hoist_t<Dim, T>> {
 public:
-	static auto get() -> erasure {
-		return erasure::get<noarr::dim<Dim>>();
-	}
+	static auto get() -> erasure { return erasure::get<noarr::dim<Dim>>(); }
 };
 
 template<auto Dim, class LenT>
 class translate<noarr::set_length_proto<Dim, LenT>> {
 public:
-	static auto get() -> erasure {
-		return erasure::get<noarr::dim<Dim>>();
-	}
+	static auto get() -> erasure { return erasure::get<noarr::dim<Dim>>(); }
 };
 
 template<auto Dim, class T, class LenT>
 class translate<noarr::shift_t<Dim, T, LenT>> {
 public:
-	static auto get() -> erasure {
-		return erasure::get<noarr::dim<Dim>>();
-	}
+	static auto get() -> erasure { return erasure::get<noarr::dim<Dim>>(); }
 };
 
 template<auto Dim, class T, class StartT, class LenT>
 class translate<noarr::slice_t<Dim, T, StartT, LenT>> {
 public:
-	static auto get() -> erasure {
-		return erasure::get<noarr::dim<Dim>>();
-	}
+	static auto get() -> erasure { return erasure::get<noarr::dim<Dim>>(); }
 };
 
 template<auto Dim, class T, class StartT, class EndT>
 class translate<noarr::span_t<Dim, T, StartT, EndT>> {
 public:
-	static auto get() -> erasure {
-		return erasure::get<noarr::dim<Dim>>();
-	}
+	static auto get() -> erasure { return erasure::get<noarr::dim<Dim>>(); }
 };
 
 template<auto Dim, class T>
 class translate<noarr::bcast_t<Dim, T>> {
 public:
-	static auto get() -> erasure {
-		return erasure::get<noarr::dim<Dim>>();
-	}
+	static auto get() -> erasure { return erasure::get<noarr::dim<Dim>>(); }
 };
 
 // TODO: add support for step_t
@@ -545,9 +465,7 @@ class constant_size_expression : public size_expression {
 public:
 	explicit constant_size_expression(std::size_t value) : m_value(value) {}
 
-	auto get(std::map<erasure, dimension_data> & /*dimensions*/) const -> std::size_t override {
-		return m_value;
-	}
+	auto get(std::map<erasure, dimension_data> & /*dimensions*/) const -> std::size_t override { return m_value; }
 
 	[[nodiscard]]
 	auto clone() const -> size_expression::ptr override {
@@ -575,9 +493,7 @@ public:
 	}
 };
 
-auto make_size_expression() -> size_expression::ptr {
-	return std::make_unique<unknown_size_expression>();
-}
+auto make_size_expression() -> size_expression::ptr { return std::make_unique<unknown_size_expression>(); }
 
 template<dimension_data::param Param>
 class param_size_expression : public size_expression {
@@ -1095,7 +1011,7 @@ using num_t = int;
 namespace noarr {
 
 template<IsDim auto Dim>
-auto mpi_bind(MPI_Comm comm) {
+inline auto mpi_bind(MPI_Comm comm) {
 	int rank = 0;
 	// int size;
 
@@ -1106,7 +1022,7 @@ auto mpi_bind(MPI_Comm comm) {
 }
 
 template<IsDim auto Dim, auto MajorDim = dim<[]() {}>{}>
-auto mpi_block(MPI_Comm comm) {
+inline auto mpi_block(MPI_Comm comm) {
 	int rank = 0;
 	int size = 0;
 
@@ -1248,6 +1164,28 @@ constexpr auto mpi_for(auto trav, MPI_Comm comm, const Bags &...bags) {
 	};
 }
 
+using TODO_TYPE = int;
+
+// TODO: MPI_Comm custom wrapper with a destructor that calls MPI_Comm_free
+
+inline auto mpi_bcast(auto bag, MPI_Comm comm, TODO_TYPE rank) {
+	MPICHK(MPI_Bcast(bag.data(), 1, bag.get_mpi_type(), rank, comm));
+}
+
+template<auto AlongDim, auto... AllDims, class Traverser>
+requires (IsDim<decltype(AlongDim)> && ... && IsDim<decltype(AllDims)>) && IsTraverser<Traverser>
+inline auto mpi_comm_split_along(Traverser traverser, MPI_Comm comm) -> MPI_Comm { // TODO: custom wrapper
+	static_assert(dim_sequence<AllDims...>::template contains<AlongDim>,
+	              "The dimension must be present in the sequence");
+
+	const auto space = noarr::scalar<char>() ^ noarr::vectors_like<AllDims...>(traverser.get_struct());
+
+	MPI_Comm new_comm = MPI_COMM_NULL;
+	MPICHK(MPI_Comm_split(comm, space | noarr::offset(traverser.state() - noarr::filter_indices<AlongDim>(traverser)),
+	                      noarr::get_index<AlongDim>(traverser), &new_comm));
+	return new_comm;
+}
+
 } // namespace noarr
 
 auto main() -> int try {
@@ -1267,9 +1205,8 @@ auto main() -> int try {
 	auto data = noarr::scalar<int>() ^ noarr::vectors<'x', 'y', 'z'>(2 * x, 2 * y, 2 * z);
 
 	// split the data into blocks
-	auto structure = data ^ noarr::into_blocks<'x', 'X'>() ^ noarr::set_length<'X'>(2) ^
-	                 noarr::into_blocks<'y', 'Y'>() ^ noarr::set_length<'Y'>(2) ^ noarr::into_blocks<'z', 'Z'>() ^
-	                 noarr::set_length<'Z'>(2);
+	auto structure = data ^ noarr::into_blocks<'x', 'X'>() ^ noarr::into_blocks<'y', 'Y'>() ^
+	                 noarr::into_blocks<'z', 'Z'>() ^ noarr::set_length<'X', 'Y', 'Z'>(2, 2, 2);
 
 	// privatize a block corresponding to a single MPI rank
 	auto block = noarr::bag(noarr::scalar<int>() ^ noarr::vectors_like<'x', 'y', 'z'>(structure));
@@ -1291,32 +1228,29 @@ auto main() -> int try {
 	MPICHK(MPI_Type_get_extent((MPI_Datatype)mpi_rep, &lb, &extent));
 	std::cerr << "Extent: " << extent << '\n';
 	std::cerr << "Lower bound: " << lb << '\n';
-
 	// do not actually traverse any dimensions; the relevant dimensions are already bound to the rank
 	// trav ^ noarr::mpi_bind<'r'>(MPI_COMM_WORLD) | noarr::for_dims<>([=, b = block.get_ref(), mpi_rep =
 	// MPI_Datatype(mpi_rep)](auto inner) {
-	mpi_run<'r'>(trav, MPI_COMM_WORLD, block)([x, y, z](auto inner, auto b) {
+
+	mpi_run<'r'>(trav, MPI_COMM_WORLD, block)([x, y, z](const auto inner, const auto b) {
 		MPICHK(MPI_Barrier(MPI_COMM_WORLD));
 
 		std::cerr << "begin" << '\n';
 
 		// get the indices of the corresponding block
-		auto [X, Y, Z] = noarr::get_indices<'X', 'Y', 'Z'>(inner);
-
-		MPI_Comm x_comm = MPI_COMM_NULL;
-		MPI_Comm y_comm = MPI_COMM_NULL;
-		MPI_Comm z_comm = MPI_COMM_NULL;
+		const auto [X, Y, Z] = noarr::get_indices<'X', 'Y', 'Z'>(inner);
 
 		// communicate along X
-		MPICHK(MPI_Comm_split(MPI_COMM_WORLD, Y * z + Z, X, &x_comm));
-
-		// MPI_Comm_split(MPI_COMM_WORLD, inner.structure() | noarr::get_offset(inner.state() - noarr::idx<'X'>())
+		// MPICHK(MPI_Comm_split(MPI_COMM_WORLD, Y * z + Z, X, &x_comm));
+		MPI_Comm x_comm = noarr::mpi_comm_split_along<'X', /*all_dims: */ 'X', 'Y', 'Z'>(inner, MPI_COMM_WORLD);
 
 		// communicate along Y
-		MPICHK(MPI_Comm_split(MPI_COMM_WORLD, Z * x + X, Y, &y_comm));
+		// MPICHK(MPI_Comm_split(MPI_COMM_WORLD, Z * x + X, Y, &y_comm));
+		MPI_Comm y_comm = noarr::mpi_comm_split_along<'Y', /*all_dims: */ 'X', 'Y', 'Z'>(inner, MPI_COMM_WORLD);
 
 		// communicate along Z
-		MPICHK(MPI_Comm_split(MPI_COMM_WORLD, X * y + Y, Z, &z_comm));
+		// MPICHK(MPI_Comm_split(MPI_COMM_WORLD, X * y + Y, Z, &z_comm));
+		MPI_Comm z_comm = noarr::mpi_comm_split_along<'Z', /*all_dims: */ 'X', 'Y', 'Z'>(inner, MPI_COMM_WORLD);
 
 		// -> we wanna create a shortcut for `MPI_Comm_split(the original communicator, all other indices, the index
 		// we are communicating along, &the new communicator)`
@@ -1333,7 +1267,8 @@ auto main() -> int try {
 		}
 
 		// broadcast along the communicators
-		MPICHK(MPI_Bcast(b.data(), 1, b.get_mpi_type(), 0, x_comm));
+		// MPICHK(MPI_Bcast(b.data(), 1, b.get_mpi_type(), 0, x_comm));
+		mpi_bcast(b, x_comm, 0);
 
 		// -> we wanna generalize the above to `broadcast(b, the communicator we are broadcasting along)`
 
@@ -1353,7 +1288,8 @@ auto main() -> int try {
 			};
 		}
 
-		MPICHK(MPI_Bcast(b.data(), 1, b.get_mpi_type(), 0, y_comm));
+		// MPICHK(MPI_Bcast(b.data(), 1, b.get_mpi_type(), 0, y_comm));
+		mpi_bcast(b, y_comm, 0);
 
 		if (Z == 0) {
 			inner | [b](auto state) {
@@ -1371,7 +1307,8 @@ auto main() -> int try {
 			};
 		}
 
-		MPICHK(MPI_Bcast(b.data(), 1, b.get_mpi_type(), 0, z_comm));
+		// MPICHK(MPI_Bcast(b.data(), 1, b.get_mpi_type(), 0, z_comm));
+		mpi_bcast(b, z_comm, 0);
 
 		inner | [b](auto state) {
 			auto [x, y, z] = noarr::get_indices<'x', 'y', 'z'>(state);
@@ -1386,7 +1323,7 @@ auto main() -> int try {
 		MPICHK(MPI_Comm_free(&y_comm));
 		MPICHK(MPI_Comm_free(&z_comm));
 
-		// -> we wanna destroy them using the raii pattern
+		// TODO: -> we wanna destroy them using the raii pattern
 	});
 
 	MPICHK(MPI_Barrier(MPI_COMM_WORLD));

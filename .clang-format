@@ -14,7 +14,22 @@ UseTab: AlignWithSpaces
 
 SortIncludes: true
 
-BreakBeforeBraces: Attach
+InsertBraces: true
+BreakBeforeBraces: Custom
+BraceWrapping:
+  AfterClass: false
+  AfterControlStatement: false
+  AfterEnum: false
+  AfterFunction: false
+  AfterNamespace: false
+  AfterStruct: false
+  AfterUnion: false
+  BeforeCatch: false
+  BeforeElse: false
+  BeforeWhile: false
+  BeforeLambdaBody: false
+  IndentBraces: false
+
 BreakTemplateDeclarations: Yes
 SpaceAfterTemplateKeyword: false
 BreakAfterAttributes: Always
@@ -22,11 +37,14 @@ BreakAfterAttributes: Always
 IndentAccessModifiers: false
 AccessModifierOffset: -4
 IndentCaseLabels: false
+RequiresClausePosition: OwnLine
 IndentRequiresClause: false
 IndentPPDirectives: AfterHash
 
-InsertBraces: true
-
-AllowShortFunctionsOnASingleLine: Empty
+AllowShortFunctionsOnASingleLine: All
 
 SeparateDefinitionBlocks: Always
+
+SpaceBeforeParens: Custom
+SpaceBeforeParensOptions:
+  AfterRequiresInClause: true
