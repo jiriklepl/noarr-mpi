@@ -1135,7 +1135,8 @@ private:
 // - A lightweight C++ MPI library:
 // - Towards Modern C++ Language support for MPI
 
-template<class Traverser> requires IsTraverser<Traverser>
+template<class Traverser>
+requires IsTraverser<Traverser>
 struct mpi_traverser_t : strict_contain<Traverser, MPI_Comm> {
 	using base = strict_contain<Traverser, MPI_Comm>;
 	using base::base;
@@ -1150,21 +1151,13 @@ struct mpi_traverser_t : strict_contain<Traverser, MPI_Comm> {
 		return base::template get<1>();
 	}
 
-	constexpr auto state() const noexcept {
-		return get_traverser().state();
-	}
+	constexpr auto state() const noexcept { return get_traverser().state(); }
 
-	constexpr auto get_struct() const noexcept {
-		return get_traverser().get_struct();
-	}
+	constexpr auto get_struct() const noexcept { return get_traverser().get_struct(); }
 
-	constexpr auto get_order() const noexcept {
-		return get_traverser().get_order();
-	}
+	constexpr auto get_order() const noexcept { return get_traverser().get_order(); }
 
-	constexpr auto top_struct() const noexcept {
-		return get_traverser().top_struct();
-	}
+	constexpr auto top_struct() const noexcept { return get_traverser().top_struct(); }
 
 	[[nodiscard]]
 	friend auto operator^(mpi_traverser_t traverser, auto order) noexcept {
@@ -1172,15 +1165,13 @@ struct mpi_traverser_t : strict_contain<Traverser, MPI_Comm> {
 		return mpi_traverser_t<ordered>{traverser.get_traverser() ^ order, traverser.get_comm()};
 	}
 
-	template<auto ...Dims, class F>
+	template<auto... Dims, class F>
 	requires (... && IsDim<decltype(Dims)>)
 	constexpr void for_each(F &&f) const {
-		get_traverser().template for_each<Dims...>([&f, comm = get_comm()](auto state) {
-			std::forward<F>(f)(state);
-		});
+		get_traverser().template for_each<Dims...>([&f, comm = get_comm()](auto state) { std::forward<F>(f)(state); });
 	}
 
-	template<auto ...Dims, class F>
+	template<auto... Dims, class F>
 	requires (... && IsDim<decltype(Dims)>)
 	constexpr void for_sections(F &&f) const {
 		get_traverser().template for_sections<Dims...>([&f, comm = get_comm()]<class Inner>(Inner inner) {
@@ -1188,7 +1179,7 @@ struct mpi_traverser_t : strict_contain<Traverser, MPI_Comm> {
 		});
 	}
 
-	template<auto ...Dims, class F>
+	template<auto... Dims, class F>
 	requires (... && IsDim<decltype(Dims)>)
 	constexpr void for_dims(F &&f) const {
 		get_traverser().template for_dims<Dims...>([&f, comm = get_comm()]<class Inner>(Inner inner) {
@@ -1196,6 +1187,10 @@ struct mpi_traverser_t : strict_contain<Traverser, MPI_Comm> {
 		});
 	}
 };
+
+template<class Traverser>
+requires IsTraverser<Traverser>
+mpi_traverser_t(Traverser, MPI_Comm) -> mpi_traverser_t<Traverser>;
 
 template<class T>
 struct is_mpi_traverser : std::false_type {};
@@ -1340,18 +1335,21 @@ constexpr auto operator|(Traverser traverser, auto f) -> decltype(traverser.for_
 	return traverser.for_each(f);
 }
 
-template<IsMPITraverser Traverser, auto ...Dims, class F>
-constexpr auto operator|(Traverser traverser, const helpers::for_each_t<F, Dims...> &f) -> decltype(traverser.template for_each<Dims...>(f)) {
+template<IsMPITraverser Traverser, auto... Dims, class F>
+constexpr auto operator|(Traverser traverser, const helpers::for_each_t<F, Dims...> &f)
+	-> decltype(traverser.template for_each<Dims...>(f)) {
 	return traverser.template for_each<Dims...>(f);
 }
 
-template<IsMPITraverser Traverser, auto ...Dims, class F>
-constexpr auto operator|(Traverser traverser, const helpers::for_sections_t<F, Dims...> &f) -> decltype(traverser.template for_sections<Dims...>(f)) {
+template<IsMPITraverser Traverser, auto... Dims, class F>
+constexpr auto operator|(Traverser traverser, const helpers::for_sections_t<F, Dims...> &f)
+	-> decltype(traverser.template for_sections<Dims...>(f)) {
 	return traverser.template for_sections<Dims...>(f);
 }
 
-template<IsMPITraverser Traverser, auto ...Dims, class F>
-constexpr auto operator|(Traverser traverser, const helpers::for_dims_t<F, Dims...> &f) -> decltype(traverser.template for_dims<Dims...>(f)) {
+template<IsMPITraverser Traverser, auto... Dims, class F>
+constexpr auto operator|(Traverser traverser, const helpers::for_dims_t<F, Dims...> &f)
+	-> decltype(traverser.template for_dims<Dims...>(f)) {
 	return traverser.template for_dims<Dims...>(f);
 }
 
@@ -1400,15 +1398,18 @@ inline void mpi_bcast(auto structure, ToMPIComm auto has_comm, TODO_TYPE rank) {
 }
 
 inline void mpi_gather(auto structure, ToMPIComm auto has_comm, TODO_TYPE rank) {
-	MPICHK(MPI_Gather(structure.data(), 1, structure.get_mpi_type(), structure.data(), 1, structure.get_mpi_type(), rank, convert_to_MPI_Comm(has_comm)));
+	MPICHK(MPI_Gather(structure.data(), 1, structure.get_mpi_type(), structure.data(), 1, structure.get_mpi_type(),
+	                  rank, convert_to_MPI_Comm(has_comm)));
 }
 
 inline void mpi_gather(auto from, auto to, ToMPIComm auto has_comm, TODO_TYPE rank) {
-	MPICHK(MPI_Gather(from.data(), 1, from.get_mpi_type(), to.data(), 1, to.get_mpi_type(), rank, convert_to_MPI_Comm(has_comm)));
+	MPICHK(MPI_Gather(from.data(), 1, from.get_mpi_type(), to.data(), 1, to.get_mpi_type(), rank,
+	                  convert_to_MPI_Comm(has_comm)));
 }
 
 template<auto AlongDim, auto... AllDims, class Traverser>
-requires (IsDim<decltype(AlongDim)> && ... && IsDim<decltype(AllDims)>) && (IsTraverser<Traverser> || IsMPITraverser<Traverser>)
+requires (IsDim<decltype(AlongDim)> && ... && IsDim<decltype(AllDims)>) &&
+         (IsTraverser<Traverser> || IsMPITraverser<Traverser>)
 inline auto mpi_comm_split_along(Traverser traverser, MPI_Comm comm) -> MPI_Comm { // TODO: custom wrapper
 	static_assert(dim_sequence<AllDims...>::template contains<AlongDim>,
 	              "The dimension must be present in the sequence");
@@ -1464,10 +1465,9 @@ auto main() -> int try {
 	std::cerr << block.structure().size(empty_state) << '\n';
 
 	// bind the structure to MPI_COMM_WORLD
-	auto pre_trav =
-		noarr::traverser(structure) ^ noarr::merge_blocks<'X', 'Y', 'r'>() ^ noarr::merge_blocks<'r', 'Z', 'r'>() ^ noarr::hoist<'r'>();
-	auto trav = noarr::mpi_traverser_t<decltype(pre_trav)>{pre_trav, MPI_COMM_WORLD};
-
+	auto pre_trav = noarr::traverser(structure) ^ noarr::merge_blocks<'X', 'Y', 'r'>() ^
+	                noarr::merge_blocks<'r', 'Z', 'r'>() ^ noarr::hoist<'r'>();
+	auto trav = noarr::mpi_traverser_t{pre_trav, MPI_COMM_WORLD};
 	// const MPI_custom_type mpi_rep = mpi_transform_builder{}.process(block.structure());
 
 	// MPI_Aint lb = 0;
