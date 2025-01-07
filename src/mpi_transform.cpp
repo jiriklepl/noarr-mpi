@@ -1135,7 +1135,85 @@ private:
 // - A lightweight C++ MPI library:
 // - Towards Modern C++ Language support for MPI
 
-template<IsDim auto Dim, class... Bags>
+template<class Traverser>
+struct mpi_traverser_t : strict_contain<Traverser, MPI_Comm> {
+	using base = strict_contain<Traverser, MPI_Comm>;
+
+	[[nodiscard]]
+	constexpr Traverser get_traverser() const noexcept {
+		return base::template get<0>();
+	}
+
+	[[nodiscard]]
+	constexpr MPI_Comm get_comm() const noexcept {
+		return base::template get<1>();
+	}
+
+
+	friend auto operator^(mpi_traverser_t traverser, auto order) noexcept {
+		using ordered = decltype(traverser.get_traverser() ^ order);
+		return mpi_traverser_t<ordered>{traverser.get_traverser() ^ order, traverser.get_comm()};
+	}
+
+	template<auto ...Dims, class F>
+	requires (... && IsDim<decltype(Dims)>)
+	constexpr void for_each(F &&f) const {
+		get_traverser().template for_each<Dims...>([&f, comm = get_comm()](auto state) {
+			std::forward<F>(f)(state);
+		});
+	}
+
+	template<auto ...Dims, class F>
+	requires (... && IsDim<decltype(Dims)>)
+	constexpr void for_sections(F &&f) const {
+		get_traverser().template for_sections<Dims...>([&f, comm = get_comm()]<class Inner>(Inner inner) {
+			std::forward<F>(f)(mpi_traverser_t<Inner>{inner, comm});
+		});
+	}
+
+	template<auto ...Dims, class F>
+	requires (... && IsDim<decltype(Dims)>)
+	constexpr void for_dims(F &&f) const {
+		get_traverser().template for_dims<Dims...>([&f, comm = get_comm()]<class Inner>(Inner inner) {
+			std::forward<F>(f)(mpi_traverser_t<Inner>{inner, comm});
+		});
+	}
+};
+
+template<class T>
+struct is_mpi_traverser : std::false_type {};
+
+template<class Traverser>
+struct is_mpi_traverser<mpi_traverser_t<Traverser>> : std::true_type {};
+
+template<class T>
+constexpr bool is_mpi_traverser_v = is_mpi_traverser<T>::value;
+
+template<class T>
+concept IsMPITraverser = is_mpi_traverser_v<T>;
+
+template<IsMPITraverser Traverser>
+constexpr auto operator|(Traverser traverser, auto f) -> decltype(traverser.for_each(f)) {
+	return traverser.for_each(f);
+}
+
+template<IsMPITraverser Traverser, auto ...Dims, class F>
+constexpr auto operator|(Traverser traverser, const helpers::for_each_t<F, Dims...> &f) -> decltype(traverser.template for_each<Dims...>(f)) {
+	return traverser.template for_each<Dims...>(f);
+}
+
+template<IsMPITraverser Traverser, auto ...Dims, class F>
+constexpr auto operator|(Traverser traverser, const helpers::for_sections_t<F, Dims...> &f) -> decltype(traverser.template for_sections<Dims...>(f)) {
+	return traverser.template for_sections<Dims...>(f);
+}
+
+template<IsMPITraverser Traverser, auto ...Dims, class F>
+constexpr auto operator|(Traverser traverser, const helpers::for_dims_t<F, Dims...> &f) -> decltype(traverser.template for_dims<Dims...>(f)) {
+	return traverser.template for_dims<Dims...>(f);
+}
+
+template<auto Dim, class... Bags>
+requires (IsDim<decltype(Dim)> && ... && IsBag<Bags>)
 constexpr auto mpi_run(auto trav, MPI_Comm comm, const Bags &...bags) {
 	return [trav, comm, ... custom_types = mpi_transform_builder{}.process(bags.structure()),
 	        ... bags = bags.get_ref()](auto &&F) {
@@ -1214,23 +1292,18 @@ auto main() -> int try {
 	std::cerr << block.structure().size(empty_state) << '\n';
 
 	// bind the structure to MPI_COMM_WORLD
-	auto trav =
+	auto pre_trav =
 		noarr::traverser(structure) ^ noarr::merge_blocks<'X', 'Y', 'r'>() ^ noarr::merge_blocks<'r', 'Z', 'r'>();
+	auto trav = noarr::mpi_traverser_t{pre_trav, MPI_COMM_WORLD};
 
-	// const auto primitive_factory = generic_token_factory([]<class T>(T arg) { return token_list(arg); });
-	// auto tokens = tokenizer(block.structure()).tokenize(primitive_factory);
+	// const MPI_custom_type mpi_rep = mpi_transform_builder{}.process(block.structure());
 
-	const MPI_custom_type mpi_rep = mpi_transform_builder{}.process(block.structure());
+	// MPI_Aint lb = 0;
+	// MPI_Aint extent = 0;
 
-	MPI_Aint lb = 0;
-	MPI_Aint extent = 0;
-
-	MPICHK(MPI_Type_get_extent((MPI_Datatype)mpi_rep, &lb, &extent));
-	std::cerr << "Extent: " << extent << '\n';
-	std::cerr << "Lower bound: " << lb << '\n';
-	// do not actually traverse any dimensions; the relevant dimensions are already bound to the rank
-	// trav ^ noarr::mpi_bind<'r'>(MPI_COMM_WORLD) | noarr::for_dims<>([=, b = block.get_ref(), mpi_rep =
-	// MPI_Datatype(mpi_rep)](auto inner) {
+	// MPICHK(MPI_Type_get_extent((MPI_Datatype)mpi_rep, &lb, &extent));
+	// std::cerr << "Extent: " << extent << '\n';
+	// std::cerr << "Lower bound: " << lb << '\n';
 
 	mpi_run<'r'>(trav, MPI_COMM_WORLD, block)([x, y, z](const auto inner, const auto b) {
 		MPICHK(MPI_Barrier(MPI_COMM_WORLD));
