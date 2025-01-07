@@ -9,7 +9,7 @@ project(noarr_mpi
 
 FetchContent_Declare(Noarr
                     GIT_REPOSITORY https://github.com/jiriklepl/noarr-structures.git
-                    GIT_TAG        main)
+                    GIT_TAG        experimental)
 FetchContent_MakeAvailable(Noarr)
 
 find_package(MPI REQUIRED)
