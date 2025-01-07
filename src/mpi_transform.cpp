@@ -1193,45 +1193,7 @@ requires IsTraverser<Traverser>
 mpi_traverser_t(Traverser, MPI_Comm) -> mpi_traverser_t<Traverser>;
 
 template<class T>
-struct is_mpi_traverser : std::false_type {};
-
-template<class Traverser>
-struct is_mpi_traverser<mpi_traverser_t<Traverser>> : std::true_type {};
-
-template<class T>
-constexpr bool is_mpi_traverser_v = is_mpi_traverser<T>::value;
-
-template<class T>
-concept IsMPITraverser = is_mpi_traverser_v<T>;
-
-// TODO: standardize this:
-template<class T>
-struct to_traverser : std::false_type {};
-
-template<class T>
-constexpr bool to_traverser_v = to_traverser<T>::value;
-
-template<class T>
-using to_traverser_t = typename to_traverser<T>::type;
-
-template<class T>
-concept ToTraverser = to_traverser_v<std::remove_cvref_t<T>>;
-
-template<class T>
-requires ToTraverser<T>
-constexpr decltype(auto) convert_to_traverser(T &&t) noexcept {
-	return to_traverser<std::remove_cvref_t<T>>::convert(std::forward<T>(t));
-}
-
-template<class Struct, class Order>
-struct to_traverser<traverser_t<Struct, Order>> : std::true_type {
-	using type = traverser_t<Struct, Order>;
-
-	[[nodiscard]]
-	static constexpr type convert(const traverser_t<Struct, Order> &traverser) noexcept {
-		return traverser;
-	}
-};
+concept IsMPITraverser = IsSpecialization<T, mpi_traverser_t>;
 
 template<class Traverser>
 struct to_traverser<mpi_traverser_t<Traverser>> : std::true_type {
@@ -1244,7 +1206,7 @@ struct to_traverser<mpi_traverser_t<Traverser>> : std::true_type {
 };
 
 template<class Traverser>
-struct to_state<mpi_traverser_t<Traverser>> {
+struct to_state<mpi_traverser_t<Traverser>> : std::true_type {
 	using type = decltype(std::declval<Traverser>().state());
 
 	[[nodiscard]]
@@ -1453,11 +1415,11 @@ auto main() -> int try {
 	std::cerr << "Size: " << x * y * z << '\n';
 
 	// this is just imaginary; no actual data exist
-	auto data = noarr::scalar<int>() ^ noarr::vectors<'x', 'y', 'z'>(2 * x, 2 * y, 2 * z);
+	auto data = noarr::bag(noarr::scalar<int>() ^ noarr::vectors<'x', 'y', 'z'>(2 * x, 2 * y, 2 * z), nullptr);
 
 	// split the data into blocks
 	auto structure = data ^ noarr::into_blocks<'x', 'X'>() ^ noarr::into_blocks<'y', 'Y'>() ^
-	                 noarr::into_blocks<'z', 'Z'>() ^ noarr::set_length<'X', 'Y', 'Z'>(2, 2, 2);
+	                 noarr::into_blocks<'z', 'Z'>() ^ noarr::set_length<'X', 'Y', 'Z'>(2, 2, 2); // TODO: set_length automatically
 
 	// privatize a block corresponding to a single MPI rank
 	auto block = noarr::bag(noarr::scalar<int>() ^ noarr::vectors_like<'x', 'y', 'z'>(structure));
@@ -1477,7 +1439,10 @@ auto main() -> int try {
 	// std::cerr << "Extent: " << extent << '\n';
 	// std::cerr << "Lower bound: " << lb << '\n';
 
-	mpi_run(trav, block)([x, y, z](const auto inner, const auto b) {
+	// TODO `block -> b` is not the most elegant solution
+	mpi_run(trav, data, block)([x, y, z](const auto inner, const auto d, const auto b) {
+		// TODO: magical scatter `d -> b`
+
 		MPICHK(MPI_Barrier(inner.get_comm()));
 
 		std::cerr << "begin" << '\n';
@@ -1514,6 +1479,11 @@ auto main() -> int try {
 		// broadcast along the communicators
 		// MPICHK(MPI_Bcast(b.data(), 1, b.get_mpi_type(), 0, x_comm));
 		mpi_bcast(b, x_comm, 0);
+
+		static_assert(requires {
+			// broadcast globally in the traverser; just compile, never execute
+			{ mpi_bcast(b, inner, 0) } -> std::same_as<void>;
+		});
 
 		// -> we wanna generalize the above to `broadcast(b, the communicator we are broadcasting along)`
 
@@ -1567,8 +1537,9 @@ auto main() -> int try {
 		MPICHK(MPI_Comm_free(&x_comm));
 		MPICHK(MPI_Comm_free(&y_comm));
 		MPICHK(MPI_Comm_free(&z_comm));
-
 		// TODO: -> we wanna destroy them using the raii pattern
+
+		// TODO: gather the results (`b -> d`)
 	});
 
 	MPICHK(MPI_Barrier(MPI_COMM_WORLD));
