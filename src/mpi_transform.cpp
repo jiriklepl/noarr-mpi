@@ -1135,9 +1135,10 @@ private:
 // - A lightweight C++ MPI library:
 // - Towards Modern C++ Language support for MPI
 
-template<class Traverser>
+template<class Traverser> requires IsTraverser<Traverser>
 struct mpi_traverser_t : strict_contain<Traverser, MPI_Comm> {
 	using base = strict_contain<Traverser, MPI_Comm>;
+	using base::base;
 
 	[[nodiscard]]
 	constexpr Traverser get_traverser() const noexcept {
@@ -1149,7 +1150,23 @@ struct mpi_traverser_t : strict_contain<Traverser, MPI_Comm> {
 		return base::template get<1>();
 	}
 
+	constexpr auto state() const noexcept {
+		return get_traverser().state();
+	}
 
+	constexpr auto get_struct() const noexcept {
+		return get_traverser().get_struct();
+	}
+
+	constexpr auto get_order() const noexcept {
+		return get_traverser().get_order();
+	}
+
+	constexpr auto top_struct() const noexcept {
+		return get_traverser().top_struct();
+	}
+
+	[[nodiscard]]
 	friend auto operator^(mpi_traverser_t traverser, auto order) noexcept {
 		using ordered = decltype(traverser.get_traverser() ^ order);
 		return mpi_traverser_t<ordered>{traverser.get_traverser() ^ order, traverser.get_comm()};
@@ -1192,6 +1209,132 @@ constexpr bool is_mpi_traverser_v = is_mpi_traverser<T>::value;
 template<class T>
 concept IsMPITraverser = is_mpi_traverser_v<T>;
 
+// TODO: standardize this:
+template<class T>
+struct to_traverser : std::false_type {};
+
+template<class T>
+constexpr bool to_traverser_v = to_traverser<T>::value;
+
+template<class T>
+using to_traverser_t = typename to_traverser<T>::type;
+
+template<class T>
+concept ToTraverser = to_traverser_v<std::remove_cvref_t<T>>;
+
+template<class T>
+requires ToTraverser<T>
+constexpr decltype(auto) convert_to_traverser(T &&t) noexcept {
+	return to_traverser<std::remove_cvref_t<T>>::convert(std::forward<T>(t));
+}
+
+template<class Struct, class Order>
+struct to_traverser<traverser_t<Struct, Order>> : std::true_type {
+	using type = traverser_t<Struct, Order>;
+
+	[[nodiscard]]
+	static constexpr type convert(const traverser_t<Struct, Order> &traverser) noexcept {
+		return traverser;
+	}
+};
+
+template<class Traverser>
+struct to_traverser<mpi_traverser_t<Traverser>> : std::true_type {
+	using type = Traverser;
+
+	[[nodiscard]]
+	static constexpr type convert(const mpi_traverser_t<Traverser> &traverser) noexcept {
+		return traverser.get_traverser();
+	}
+};
+
+template<class Traverser>
+struct to_state<mpi_traverser_t<Traverser>> {
+	using type = decltype(std::declval<Traverser>().state());
+
+	[[nodiscard]]
+	static constexpr type convert(const mpi_traverser_t<Traverser> &traverser) noexcept {
+		return traverser.get_traverser().state();
+	}
+};
+
+template<class T>
+struct to_MPI_Comm : std::false_type {};
+
+template<class T>
+constexpr bool to_MPI_Comm_v = to_MPI_Comm<T>::value;
+
+template<class T>
+using to_MPI_Comm_t = typename to_MPI_Comm<T>::type;
+
+template<class T>
+concept ToMPIComm = to_MPI_Comm_v<std::remove_cvref_t<T>>;
+
+template<class T>
+requires ToMPIComm<T>
+constexpr decltype(auto) convert_to_MPI_Comm(T &&t) noexcept {
+	return to_MPI_Comm<std::remove_cvref_t<T>>::convert(std::forward<T>(t));
+}
+
+template<>
+struct to_MPI_Comm<MPI_Comm> : std::true_type {
+	using type = MPI_Comm;
+
+	[[nodiscard]]
+	static constexpr type convert(MPI_Comm comm) noexcept {
+		return comm;
+	}
+};
+
+template<class Traverser>
+struct to_MPI_Comm<mpi_traverser_t<Traverser>> : std::true_type {
+	using type = MPI_Comm;
+
+	[[nodiscard]]
+	static constexpr type convert(const mpi_traverser_t<Traverser> &traverser) noexcept {
+		return traverser.get_comm();
+	}
+};
+
+template<class T>
+struct to_MPI_Datatype : std::false_type {};
+
+template<class T>
+constexpr bool to_MPI_Datatype_v = to_MPI_Datatype<T>::value;
+
+template<class T>
+using to_MPI_Datatype_t = typename to_MPI_Datatype<T>::type;
+
+template<class T>
+concept ToMPIDatatype = to_MPI_Datatype_v<std::remove_cvref_t<T>>;
+
+template<class T>
+requires ToMPIDatatype<T>
+constexpr decltype(auto) convert_to_MPI_Datatype(T &&t) noexcept {
+	return to_MPI_Datatype<std::remove_cvref_t<T>>::convert(std::forward<T>(t));
+}
+
+template<>
+struct to_MPI_Datatype<MPI_Datatype> : std::true_type {
+	using type = MPI_Datatype;
+
+	[[nodiscard]]
+	static constexpr type convert(MPI_Datatype mpi_type) noexcept {
+		return mpi_type;
+	}
+};
+
+// mpi bag
+template<class Bag>
+struct to_MPI_Datatype<mpi_bag<Bag>> : std::true_type {
+	using type = MPI_Datatype;
+
+	[[nodiscard]]
+	static constexpr type convert(const mpi_bag<Bag> &bag) noexcept {
+		return bag.get_mpi_type();
+	}
+};
+
 template<IsMPITraverser Traverser>
 constexpr auto operator|(Traverser traverser, auto f) -> decltype(traverser.for_each(f)) {
 	return traverser.for_each(f);
@@ -1212,9 +1355,12 @@ constexpr auto operator|(Traverser traverser, const helpers::for_dims_t<F, Dims.
 	return traverser.template for_dims<Dims...>(f);
 }
 
-template<auto Dim, class... Bags>
-requires (IsDim<decltype(Dim)> && ... && IsBag<Bags>)
-constexpr auto mpi_run(auto trav, MPI_Comm comm, const Bags &...bags) {
+template<class... Bags>
+requires (... && IsBag<Bags>)
+constexpr auto mpi_run(auto trav, const Bags &...bags) {
+	constexpr auto Dim = helpers::traviter_top_dim<decltype(trav.top_struct())>;
+	const auto comm = trav.get_comm();
+
 	return [trav, comm, ... custom_types = mpi_transform_builder{}.process(bags.structure()),
 	        ... bags = bags.get_ref()](auto &&F) {
 		trav ^ mpi_bind<Dim>(comm) | noarr::for_dims<>([=, &F, ... types = MPI_Datatype(custom_types)](auto inner) {
@@ -1223,9 +1369,12 @@ constexpr auto mpi_run(auto trav, MPI_Comm comm, const Bags &...bags) {
 	};
 }
 
-template<IsDim auto Dim, class... Bags>
-constexpr auto mpi_for(auto trav, MPI_Comm comm, const Bags &...bags) {
+template<auto Dim, class... Bags>
+requires (IsDim<decltype(Dim)> && ... && IsBag<Bags>)
+constexpr auto mpi_for(auto trav, const Bags &...bags) {
+	const auto comm = trav.get_comm();
 	const auto bind = mpi_bind<Dim>(comm);
+
 	return [trav, comm, ... custom_types = mpi_transform_builder{}.process(bags.structure()), ... bags = bags.get_ref(),
 	        bind,
 	        // privatized bags
@@ -1246,17 +1395,40 @@ using TODO_TYPE = int;
 
 // TODO: MPI_Comm custom wrapper with a destructor that calls MPI_Comm_free
 
-inline auto mpi_bcast(auto bag, MPI_Comm comm, TODO_TYPE rank) {
-	MPICHK(MPI_Bcast(bag.data(), 1, bag.get_mpi_type(), rank, comm));
+inline void mpi_bcast(auto structure, ToMPIComm auto has_comm, TODO_TYPE rank) {
+	MPICHK(MPI_Bcast(structure.data(), 1, structure.get_mpi_type(), rank, convert_to_MPI_Comm(has_comm)));
+}
+
+inline void mpi_gather(auto structure, ToMPIComm auto has_comm, TODO_TYPE rank) {
+	MPICHK(MPI_Gather(structure.data(), 1, structure.get_mpi_type(), structure.data(), 1, structure.get_mpi_type(), rank, convert_to_MPI_Comm(has_comm)));
+}
+
+inline void mpi_gather(auto from, auto to, ToMPIComm auto has_comm, TODO_TYPE rank) {
+	MPICHK(MPI_Gather(from.data(), 1, from.get_mpi_type(), to.data(), 1, to.get_mpi_type(), rank, convert_to_MPI_Comm(has_comm)));
 }
 
 template<auto AlongDim, auto... AllDims, class Traverser>
-requires (IsDim<decltype(AlongDim)> && ... && IsDim<decltype(AllDims)>) && IsTraverser<Traverser>
+requires (IsDim<decltype(AlongDim)> && ... && IsDim<decltype(AllDims)>) && (IsTraverser<Traverser> || IsMPITraverser<Traverser>)
 inline auto mpi_comm_split_along(Traverser traverser, MPI_Comm comm) -> MPI_Comm { // TODO: custom wrapper
 	static_assert(dim_sequence<AllDims...>::template contains<AlongDim>,
 	              "The dimension must be present in the sequence");
 
 	const auto space = noarr::scalar<char>() ^ noarr::vectors_like<AllDims...>(traverser.get_struct());
+
+	MPI_Comm new_comm = MPI_COMM_NULL;
+	MPICHK(MPI_Comm_split(comm, space | noarr::offset(traverser.state() - noarr::filter_indices<AlongDim>(traverser)),
+	                      noarr::get_index<AlongDim>(traverser), &new_comm));
+	return new_comm;
+}
+
+template<auto AlongDim, auto... AllDims, class MPITraverser>
+requires (IsDim<decltype(AlongDim)> && ... && IsDim<decltype(AllDims)>) && IsMPITraverser<MPITraverser>
+inline auto mpi_comm_split_along(MPITraverser traverser) -> MPI_Comm { // TODO: custom wrapper
+	static_assert(dim_sequence<AllDims...>::template contains<AlongDim>,
+	              "The dimension must be present in the sequence");
+
+	const auto space = noarr::scalar<char>() ^ noarr::vectors_like<AllDims...>(traverser.get_struct());
+	const auto comm = traverser.get_comm();
 
 	MPI_Comm new_comm = MPI_COMM_NULL;
 	MPICHK(MPI_Comm_split(comm, space | noarr::offset(traverser.state() - noarr::filter_indices<AlongDim>(traverser)),
@@ -1293,8 +1465,8 @@ auto main() -> int try {
 
 	// bind the structure to MPI_COMM_WORLD
 	auto pre_trav =
-		noarr::traverser(structure) ^ noarr::merge_blocks<'X', 'Y', 'r'>() ^ noarr::merge_blocks<'r', 'Z', 'r'>();
-	auto trav = noarr::mpi_traverser_t{pre_trav, MPI_COMM_WORLD};
+		noarr::traverser(structure) ^ noarr::merge_blocks<'X', 'Y', 'r'>() ^ noarr::merge_blocks<'r', 'Z', 'r'>() ^ noarr::hoist<'r'>();
+	auto trav = noarr::mpi_traverser_t<decltype(pre_trav)>{pre_trav, MPI_COMM_WORLD};
 
 	// const MPI_custom_type mpi_rep = mpi_transform_builder{}.process(block.structure());
 
@@ -1305,8 +1477,8 @@ auto main() -> int try {
 	// std::cerr << "Extent: " << extent << '\n';
 	// std::cerr << "Lower bound: " << lb << '\n';
 
-	mpi_run<'r'>(trav, MPI_COMM_WORLD, block)([x, y, z](const auto inner, const auto b) {
-		MPICHK(MPI_Barrier(MPI_COMM_WORLD));
+	mpi_run(trav, block)([x, y, z](const auto inner, const auto b) {
+		MPICHK(MPI_Barrier(inner.get_comm()));
 
 		std::cerr << "begin" << '\n';
 
@@ -1315,15 +1487,15 @@ auto main() -> int try {
 
 		// communicate along X
 		// MPICHK(MPI_Comm_split(MPI_COMM_WORLD, Y * z + Z, X, &x_comm));
-		MPI_Comm x_comm = noarr::mpi_comm_split_along<'X', /*all_dims: */ 'X', 'Y', 'Z'>(inner, MPI_COMM_WORLD);
+		MPI_Comm x_comm = noarr::mpi_comm_split_along<'X', /*all_dims: */ 'X', 'Y', 'Z'>(inner);
 
 		// communicate along Y
 		// MPICHK(MPI_Comm_split(MPI_COMM_WORLD, Z * x + X, Y, &y_comm));
-		MPI_Comm y_comm = noarr::mpi_comm_split_along<'Y', /*all_dims: */ 'X', 'Y', 'Z'>(inner, MPI_COMM_WORLD);
+		MPI_Comm y_comm = noarr::mpi_comm_split_along<'Y', /*all_dims: */ 'X', 'Y', 'Z'>(inner);
 
 		// communicate along Z
 		// MPICHK(MPI_Comm_split(MPI_COMM_WORLD, X * y + Y, Z, &z_comm));
-		MPI_Comm z_comm = noarr::mpi_comm_split_along<'Z', /*all_dims: */ 'X', 'Y', 'Z'>(inner, MPI_COMM_WORLD);
+		MPI_Comm z_comm = noarr::mpi_comm_split_along<'Z', /*all_dims: */ 'X', 'Y', 'Z'>(inner);
 
 		// -> we wanna create a shortcut for `MPI_Comm_split(the original communicator, all other indices, the index
 		// we are communicating along, &the new communicator)`
