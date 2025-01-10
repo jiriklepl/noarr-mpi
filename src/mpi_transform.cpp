@@ -18,8 +18,14 @@
 #include <noarr/structures/extra/struct_concepts.hpp>
 #include <noarr/traversers.hpp>
 
+#include "noarr/structures/base/signature.hpp"
+#include "noarr/structures/base/state.hpp"
 #include "noarr/structures/base/structs_common.hpp"
 #include "noarr/structures/base/utility.hpp"
+#include "noarr/structures/extra/sig_utils.hpp"
+#include "noarr/structures/extra/to_struct.hpp"
+#include "noarr/structures/extra/traverser.hpp"
+#include "noarr/structures/structs/blocks.hpp"
 #include "noarr/tokenizer.hpp"
 
 #define MPICHK(...)                                                                                                    \
@@ -506,7 +512,7 @@ public:
 	auto get(std::map<erasure, dimension_data> &dimensions) const -> std::size_t override {
 		const auto it = dimensions.find(m_erasure);
 		if (it == dimensions.end()) {
-			throw std::runtime_error("Dimension not found");
+			throw std::runtime_error(__FILE__ + std::string(":") + std::to_string(__LINE__) + std::string(": Dimension not found"));
 		}
 
 		const auto &data = it->second;
@@ -651,7 +657,7 @@ public:
 		const auto old = erasure::get<noarr::dim<Dim>>();
 		const auto old_it = m_dimensions.find(old);
 		if (old_it == m_dimensions.end()) {
-			throw std::runtime_error("Dimension not found");
+			throw std::runtime_error(__FILE__ + std::string(":") + std::to_string(__LINE__) + std::string(": Dimension not found"));
 		}
 
 		// kill the old dimension
@@ -680,9 +686,11 @@ public:
 
 		m_dimensions.try_emplace(e_minor,
 		                         dimension_data{
-									 .start = make_size_expression(),
-									 .end = make_size_expression(),
-									 .extent = make_size_expression(),
+									 .start = make_size_expression(0),
+									 .end = make_size_expression<std::divides<>>(make_size_expression(range_size, moved_data),
+		                                                             make_size_expression(range_size, e_major)),
+									 .extent = make_size_expression<std::divides<>>(make_size_expression(range_size, moved_data),
+		                                                                make_size_expression(range_size, e_major)),
 									 .stride = moved_data.stride->clone(), // TODO: Check whether clone is a good idea
 									 .parent = moved_data.parent,
 									 .children = {e_major},
@@ -726,19 +734,7 @@ public:
 
 		const auto it = m_dimensions.find(e);
 		if (it == m_dimensions.end()) {
-			throw std::runtime_error("Dimension not found");
-		}
-
-		if (!dynamic_cast<unknown_size_expression *>(it->second.start.get())) {
-			throw std::runtime_error("Start already set");
-		}
-
-		if (!dynamic_cast<unknown_size_expression *>(it->second.extent.get())) {
-			throw std::runtime_error("Extent already set");
-		}
-
-		if (!dynamic_cast<unknown_size_expression *>(it->second.end.get())) {
-			throw std::runtime_error("End already set");
+			return;
 		}
 
 		it->second.start = make_size_expression(0);
@@ -748,13 +744,12 @@ public:
 
 	template<auto Dim, class T, class LenT>
 	requires noarr::IsDim<decltype(Dim)>
-	[[deprecated("Not implemented")]]
 	void operator()(noarr::shift_t<Dim, T, LenT> shift) {
 		const auto e = erasure::get<noarr::dim<Dim>>();
 		const auto it = m_dimensions.find(e);
 
 		if (it == m_dimensions.end()) {
-			throw std::runtime_error("Dimension not found");
+			throw std::runtime_error(__FILE__ + std::string(":") + std::to_string(__LINE__) + std::string(": Dimension not found"));
 		}
 
 		if (dynamic_cast<unknown_size_expression *>(it->second.start.get())) {
@@ -766,6 +761,27 @@ public:
 			make_size_expression<std::plus<>>(std::move(it->second.start), make_size_expression(shift.start()));
 	}
 
+	template<auto Dim, class T, class IdxT>
+	requires noarr::IsDim<decltype(Dim)>
+	void operator()(noarr::fix_t<Dim, T, IdxT> fix) {
+		const auto e = erasure::get<noarr::dim<Dim>>();
+		const auto it = m_dimensions.find(e);
+
+		if (it == m_dimensions.end()) {
+			return;
+		}
+
+		if (dynamic_cast<unknown_size_expression *>(it->second.start.get())) {
+			// TODO: in noarr (or mu), it is technically possible to first shift the dimension and then set the length
+			throw std::runtime_error("Start not set");
+		}
+
+		it->second.start =
+			make_size_expression<std::plus<>>(std::move(it->second.start), make_size_expression(fix.idx()));
+		it->second.end =
+			make_size_expression<std::plus<>>(std::move(it->second.end), make_size_expression(fix.idx() + 1));
+	}
+
 	template<auto Dim, class T, class StartT, class LenT>
 	requires noarr::IsDim<decltype(Dim)>
 	void operator()(noarr::slice_t<Dim, T, StartT, LenT> slice) {
@@ -773,7 +789,7 @@ public:
 		const auto it = m_dimensions.find(e);
 
 		if (it == m_dimensions.end()) {
-			throw std::runtime_error("Dimension not found");
+			throw std::runtime_error(__FILE__ + std::string(":") + std::to_string(__LINE__) + std::string(": Dimension not found"));
 		}
 
 		if (dynamic_cast<unknown_size_expression *>(it->second.start.get())) {
@@ -797,7 +813,7 @@ public:
 		const auto it = m_dimensions.find(e);
 
 		if (it == m_dimensions.end()) {
-			throw std::runtime_error("Dimension not found");
+			throw std::runtime_error(__FILE__ + std::string(":") + std::to_string(__LINE__) + std::string(": Dimension not found"));
 		}
 
 		if (dynamic_cast<unknown_size_expression *>(it->second.start.get())) {
@@ -1013,12 +1029,12 @@ namespace noarr {
 template<IsDim auto Dim>
 inline auto mpi_bind(MPI_Comm comm) {
 	int rank = 0;
-	// int size;
+	int size = 0;
 
 	MPICHK(MPI_Comm_rank(comm, &rank));
-	// MPI_Comm_size(comm, &size);
+	MPICHK(MPI_Comm_size(comm, &size));
 
-	return fix<Dim>(rank);
+	return set_length<Dim>(size) ^ fix<Dim>(rank);
 }
 
 template<IsDim auto Dim, auto MajorDim = dim<[]() {}>{}>
@@ -1043,12 +1059,24 @@ public:
 	}
 
 	[[nodiscard]]
-	auto get_bag() const {
+	const Bag &get_bag() const {
 		return *this;
 	}
 
 private:
 	MPI_Datatype mpi_type_;
+};
+
+template<class T>
+concept IsMpiBag = IsSpecialization<T, mpi_bag>;
+
+template<IsMpiBag Bag>
+struct to_struct<Bag> : std::true_type {
+	using type = decltype(convert_to_struct(std::declval<Bag>().get_bag()));
+
+	static constexpr type convert(const Bag &bag) {
+		return convert_to_struct(bag.get_bag());
+	}
 };
 
 // for each of the functions, we want `fun(mpi_traverser, ...)`, `mpi_traverser.fun(...)` and `mpi_traverser | fun(...)`
@@ -1135,11 +1163,16 @@ private:
 // - A lightweight C++ MPI library:
 // - Towards Modern C++ Language support for MPI
 
-template<class Traverser>
+template<IsDim auto Dim, class Traverser>
 requires IsTraverser<Traverser>
 struct mpi_traverser_t : strict_contain<Traverser, MPI_Comm> {
 	using base = strict_contain<Traverser, MPI_Comm>;
 	using base::base;
+
+	static constexpr auto dim = Dim;
+
+	[[nodiscard]]
+	constexpr auto get_bind() const noexcept { return mpi_bind<Dim>(get_comm()); }
 
 	[[nodiscard]]
 	constexpr Traverser get_traverser() const noexcept {
@@ -1151,18 +1184,22 @@ struct mpi_traverser_t : strict_contain<Traverser, MPI_Comm> {
 		return base::template get<1>();
 	}
 
+	[[nodiscard]]
 	constexpr auto state() const noexcept { return get_traverser().state(); }
 
+	[[nodiscard]]
 	constexpr auto get_struct() const noexcept { return get_traverser().get_struct(); }
 
+	[[nodiscard]]
 	constexpr auto get_order() const noexcept { return get_traverser().get_order(); }
 
+	[[nodiscard]]
 	constexpr auto top_struct() const noexcept { return get_traverser().top_struct(); }
 
 	[[nodiscard]]
 	friend auto operator^(mpi_traverser_t traverser, auto order) noexcept {
 		using ordered = decltype(traverser.get_traverser() ^ order);
-		return mpi_traverser_t<ordered>{traverser.get_traverser() ^ order, traverser.get_comm()};
+		return mpi_traverser_t<Dim, ordered>{traverser.get_traverser() ^ order, traverser.get_comm()};
 	}
 
 	template<auto... Dims, class F>
@@ -1175,42 +1212,56 @@ struct mpi_traverser_t : strict_contain<Traverser, MPI_Comm> {
 	requires (... && IsDim<decltype(Dims)>)
 	constexpr void for_sections(F &&f) const {
 		get_traverser().template for_sections<Dims...>([&f, comm = get_comm()]<class Inner>(Inner inner) {
-			std::forward<F>(f)(mpi_traverser_t<Inner>{inner, comm});
+			std::forward<F>(f)(mpi_traverser_t<Dim, Inner>{inner, comm});
 		});
 	}
+
 
 	template<auto... Dims, class F>
 	requires (... && IsDim<decltype(Dims)>)
 	constexpr void for_dims(F &&f) const {
 		get_traverser().template for_dims<Dims...>([&f, comm = get_comm()]<class Inner>(Inner inner) {
-			std::forward<F>(f)(mpi_traverser_t<Inner>{inner, comm});
+			std::forward<F>(f)(mpi_traverser_t<Dim, Inner>{inner, comm});
 		});
 	}
 };
 
-template<class Traverser>
-requires IsTraverser<Traverser>
-mpi_traverser_t(Traverser, MPI_Comm) -> mpi_traverser_t<Traverser>;
+template<IsDim auto Dim, IsTraverser Traverser>
+constexpr auto mpi_traverser(Traverser traverser, MPI_Comm comm) noexcept {
+	using trav = decltype(traverser ^ mpi_bind<Dim>(comm));
+	return mpi_traverser_t<Dim, trav>{traverser ^ mpi_bind<Dim>(comm), comm};
+}
+
+// TODO: the version with top-dim
 
 template<class T>
-concept IsMPITraverser = IsSpecialization<T, mpi_traverser_t>;
+struct is_mpi_traverser : std::false_type {};
 
-template<class Traverser>
-struct to_traverser<mpi_traverser_t<Traverser>> : std::true_type {
-	using type = Traverser;
+template<class T>
+constexpr bool is_mpi_traverser_v = is_mpi_traverser<T>::value;
+
+template<class T>
+concept IsMpiTraverser = is_mpi_traverser_v<std::remove_cvref_t<T>>;
+
+template<IsDim auto Dim, IsTraverser Traverser>
+struct is_mpi_traverser<mpi_traverser_t<Dim, Traverser>> : std::true_type {};
+
+template<IsMpiTraverser Traverser>
+struct to_traverser<Traverser> : std::true_type {
+	using type = std::remove_cvref_t<decltype(std::declval<Traverser>().get_traverser())>;
 
 	[[nodiscard]]
-	static constexpr type convert(const mpi_traverser_t<Traverser> &traverser) noexcept {
+	static constexpr type convert(const Traverser &traverser) noexcept {
 		return traverser.get_traverser();
 	}
 };
 
-template<class Traverser>
-struct to_state<mpi_traverser_t<Traverser>> : std::true_type {
+template<IsMpiTraverser Traverser>
+struct to_state<Traverser> : std::true_type {
 	using type = decltype(std::declval<Traverser>().state());
 
 	[[nodiscard]]
-	static constexpr type convert(const mpi_traverser_t<Traverser> &traverser) noexcept {
+	static constexpr type convert(const Traverser &traverser) noexcept {
 		return traverser.get_traverser().state();
 	}
 };
@@ -1243,12 +1294,12 @@ struct to_MPI_Comm<MPI_Comm> : std::true_type {
 	}
 };
 
-template<class Traverser>
-struct to_MPI_Comm<mpi_traverser_t<Traverser>> : std::true_type {
-	using type = MPI_Comm;
+template<IsMpiTraverser Traverser>
+struct to_MPI_Comm<Traverser> : std::true_type {
+	using type = decltype(std::declval<Traverser>().get_comm());
 
 	[[nodiscard]]
-	static constexpr type convert(const mpi_traverser_t<Traverser> &traverser) noexcept {
+	static constexpr type convert(const Traverser &traverser) noexcept {
 		return traverser.get_comm();
 	}
 };
@@ -1292,24 +1343,24 @@ struct to_MPI_Datatype<mpi_bag<Bag>> : std::true_type {
 	}
 };
 
-template<IsMPITraverser Traverser>
+template<IsMpiTraverser Traverser>
 constexpr auto operator|(Traverser traverser, auto f) -> decltype(traverser.for_each(f)) {
 	return traverser.for_each(f);
 }
 
-template<IsMPITraverser Traverser, auto... Dims, class F>
+template<IsMpiTraverser Traverser, auto... Dims, class F>
 constexpr auto operator|(Traverser traverser, const helpers::for_each_t<F, Dims...> &f)
 	-> decltype(traverser.template for_each<Dims...>(f)) {
 	return traverser.template for_each<Dims...>(f);
 }
 
-template<IsMPITraverser Traverser, auto... Dims, class F>
+template<IsMpiTraverser Traverser, auto... Dims, class F>
 constexpr auto operator|(Traverser traverser, const helpers::for_sections_t<F, Dims...> &f)
 	-> decltype(traverser.template for_sections<Dims...>(f)) {
 	return traverser.template for_sections<Dims...>(f);
 }
 
-template<IsMPITraverser Traverser, auto... Dims, class F>
+template<IsMpiTraverser Traverser, auto... Dims, class F>
 constexpr auto operator|(Traverser traverser, const helpers::for_dims_t<F, Dims...> &f)
 	-> decltype(traverser.template for_dims<Dims...>(f)) {
 	return traverser.template for_dims<Dims...>(f);
@@ -1317,13 +1368,10 @@ constexpr auto operator|(Traverser traverser, const helpers::for_dims_t<F, Dims.
 
 template<class... Bags>
 requires (... && IsBag<Bags>)
-constexpr auto mpi_run(auto trav, const Bags &...bags) {
-	constexpr auto Dim = helpers::traviter_top_dim<decltype(trav.top_struct())>;
-	const auto comm = trav.get_comm();
-
-	return [trav, comm, ... custom_types = mpi_transform_builder{}.process(bags.structure()),
+constexpr auto mpi_run(IsMpiTraverser auto trav, const Bags &...bags) {
+	return [trav, ... custom_types = mpi_transform_builder{}.process(bags.structure() ^ fix(trav.state()) ^ set_length(trav.state())),
 	        ... bags = bags.get_ref()](auto &&F) {
-		trav ^ mpi_bind<Dim>(comm) | noarr::for_dims<>([=, &F, ... types = MPI_Datatype(custom_types)](auto inner) {
+		trav | noarr::for_dims<>([=, &F, ... types = MPI_Datatype(custom_types)](auto inner) {
 			F(inner, mpi_bag(bags, types)...);
 		});
 	};
@@ -1331,16 +1379,14 @@ constexpr auto mpi_run(auto trav, const Bags &...bags) {
 
 template<auto Dim, class... Bags>
 requires (IsDim<decltype(Dim)> && ... && IsBag<Bags>)
-constexpr auto mpi_for(auto trav, const Bags &...bags) {
+constexpr auto mpi_for(IsMpiTraverser auto trav, const Bags &...bags) {
 	const auto comm = trav.get_comm();
-	const auto bind = mpi_bind<Dim>(comm);
 
 	return [trav, comm, ... custom_types = mpi_transform_builder{}.process(bags.structure()), ... bags = bags.get_ref(),
-	        bind,
 	        // privatized bags
-	        ... privatized_structs = vectors_like((bags.structure() ^ bind))](auto &&init, auto &&for_each,
+	        ... privatized_structs = vectors_like(bags.structure())](auto &&init, auto &&for_each,
 	                                                                          auto &&finalize) {
-		trav ^ bind |
+		trav |
 			noarr::for_dims<>([=, &init, &for_each, &finalize, ... types = MPI_Datatype(custom_types)](auto inner) {
 				init(inner, mpi_bag(bags, types)...);
 
@@ -1359,24 +1405,96 @@ inline void mpi_bcast(auto structure, ToMPIComm auto has_comm, TODO_TYPE rank) {
 	MPICHK(MPI_Bcast(structure.data(), 1, structure.get_mpi_type(), rank, convert_to_MPI_Comm(has_comm)));
 }
 
-inline void mpi_gather(auto structure, ToMPIComm auto has_comm, TODO_TYPE rank) {
-	MPICHK(MPI_Gather(structure.data(), 1, structure.get_mpi_type(), structure.data(), 1, structure.get_mpi_type(),
-	                  rank, convert_to_MPI_Comm(has_comm)));
-}
+// TODO: doesn't work
+// inline void mpi_gather(auto structure, ToMPIComm auto has_comm, TODO_TYPE rank) {
+// 	MPICHK(MPI_Gather(structure.data(), 1, structure.get_mpi_type(), structure.data(), 1, structure.get_mpi_type(),
+// 	                  rank, convert_to_MPI_Comm(has_comm)));
+// }
 
-inline void mpi_gather(auto from, auto to, ToMPIComm auto has_comm, TODO_TYPE rank) {
-	MPICHK(MPI_Gather(from.data(), 1, from.get_mpi_type(), to.data(), 1, to.get_mpi_type(), rank,
-	                  convert_to_MPI_Comm(has_comm)));
-}
+template<class Sig>
+struct in_signature {
+	using signature = Sig;
+	using value_type = bool;
+
+	template<IsDim auto Dim>
+	static constexpr bool value = Sig::template any_accept<Dim>;
+};
+
+template<IsStruct Struct>
+struct index_space_size {
+public:
+	template<class DimTree>
+	static constexpr std::size_t get(Struct structure) noexcept {
+		return get_impl(DimTree{}, structure);
+	}
+
+	static constexpr std::size_t get(Struct structure) noexcept {
+		return get_impl(sig_dim_tree<typename Struct::signature>{}, structure);
+	}
+
+private:
+	template<auto Dim, class... Branches>
+	requires (sizeof...(Branches) != 1)
+	static constexpr std::size_t get_impl(dim_tree<Dim, Branches...> /*dt*/, Struct structure) noexcept {
+		return (... + get_impl(Branches{}, structure));
+	}
+
+	template<auto Dim, class Branch>
+	static constexpr std::size_t get_impl(dim_tree<Dim, Branch> /*dt*/, Struct structure) noexcept {
+		return (structure | get_length<Dim>()) * get_impl(Branch{}, structure);
+	}
+
+	static constexpr std::size_t get_impl(dim_sequence<> /*dt*/, Struct /*structure*/) noexcept {
+		return 1;
+	}
+};
+
+inline void mpi_scatter(auto from, auto to, IsMpiTraverser auto traverser, TODO_TYPE rank) {
+	// TODO: make this traverser-aware, which simplifies the code like... a lot
+	const auto from_struct = convert_to_struct(from) ^ noarr::set_length(traverser.state());
+	const auto to_struct = convert_to_struct(to) ^ noarr::set_length(traverser.state());
+	const auto comm = convert_to_MPI_Comm(traverser);
+
+	using from_dim_tree = sig_dim_tree<typename decltype(from_struct)::signature>;
+	using to_dim_tree = sig_dim_tree<typename decltype(to_struct)::signature>;
+
+	// we need gatherv; displacements should cover the difference of the dimension trees
+
+	using to_dim_filtered = dim_tree_filter<to_dim_tree, in_signature<typename decltype(to_struct)::signature>>;
+	using to_dim_removed = dim_tree_filter<to_dim_tree, dim_pred_not<in_signature<typename decltype(from_struct)::signature>>>;
+
+	// to must be a subset of from
+	static_assert(std::is_same_v<to_dim_filtered, to_dim_tree> && std::is_same_v<to_dim_removed, dim_sequence<>>, R"(The "to" structure must be a subset of the "from" structure)");
+
+	// contains the dimension that are present in both structures
+	using from_dim_filtered = dim_tree_filter<from_dim_tree, in_signature<typename decltype(from_struct)::signature>>;
+
+	// contains the dimensions that are present in the "from" structure, but not in the "to" structure
+	using from_dim_removed = dim_tree_filter<from_dim_tree, dim_pred_not<in_signature<typename decltype(to_struct)::signature>>>;
+
+	const std::size_t difference_size = index_space_size<decltype(from_struct)>::template get<from_dim_removed>(from_struct);
+	std::vector<int> displacements(difference_size);
+
+	const auto from_traverser = noarr::traverser(from_struct);
+	// the displacements are determined by the `from` structure and `from_dim_removed`
+	for_each_impl(from_traverser, from_dim_removed{}, [](auto inner) {
+		// test
+		std::cout << "X: " << get_index<'X'>(inner) <<
+		             ", Y: " << get_index<'Y'>(inner) <<
+		             ", Z: " << get_index<'Z'>(inner) << '\n';
+		// TODO:
+		// displacements[TODO] = TODO;
+	}, convert_to_state(from_traverser));
+};
 
 template<auto AlongDim, auto... AllDims, class Traverser>
 requires (IsDim<decltype(AlongDim)> && ... && IsDim<decltype(AllDims)>) &&
-         (IsTraverser<Traverser> || IsMPITraverser<Traverser>)
+         (IsTraverser<Traverser> || IsMpiTraverser<Traverser>)
 inline auto mpi_comm_split_along(Traverser traverser, MPI_Comm comm) -> MPI_Comm { // TODO: custom wrapper
 	static_assert(dim_sequence<AllDims...>::template contains<AlongDim>,
 	              "The dimension must be present in the sequence");
 
-	const auto space = noarr::scalar<char>() ^ noarr::vectors_like<AllDims...>(traverser.get_struct());
+	const auto space = noarr::scalar<char>() ^ noarr::vectors_like<AllDims...>(traverser.top_struct());
 
 	MPI_Comm new_comm = MPI_COMM_NULL;
 	MPICHK(MPI_Comm_split(comm, space | noarr::offset(traverser.state() - noarr::filter_indices<AlongDim>(traverser)),
@@ -1384,17 +1502,41 @@ inline auto mpi_comm_split_along(Traverser traverser, MPI_Comm comm) -> MPI_Comm
 	return new_comm;
 }
 
+template<class T>
+struct is_length_in : std::false_type {};
+
+template<auto Dim>
+requires IsDim<decltype(Dim)>
+struct is_length_in<length_in<Dim>> : std::true_type {};
+
+template<class T>
+struct is_index_in : std::false_type {};
+
+template<auto Dim>
+requires IsDim<decltype(Dim)>
+struct is_index_in<index_in<Dim>> : std::true_type {};
+
+template<class T>
+concept IsIndexIn = is_index_in<std::remove_cvref_t<T>>::value;
+
+template<IsDim auto... Dims>
+struct remove_indices {
+	template<class Tag>
+	static constexpr bool value = !IsIndexIn<Tag> || !(... || (Tag::dims::template contains<Dims>));
+};
+
 template<auto AlongDim, auto... AllDims, class MPITraverser>
-requires (IsDim<decltype(AlongDim)> && ... && IsDim<decltype(AllDims)>) && IsMPITraverser<MPITraverser>
+requires (IsDim<decltype(AlongDim)> && ... && IsDim<decltype(AllDims)>) && IsMpiTraverser<MPITraverser>
 inline auto mpi_comm_split_along(MPITraverser traverser) -> MPI_Comm { // TODO: custom wrapper
 	static_assert(dim_sequence<AllDims...>::template contains<AlongDim>,
 	              "The dimension must be present in the sequence");
 
-	const auto space = noarr::scalar<char>() ^ noarr::vectors_like<AllDims...>(traverser.get_struct());
+	const auto state = traverser.state().items_restrict(typename helpers::state_filter_items<typename decltype(traverser.state())::items_pack, remove_indices<AllDims...>>::result());
+	const auto space = noarr::scalar<char>() ^ noarr::vectors_like<AllDims...>(traverser.get_struct(), state);
 	const auto comm = traverser.get_comm();
 
 	MPI_Comm new_comm = MPI_COMM_NULL;
-	MPICHK(MPI_Comm_split(comm, space | noarr::offset(traverser.state() - noarr::filter_indices<AlongDim>(traverser)),
+	MPICHK(MPI_Comm_split(comm, space | noarr::offset(noarr::filter_indices<AllDims...>(traverser.state() - noarr::filter_indices<AlongDim>(traverser.state()))),
 	                      noarr::get_index<AlongDim>(traverser), &new_comm));
 	return new_comm;
 }
@@ -1414,23 +1556,32 @@ auto main() -> int try {
 	std::cerr << "x: " << x << ", y: " << y << ", z: " << z << '\n';
 	std::cerr << "Size: " << x * y * z << '\n';
 
-	// this is just imaginary; no actual data exist
-	auto data = noarr::bag(noarr::scalar<int>() ^ noarr::vectors<'x', 'y', 'z'>(2 * x, 2 * y, 2 * z), nullptr);
+	int rank = 0; // TODO: remove this
+
+	MPICHK(MPI_Comm_rank(MPI_COMM_WORLD, &rank));
+	auto data_input = noarr::scalar<int>() ^ noarr::vectors<'x', 'y', 'z'>(2 * x, 2 * y, 2 * z);
+
 
 	// split the data into blocks
-	auto structure = data ^ noarr::into_blocks<'x', 'X'>() ^ noarr::into_blocks<'y', 'Y'>() ^
-	                 noarr::into_blocks<'z', 'Z'>() ^ noarr::set_length<'X', 'Y', 'Z'>(2, 2, 2); // TODO: set_length automatically
+	auto data_structure = data_input ^ noarr::into_blocks<'x', 'X'>() ^ noarr::into_blocks<'y', 'Y'>() ^
+	                 noarr::into_blocks<'z', 'Z'>() ^ noarr::set_length<'X', 'Y'>(2, 2);
 
-	// privatize a block corresponding to a single MPI rank
-	auto block = noarr::bag(noarr::scalar<int>() ^ noarr::vectors_like<'x', 'y', 'z'>(structure));
-
-	std::cerr << block.structure().size(empty_state) << '\n';
+	// data on the root rank
+	auto data_blob = (rank == 0)
+		? std::make_unique<char[]>(data_structure | noarr::get_size())
+		: std::unique_ptr<char[]>{};
 
 	// bind the structure to MPI_COMM_WORLD
-	auto pre_trav = noarr::traverser(structure) ^ noarr::merge_blocks<'X', 'Y', 'r'>() ^
-	                noarr::merge_blocks<'r', 'Z', 'r'>() ^ noarr::hoist<'r'>();
-	auto trav = noarr::mpi_traverser_t{pre_trav, MPI_COMM_WORLD};
+	auto pre_trav = noarr::traverser(data_structure) ^ noarr::merge_blocks<'X', 'Y', 'r'>() ^ noarr::merge_blocks<'r', 'Z', 'r'>();
+	auto trav = noarr::mpi_traverser<'r'>(pre_trav, MPI_COMM_WORLD);
 	// const MPI_custom_type mpi_rep = mpi_transform_builder{}.process(block.structure());
+
+
+	// privatize a block corresponding to a single MPI rank
+	auto block = noarr::bag(noarr::scalar<int>() ^ noarr::vectors_like<'x', 'y', 'z'>(trav.top_struct()));
+	std::cerr << block.structure().size(empty_state) << '\n';
+
+	auto data = noarr::bag(data_structure, data_blob.get());
 
 	// MPI_Aint lb = 0;
 	// MPI_Aint extent = 0;
@@ -1442,10 +1593,37 @@ auto main() -> int try {
 	// TODO `block -> b` is not the most elegant solution
 	mpi_run(trav, data, block)([x, y, z](const auto inner, const auto d, const auto b) {
 		// TODO: magical scatter `d -> b`
+		// mpi_scatter(d, b, inner, 0);
 
 		MPICHK(MPI_Barrier(inner.get_comm()));
 
-		std::cerr << "begin" << '\n';
+		std::cerr << "Checking consistency of the data types" << '\n';
+
+		{
+			MPI_Aint d_lb = 0;
+			MPI_Aint d_extent = 0;
+
+			MPI_Aint b_lb = 0;
+			MPI_Aint b_extent = 0;
+
+
+			MPICHK(MPI_Type_get_extent(d.get_mpi_type(), &d_lb, &d_extent));
+			std::cerr << "Extent: " << d_extent << '\n';
+			std::cerr << "Lower bound: " << d_lb << '\n';
+
+
+			MPICHK(MPI_Type_get_extent(b.get_mpi_type(), &b_lb, &b_extent));
+			std::cerr << "Extent: " << b_extent << '\n';
+			std::cerr << "Lower bound: " << b_lb << '\n';
+
+			if (d_lb != b_lb * 8 || d_extent != b_extent * 8) {
+				std::cerr << "Error: " << d_lb << " != " << b_lb * 8 << " or " << d_extent << " != " << b_extent * 8 << std::endl;
+			}
+		}
+
+		MPICHK(MPI_Barrier(inner.get_comm()));
+
+		std::cerr << "Data types are consistent" << '\n';
 
 		// get the indices of the corresponding block
 		const auto [X, Y, Z] = noarr::get_indices<'X', 'Y', 'Z'>(inner);
@@ -1540,6 +1718,10 @@ auto main() -> int try {
 		// TODO: -> we wanna destroy them using the raii pattern
 
 		// TODO: gather the results (`b -> d`)
+		if (X + Y + Z == 0) {
+			mpi_scatter(d, b, inner, 0);
+		}
+		// mpi_gather(b, d, inner, 0);
 	});
 
 	MPICHK(MPI_Barrier(MPI_COMM_WORLD));
