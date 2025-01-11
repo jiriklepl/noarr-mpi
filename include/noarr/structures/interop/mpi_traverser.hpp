@@ -21,7 +21,9 @@ struct mpi_traverser_t : strict_contain<Traverser, MPI_Comm> {
 	static constexpr auto dim = Dim;
 
 	[[nodiscard]]
-	constexpr auto get_bind() const noexcept { return mpi_bind<Dim>(get_comm()); }
+	constexpr auto get_bind() const noexcept {
+		return mpi_bind<Dim>(get_comm());
+	}
 
 	[[nodiscard]]
 	constexpr Traverser get_traverser() const noexcept {
@@ -34,16 +36,24 @@ struct mpi_traverser_t : strict_contain<Traverser, MPI_Comm> {
 	}
 
 	[[nodiscard]]
-	constexpr auto state() const noexcept { return get_traverser().state(); }
+	constexpr auto state() const noexcept {
+		return get_traverser().state();
+	}
 
 	[[nodiscard]]
-	constexpr auto get_struct() const noexcept { return get_traverser().get_struct(); }
+	constexpr auto get_struct() const noexcept {
+		return get_traverser().get_struct();
+	}
 
 	[[nodiscard]]
-	constexpr auto get_order() const noexcept { return get_traverser().get_order(); }
+	constexpr auto get_order() const noexcept {
+		return get_traverser().get_order();
+	}
 
 	[[nodiscard]]
-	constexpr auto top_struct() const noexcept { return get_traverser().top_struct(); }
+	constexpr auto top_struct() const noexcept {
+		return get_traverser().top_struct();
+	}
 
 	[[nodiscard]]
 	friend auto operator^(mpi_traverser_t traverser, auto order) noexcept {
@@ -64,7 +74,6 @@ struct mpi_traverser_t : strict_contain<Traverser, MPI_Comm> {
 			std::forward<F>(f)(mpi_traverser_t<Dim, Inner>{inner, comm});
 		});
 	}
-
 
 	template<auto... Dims, class F>
 	requires (... && IsDim<decltype(Dims)>)

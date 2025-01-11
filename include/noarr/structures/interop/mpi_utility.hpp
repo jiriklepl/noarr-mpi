@@ -13,8 +13,6 @@
 
 #include <mpi.h>
 
-
-
 #define MPICHK(...)                                                                                                    \
 	do {                                                                                                               \
 		const decltype(MPI_SUCCESS) mpi_result = (__VA_ARGS__);                                                        \
@@ -30,7 +28,6 @@
 	} while (0)
 
 namespace noarr {
-
 
 class MPI_custom_type {
 	MPI_Datatype value;
@@ -75,9 +72,7 @@ public:
 
 class MPI_session {
 public:
-	MPI_session() {
-		MPICHK(MPI_Init(nullptr, nullptr));
-	}
+	MPI_session() { MPICHK(MPI_Init(nullptr, nullptr)); }
 
 	~MPI_session() { MPICHK(MPI_Finalize()); }
 

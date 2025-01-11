@@ -5,9 +5,9 @@
 
 #include <mpi.h>
 
-#include <noarr/structures/interop/bag.hpp>
-#include <noarr/structures/extra/to_struct.hpp>
 #include <noarr/structures/base/utility.hpp>
+#include <noarr/structures/extra/to_struct.hpp>
+#include <noarr/structures/interop/bag.hpp>
 
 namespace noarr {
 
@@ -37,9 +37,7 @@ template<IsMpiBag Bag>
 struct to_struct<Bag> : std::true_type {
 	using type = decltype(convert_to_struct(std::declval<Bag>().get_bag()));
 
-	static constexpr type convert(const Bag &bag) {
-		return convert_to_struct(bag.get_bag());
-	}
+	static constexpr type convert(const Bag &bag) { return convert_to_struct(bag.get_bag()); }
 };
 
 } // namespace noarr

@@ -12,20 +12,18 @@
 
 #include <mpi.h>
 
-#include <noarr/structures/structs/scalar.hpp>
-#include <noarr/structures/structs/layouts.hpp>
-#include <noarr/structures/structs/setters.hpp>
-#include <noarr/structures/structs/views.hpp>
 #include <noarr/structures/structs/bcast.hpp>
 #include <noarr/structures/structs/blocks.hpp>
+#include <noarr/structures/structs/layouts.hpp>
+#include <noarr/structures/structs/scalar.hpp>
+#include <noarr/structures/structs/setters.hpp>
 #include <noarr/structures/structs/slice.hpp>
+#include <noarr/structures/structs/views.hpp>
 
-#include "../interop/mpi_utility.hpp"
 #include "../extra/tokenizer.hpp"
-
+#include "../interop/mpi_utility.hpp"
 
 namespace noarr {
-
 
 class erasure {
 	class abstract_type {
@@ -236,7 +234,8 @@ public:
 	auto get(std::map<erasure, dimension_data> &dimensions) const -> std::size_t override {
 		const auto it = dimensions.find(m_erasure);
 		if (it == dimensions.end()) {
-			throw std::runtime_error(__FILE__ + std::string(":") + std::to_string(__LINE__) + std::string(": Dimension not found"));
+			throw std::runtime_error(__FILE__ + std::string(":") + std::to_string(__LINE__) +
+			                         std::string(": Dimension not found"));
 		}
 
 		const auto &data = it->second;
@@ -381,7 +380,8 @@ public:
 		const auto old = erasure::get<dim<Dim>>();
 		const auto old_it = m_dimensions.find(old);
 		if (old_it == m_dimensions.end()) {
-			throw std::runtime_error(__FILE__ + std::string(":") + std::to_string(__LINE__) + std::string(": Dimension not found"));
+			throw std::runtime_error(__FILE__ + std::string(":") + std::to_string(__LINE__) +
+			                         std::string(": Dimension not found"));
 		}
 
 		// kill the old dimension
@@ -408,18 +408,18 @@ public:
 						 .type = {},
 					 });
 
-		m_dimensions.try_emplace(e_minor,
-		                         dimension_data{
-									 .start = make_size_expression(0),
-									 .end = make_size_expression<std::divides<>>(make_size_expression(range_size, moved_data),
+		m_dimensions.try_emplace(
+			e_minor, dimension_data{
+						 .start = make_size_expression(0),
+						 .end = make_size_expression<std::divides<>>(make_size_expression(range_size, moved_data),
 		                                                             make_size_expression(range_size, e_major)),
-									 .extent = make_size_expression<std::divides<>>(make_size_expression(range_size, moved_data),
+						 .extent = make_size_expression<std::divides<>>(make_size_expression(range_size, moved_data),
 		                                                                make_size_expression(range_size, e_major)),
-									 .stride = moved_data.stride->clone(), // TODO: Check whether clone is a good idea
-									 .parent = moved_data.parent,
-									 .children = {e_major},
-									 .type = {},
-								 });
+						 .stride = moved_data.stride->clone(), // TODO: Check whether clone is a good idea
+						 .parent = moved_data.parent,
+						 .children = {e_major},
+						 .type = {},
+					 });
 
 		for (const auto &e : moved_data.children) {
 			if (auto it = m_dimensions.find(e); it != m_dimensions.end()) {
@@ -473,7 +473,8 @@ public:
 		const auto it = m_dimensions.find(e);
 
 		if (it == m_dimensions.end()) {
-			throw std::runtime_error(__FILE__ + std::string(":") + std::to_string(__LINE__) + std::string(": Dimension not found"));
+			throw std::runtime_error(__FILE__ + std::string(":") + std::to_string(__LINE__) +
+			                         std::string(": Dimension not found"));
 		}
 
 		if (dynamic_cast<unknown_size_expression *>(it->second.start.get())) {
@@ -513,7 +514,8 @@ public:
 		const auto it = m_dimensions.find(e);
 
 		if (it == m_dimensions.end()) {
-			throw std::runtime_error(__FILE__ + std::string(":") + std::to_string(__LINE__) + std::string(": Dimension not found"));
+			throw std::runtime_error(__FILE__ + std::string(":") + std::to_string(__LINE__) +
+			                         std::string(": Dimension not found"));
 		}
 
 		if (dynamic_cast<unknown_size_expression *>(it->second.start.get())) {
@@ -537,7 +539,8 @@ public:
 		const auto it = m_dimensions.find(e);
 
 		if (it == m_dimensions.end()) {
-			throw std::runtime_error(__FILE__ + std::string(":") + std::to_string(__LINE__) + std::string(": Dimension not found"));
+			throw std::runtime_error(__FILE__ + std::string(":") + std::to_string(__LINE__) +
+			                         std::string(": Dimension not found"));
 		}
 
 		if (dynamic_cast<unknown_size_expression *>(it->second.start.get())) {

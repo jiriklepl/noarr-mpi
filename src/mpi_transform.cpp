@@ -5,21 +5,17 @@
 
 #include <mpi.h>
 
-
 #include <noarr/structures/extra/shortcuts.hpp>
 #include <noarr/structures/extra/struct_concepts.hpp>
 #include <noarr/traversers.hpp>
 
 #include "noarr/structures/extra/tokenizer.hpp"
 
-#include "noarr/structures/interop/mpi_utility.hpp"
-#include "noarr/structures/interop/mpi_traverser.hpp"
+#include "noarr/structures/interop/mpi_algorithms.hpp"
 #include "noarr/structures/interop/mpi_bag.hpp"
 #include "noarr/structures/interop/mpi_structs.hpp"
-#include "noarr/structures/interop/mpi_algorithms.hpp"
-
-
-
+#include "noarr/structures/interop/mpi_traverser.hpp"
+#include "noarr/structures/interop/mpi_utility.hpp"
 
 // TODO: review the types and implement the missing ones
 
@@ -28,10 +24,6 @@
 using num_t = int;
 
 namespace noarr {
-
-
-
-
 
 // for each of the functions, we want `fun(mpi_traverser, ...)`, `mpi_traverser.fun(...)` and `mpi_traverser | fun(...)`
 // variants
@@ -121,10 +113,6 @@ using TODO_TYPE = int;
 
 // TODO: MPI_Comm custom wrapper with a destructor that calls MPI_Comm_free
 
-inline void mpi_bcast(auto structure, ToMPIComm auto has_comm, TODO_TYPE rank) {
-	MPICHK(MPI_Bcast(structure.data(), 1, structure.get_mpi_type(), rank, convert_to_MPI_Comm(has_comm)));
-}
-
 // TODO: doesn't work
 // inline void mpi_gather(auto structure, ToMPIComm auto has_comm, TODO_TYPE rank) {
 // 	MPICHK(MPI_Gather(structure.data(), 1, structure.get_mpi_type(), structure.data(), 1, structure.get_mpi_type(),
@@ -164,9 +152,7 @@ private:
 		return (structure | get_length<Dim>()) * get_impl(Branch{}, structure);
 	}
 
-	static constexpr std::size_t get_impl(dim_sequence<> /*dt*/, Struct /*structure*/) noexcept {
-		return 1;
-	}
+	static constexpr std::size_t get_impl(dim_sequence<> /*dt*/, Struct /*structure*/) noexcept { return 1; }
 };
 
 inline void mpi_scatter(auto from, auto to, IsMpiTraverser auto traverser, TODO_TYPE rank) {
@@ -181,30 +167,36 @@ inline void mpi_scatter(auto from, auto to, IsMpiTraverser auto traverser, TODO_
 	// we need gatherv; displacements should cover the difference of the dimension trees
 
 	using to_dim_filtered = dim_tree_filter<to_dim_tree, in_signature<typename decltype(to_struct)::signature>>;
-	using to_dim_removed = dim_tree_filter<to_dim_tree, dim_pred_not<in_signature<typename decltype(from_struct)::signature>>>;
+	using to_dim_removed =
+		dim_tree_filter<to_dim_tree, dim_pred_not<in_signature<typename decltype(from_struct)::signature>>>;
 
 	// to must be a subset of from
-	static_assert(std::is_same_v<to_dim_filtered, to_dim_tree> && std::is_same_v<to_dim_removed, dim_sequence<>>, R"(The "to" structure must be a subset of the "from" structure)");
+	static_assert(std::is_same_v<to_dim_filtered, to_dim_tree> && std::is_same_v<to_dim_removed, dim_sequence<>>,
+	              R"(The "to" structure must be a subset of the "from" structure)");
 
 	// contains the dimension that are present in both structures
 	using from_dim_filtered = dim_tree_filter<from_dim_tree, in_signature<typename decltype(from_struct)::signature>>;
 
 	// contains the dimensions that are present in the "from" structure, but not in the "to" structure
-	using from_dim_removed = dim_tree_filter<from_dim_tree, dim_pred_not<in_signature<typename decltype(to_struct)::signature>>>;
+	using from_dim_removed =
+		dim_tree_filter<from_dim_tree, dim_pred_not<in_signature<typename decltype(to_struct)::signature>>>;
 
-	const std::size_t difference_size = index_space_size<decltype(from_struct)>::template get<from_dim_removed>(from_struct);
+	const std::size_t difference_size =
+		index_space_size<decltype(from_struct)>::template get<from_dim_removed>(from_struct);
 	std::vector<int> displacements(difference_size);
 
 	const auto from_traverser = noarr::traverser(from_struct);
 	// the displacements are determined by the `from` structure and `from_dim_removed`
-	for_each_impl(from_traverser, from_dim_removed{}, [](auto inner) {
-		// test
-		std::cout << "X: " << get_index<'X'>(inner) <<
-		             ", Y: " << get_index<'Y'>(inner) <<
-		             ", Z: " << get_index<'Z'>(inner) << '\n';
-		// TODO:
-		// displacements[TODO] = TODO;
-	}, convert_to_state(from_traverser));
+	for_each_impl(
+		from_traverser, from_dim_removed{},
+		[](auto inner) {
+			// test
+			std::cout << "X: " << get_index<'X'>(inner) << ", Y: " << get_index<'Y'>(inner)
+					  << ", Z: " << get_index<'Z'>(inner) << '\n';
+			// TODO:
+		    // displacements[TODO] = TODO;
+		},
+		convert_to_state(from_traverser));
 };
 
 template<auto AlongDim, auto... AllDims, class Traverser>
@@ -251,12 +243,16 @@ inline auto mpi_comm_split_along(MPITraverser traverser) -> MPI_Comm { // TODO: 
 	static_assert(dim_sequence<AllDims...>::template contains<AlongDim>,
 	              "The dimension must be present in the sequence");
 
-	const auto state = traverser.state().items_restrict(typename helpers::state_filter_items<typename decltype(traverser.state())::items_pack, remove_indices<AllDims...>>::result());
+	const auto state = traverser.state().items_restrict(
+		typename helpers::state_filter_items<typename decltype(traverser.state())::items_pack,
+	                                         remove_indices<AllDims...>>::result());
 	const auto space = noarr::scalar<char>() ^ noarr::vectors_like<AllDims...>(traverser.get_struct(), state);
 	const auto comm = traverser.get_comm();
 
 	MPI_Comm new_comm = MPI_COMM_NULL;
-	MPICHK(MPI_Comm_split(comm, space | noarr::offset(noarr::filter_indices<AllDims...>(traverser.state() - noarr::filter_indices<AlongDim>(traverser.state()))),
+	MPICHK(MPI_Comm_split(comm,
+	                      space | noarr::offset(noarr::filter_indices<AllDims...>(
+									  traverser.state() - noarr::filter_indices<AlongDim>(traverser.state()))),
 	                      noarr::get_index<AlongDim>(traverser), &new_comm));
 	return new_comm;
 }
@@ -281,21 +277,19 @@ auto main() -> int try {
 	MPICHK(MPI_Comm_rank(MPI_COMM_WORLD, &rank));
 	auto data_input = noarr::scalar<int>() ^ noarr::vectors<'x', 'y', 'z'>(2 * x, 2 * y, 2 * z);
 
-
 	// split the data into blocks
 	auto data_structure = data_input ^ noarr::into_blocks<'x', 'X'>() ^ noarr::into_blocks<'y', 'Y'>() ^
-	                 noarr::into_blocks<'z', 'Z'>() ^ noarr::set_length<'X', 'Y'>(2, 2);
+	                      noarr::into_blocks<'z', 'Z'>() ^ noarr::set_length<'X', 'Y'>(2, 2);
 
 	// data on the root rank
-	auto data_blob = (rank == 0)
-		? std::make_unique<char[]>(data_structure | noarr::get_size())
-		: std::unique_ptr<char[]>{};
+	auto data_blob =
+		(rank == 0) ? std::make_unique<char[]>(data_structure | noarr::get_size()) : std::unique_ptr<char[]>{};
 
 	// bind the structure to MPI_COMM_WORLD
-	auto pre_trav = noarr::traverser(data_structure) ^ noarr::merge_blocks<'X', 'Y', 'r'>() ^ noarr::merge_blocks<'r', 'Z', 'r'>();
+	auto pre_trav =
+		noarr::traverser(data_structure) ^ noarr::merge_blocks<'X', 'Y', 'r'>() ^ noarr::merge_blocks<'r', 'Z', 'r'>();
 	auto trav = noarr::mpi_traverser<'r'>(pre_trav, MPI_COMM_WORLD);
 	// const noarr::MPI_custom_type mpi_rep = mpi_transform_builder{}.process(block.structure());
-
 
 	// privatize a block corresponding to a single MPI rank
 	auto block = noarr::bag(noarr::scalar<int>() ^ noarr::vectors_like<'x', 'y', 'z'>(trav.top_struct()));
@@ -326,18 +320,17 @@ auto main() -> int try {
 			MPI_Aint b_lb = 0;
 			MPI_Aint b_extent = 0;
 
-
 			MPICHK(MPI_Type_get_extent(d.get_mpi_type(), &d_lb, &d_extent));
 			std::cerr << "Extent: " << d_extent << '\n';
 			std::cerr << "Lower bound: " << d_lb << '\n';
-
 
 			MPICHK(MPI_Type_get_extent(b.get_mpi_type(), &b_lb, &b_extent));
 			std::cerr << "Extent: " << b_extent << '\n';
 			std::cerr << "Lower bound: " << b_lb << '\n';
 
 			if (d_lb != b_lb * 8 || d_extent != b_extent * 8) {
-				std::cerr << "Error: " << d_lb << " != " << b_lb * 8 << " or " << d_extent << " != " << b_extent * 8 << std::endl;
+				std::cerr << "Error: " << d_lb << " != " << b_lb * 8 << " or " << d_extent << " != " << b_extent * 8
+						  << std::endl;
 			}
 		}
 
