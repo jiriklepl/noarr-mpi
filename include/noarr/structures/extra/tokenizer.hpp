@@ -1,5 +1,5 @@
-#ifndef NOARR_TOKENIZER_HPP
-#define NOARR_TOKENIZER_HPP
+#ifndef NOARR_STRUCTURES_EXTRA_TOKENIZER_HPP
+#define NOARR_STRUCTURES_EXTRA_TOKENIZER_HPP
 
 #include <cstddef>
 #include <type_traits>
@@ -126,4 +126,4 @@ private:
 
 } // namespace noarr
 
-#endif // NOARR_TOKENIZER_HPP
+#endif // NOARR_STRUCTURES_EXTRA_TOKENIZER_HPP
