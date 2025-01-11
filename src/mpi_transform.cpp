@@ -199,68 +199,16 @@ inline void mpi_scatter(auto from, auto to, IsMpiTraverser auto traverser, TODO_
 		convert_to_state(from_traverser));
 };
 
-template<auto AlongDim, auto... AllDims, class Traverser>
-requires (IsDim<decltype(AlongDim)> && ... && IsDim<decltype(AllDims)>) &&
-         (IsTraverser<Traverser> || IsMpiTraverser<Traverser>)
-inline auto mpi_comm_split_along(Traverser traverser, MPI_Comm comm) -> MPI_Comm { // TODO: custom wrapper
-	static_assert(dim_sequence<AllDims...>::template contains<AlongDim>,
-	              "The dimension must be present in the sequence");
-
-	const auto space = noarr::scalar<char>() ^ noarr::vectors_like<AllDims...>(traverser.top_struct());
-
-	MPI_Comm new_comm = MPI_COMM_NULL;
-	MPICHK(MPI_Comm_split(comm, space | noarr::offset(traverser.state() - noarr::filter_indices<AlongDim>(traverser)),
-	                      noarr::get_index<AlongDim>(traverser), &new_comm));
-	return new_comm;
-}
-
-template<class T>
-struct is_length_in : std::false_type {};
-
-template<auto Dim>
-requires IsDim<decltype(Dim)>
-struct is_length_in<length_in<Dim>> : std::true_type {};
-
-template<class T>
-struct is_index_in : std::false_type {};
-
-template<auto Dim>
-requires IsDim<decltype(Dim)>
-struct is_index_in<index_in<Dim>> : std::true_type {};
-
-template<class T>
-concept IsIndexIn = is_index_in<std::remove_cvref_t<T>>::value;
-
 template<IsDim auto... Dims>
 struct remove_indices {
 	template<class Tag>
 	static constexpr bool value = !IsIndexIn<Tag> || !(... || (Tag::dims::template contains<Dims>));
 };
 
-template<auto AlongDim, auto... AllDims, class MPITraverser>
-requires (IsDim<decltype(AlongDim)> && ... && IsDim<decltype(AllDims)>) && IsMpiTraverser<MPITraverser>
-inline auto mpi_comm_split_along(MPITraverser traverser) -> MPI_Comm { // TODO: custom wrapper
-	static_assert(dim_sequence<AllDims...>::template contains<AlongDim>,
-	              "The dimension must be present in the sequence");
-
-	const auto state = traverser.state().items_restrict(
-		typename helpers::state_filter_items<typename decltype(traverser.state())::items_pack,
-	                                         remove_indices<AllDims...>>::result());
-	const auto space = noarr::scalar<char>() ^ noarr::vectors_like<AllDims...>(traverser.get_struct(), state);
-	const auto comm = traverser.get_comm();
-
-	MPI_Comm new_comm = MPI_COMM_NULL;
-	MPICHK(MPI_Comm_split(comm,
-	                      space | noarr::offset(noarr::filter_indices<AllDims...>(
-									  traverser.state() - noarr::filter_indices<AlongDim>(traverser.state()))),
-	                      noarr::get_index<AlongDim>(traverser), &new_comm));
-	return new_comm;
-}
-
 } // namespace noarr
 
-auto main() -> int try {
-	const noarr::MPI_session mpi_session;
+auto main(int argc, char **argv) -> int try {
+	const noarr::MPI_session mpi_session(argc, argv);
 
 	using namespace noarr;
 	// to be shadowed by a local definition of order
@@ -272,9 +220,8 @@ auto main() -> int try {
 	std::cerr << "x: " << x << ", y: " << y << ", z: " << z << '\n';
 	std::cerr << "Size: " << x * y * z << '\n';
 
-	int rank = 0; // TODO: remove this
+	const int rank = mpi_get_rank(mpi_session);
 
-	MPICHK(MPI_Comm_rank(MPI_COMM_WORLD, &rank));
 	auto data_input = noarr::scalar<int>() ^ noarr::vectors<'x', 'y', 'z'>(2 * x, 2 * y, 2 * z);
 
 	// split the data into blocks
@@ -309,22 +256,16 @@ auto main() -> int try {
 		// TODO: magical scatter `d -> b`
 		// mpi_scatter(d, b, inner, 0);
 
-		MPICHK(MPI_Barrier(inner.get_comm()));
+		mpi_barrier(inner);
 
 		std::cerr << "Checking consistency of the data types" << '\n';
 
 		{
-			MPI_Aint d_lb = 0;
-			MPI_Aint d_extent = 0;
-
-			MPI_Aint b_lb = 0;
-			MPI_Aint b_extent = 0;
-
-			MPICHK(MPI_Type_get_extent(d.get_mpi_type(), &d_lb, &d_extent));
+			const auto [d_lb, d_extent] = mpi_type_get_extent(d.get_mpi_type());
 			std::cerr << "Extent: " << d_extent << '\n';
 			std::cerr << "Lower bound: " << d_lb << '\n';
 
-			MPICHK(MPI_Type_get_extent(b.get_mpi_type(), &b_lb, &b_extent));
+			const auto [b_lb, b_extent] = mpi_type_get_extent(b.get_mpi_type());
 			std::cerr << "Extent: " << b_extent << '\n';
 			std::cerr << "Lower bound: " << b_lb << '\n';
 
@@ -334,7 +275,7 @@ auto main() -> int try {
 			}
 		}
 
-		MPICHK(MPI_Barrier(inner.get_comm()));
+		mpi_barrier(inner);
 
 		std::cerr << "Data types are consistent" << '\n';
 
@@ -343,15 +284,15 @@ auto main() -> int try {
 
 		// communicate along X
 		// MPICHK(MPI_Comm_split(MPI_COMM_WORLD, Y * z + Z, X, &x_comm));
-		MPI_Comm x_comm = noarr::mpi_comm_split_along<'X', /*all_dims: */ 'X', 'Y', 'Z'>(inner);
+		auto x_comm = noarr::mpi_comm_split_along<'X', /*all_dims: */ 'X', 'Y', 'Z'>(inner);
 
 		// communicate along Y
 		// MPICHK(MPI_Comm_split(MPI_COMM_WORLD, Z * x + X, Y, &y_comm));
-		MPI_Comm y_comm = noarr::mpi_comm_split_along<'Y', /*all_dims: */ 'X', 'Y', 'Z'>(inner);
+		auto y_comm = noarr::mpi_comm_split_along<'Y', /*all_dims: */ 'X', 'Y', 'Z'>(inner);
 
 		// communicate along Z
 		// MPICHK(MPI_Comm_split(MPI_COMM_WORLD, X * y + Y, Z, &z_comm));
-		MPI_Comm z_comm = noarr::mpi_comm_split_along<'Z', /*all_dims: */ 'X', 'Y', 'Z'>(inner);
+		auto z_comm = noarr::mpi_comm_split_along<'Z', /*all_dims: */ 'X', 'Y', 'Z'>(inner);
 
 		// -> we wanna create a shortcut for `MPI_Comm_split(the original communicator, all other indices, the index
 		// we are communicating along, &the new communicator)`
@@ -424,12 +365,6 @@ auto main() -> int try {
 			}
 		};
 
-		// free the communicators
-		MPICHK(MPI_Comm_free(&x_comm));
-		MPICHK(MPI_Comm_free(&y_comm));
-		MPICHK(MPI_Comm_free(&z_comm));
-		// TODO: -> we wanna destroy them using the raii pattern
-
 		// TODO: gather the results (`b -> d`)
 		if (X + Y + Z == 0) {
 			mpi_scatter(d, b, inner, 0);
@@ -437,7 +372,7 @@ auto main() -> int try {
 		// mpi_gather(b, d, inner, 0);
 	});
 
-	MPICHK(MPI_Barrier(MPI_COMM_WORLD));
+	mpi_barrier(mpi_session);
 
 	std::cerr << "end" << '\n';
 } catch (const std::exception &e) {

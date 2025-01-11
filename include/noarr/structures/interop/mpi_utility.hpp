@@ -29,15 +29,69 @@
 
 namespace noarr {
 
+class MPI_session {
+	MPI_Comm comm = MPI_COMM_WORLD;
+
+public:
+	explicit MPI_session(MPI_Comm comm = MPI_COMM_WORLD) : comm(comm) { MPICHK(MPI_Init(nullptr, nullptr)); }
+
+	explicit MPI_session(int &argc, char **&argv, MPI_Comm comm = MPI_COMM_WORLD) : comm(comm) {
+		MPICHK(MPI_Init(&argc, &argv));
+	}
+
+	~MPI_session() { MPICHK(MPI_Finalize()); }
+
+	MPI_session(const MPI_session &) = delete;
+	auto operator=(const MPI_session &) -> MPI_session & = delete;
+
+	MPI_session(MPI_session &&) = delete;
+	auto operator=(MPI_session &&) -> MPI_session & = delete;
+
+	[[nodiscard]]
+	auto get_comm() const noexcept {
+		return comm;
+	}
+};
+
+template<class T>
+struct to_MPI_Datatype : std::false_type {};
+
+template<class T>
+constexpr bool to_MPI_Datatype_v = to_MPI_Datatype<T>::value;
+
+template<class T>
+using to_MPI_Datatype_t = typename to_MPI_Datatype<T>::type;
+
+template<class T>
+concept ToMPIDatatype = to_MPI_Datatype_v<std::remove_cvref_t<T>>;
+
+template<class T>
+requires ToMPIDatatype<T>
+constexpr decltype(auto) convert_to_MPI_Datatype(T &&t) noexcept {
+	return to_MPI_Datatype<std::remove_cvref_t<T>>::convert(std::forward<T>(t));
+}
+
+template<>
+struct to_MPI_Datatype<MPI_Datatype> : std::true_type {
+	using type = MPI_Datatype;
+
+	[[nodiscard]]
+	static constexpr type convert(MPI_Datatype mpi_type) noexcept {
+		return mpi_type;
+	}
+};
+
 class MPI_custom_type {
 	MPI_Datatype value;
 
 public:
 	constexpr MPI_custom_type() noexcept : value(MPI_DATATYPE_NULL) {}
 
-	explicit MPI_custom_type(MPI_Datatype value) : value(value) {
-		MPICHK(MPI_Type_commit(&value));
-		std::cerr << "MPI_Type_commit(" << value << ")" << '\n';
+	explicit MPI_custom_type(MPI_Datatype value, bool commited = false) : value(value) {
+		if (!commited) {
+			MPICHK(MPI_Type_commit(&value));
+		}
+		std::cerr << "MPI_Type_commit(" << value << ")" << '\n'; // TODO: remove
 	}
 
 	MPI_custom_type(const MPI_custom_type &) = delete;
@@ -70,17 +124,79 @@ public:
 	explicit operator MPI_Datatype() const { return value; }
 };
 
-class MPI_session {
+template<>
+struct to_MPI_Datatype<MPI_custom_type> : std::true_type {
+	using type = MPI_Datatype;
+
+	[[nodiscard]]
+	static constexpr type convert(const MPI_custom_type &mpi_type) noexcept {
+		return static_cast<MPI_Datatype>(mpi_type);
+	}
+};
+
+template<class T>
+struct to_MPI_Comm : std::false_type {};
+
+template<class T>
+constexpr bool to_MPI_Comm_v = to_MPI_Comm<T>::value;
+
+template<class T>
+using to_MPI_Comm_t = typename to_MPI_Comm<T>::type;
+
+template<class T>
+concept ToMPIComm = to_MPI_Comm_v<std::remove_cvref_t<T>>;
+
+template<class T>
+requires ToMPIComm<T>
+constexpr decltype(auto) convert_to_MPI_Comm(T &&t) noexcept {
+	return to_MPI_Comm<std::remove_cvref_t<T>>::convert(std::forward<T>(t));
+}
+
+template<>
+struct to_MPI_Comm<MPI_Comm> : std::true_type {
+	using type = MPI_Comm;
+
+	[[nodiscard]]
+	static constexpr type convert(MPI_Comm comm) noexcept {
+		return comm;
+	}
+};
+
+template<>
+struct to_MPI_Comm<MPI_session> : std::true_type {
+	using type = MPI_Comm;
+
+	[[nodiscard]]
+	static constexpr type convert(const MPI_session &session) noexcept {
+		return session.get_comm();
+	}
+};
+
+class mpi_comm_guard {
+	MPI_Comm value;
+
 public:
-	MPI_session() { MPICHK(MPI_Init(nullptr, nullptr)); }
+	explicit mpi_comm_guard(MPI_Comm value) : value(value) {}
 
-	~MPI_session() { MPICHK(MPI_Finalize()); }
+	mpi_comm_guard(const mpi_comm_guard &) = delete;
+	auto operator=(const mpi_comm_guard &) -> mpi_comm_guard & = delete;
 
-	MPI_session(const MPI_session &) = delete;
-	auto operator=(const MPI_session &) -> MPI_session & = delete;
+	mpi_comm_guard(mpi_comm_guard &&) = delete;
+	auto operator=(mpi_comm_guard &&) -> mpi_comm_guard & = delete;
 
-	MPI_session(MPI_session &&) = delete;
-	auto operator=(MPI_session &&) -> MPI_session & = delete;
+	~mpi_comm_guard() { MPICHK(MPI_Comm_free(&value)); }
+
+	explicit operator MPI_Comm() const { return value; }
+};
+
+template<>
+struct to_MPI_Comm<mpi_comm_guard> : std::true_type {
+	using type = MPI_Comm;
+
+	[[nodiscard]]
+	static constexpr type convert(const mpi_comm_guard &comm) noexcept {
+		return static_cast<MPI_Comm>(comm);
+	}
 };
 
 template<class T>

@@ -85,7 +85,9 @@ struct mpi_traverser_t : strict_contain<Traverser, MPI_Comm> {
 };
 
 template<IsDim auto Dim, IsTraverser Traverser>
-constexpr auto mpi_traverser(Traverser traverser, MPI_Comm comm) noexcept {
+constexpr auto mpi_traverser(Traverser traverser, ToMPIComm auto has_comm) noexcept {
+	const auto comm = convert_to_MPI_Comm(has_comm);
+
 	using trav = decltype(traverser ^ mpi_bind<Dim>(comm));
 	return mpi_traverser_t<Dim, trav>{traverser ^ mpi_bind<Dim>(comm), comm};
 }
@@ -124,34 +126,6 @@ struct to_state<Traverser> : std::true_type {
 	}
 };
 
-template<class T>
-struct to_MPI_Comm : std::false_type {};
-
-template<class T>
-constexpr bool to_MPI_Comm_v = to_MPI_Comm<T>::value;
-
-template<class T>
-using to_MPI_Comm_t = typename to_MPI_Comm<T>::type;
-
-template<class T>
-concept ToMPIComm = to_MPI_Comm_v<std::remove_cvref_t<T>>;
-
-template<class T>
-requires ToMPIComm<T>
-constexpr decltype(auto) convert_to_MPI_Comm(T &&t) noexcept {
-	return to_MPI_Comm<std::remove_cvref_t<T>>::convert(std::forward<T>(t));
-}
-
-template<>
-struct to_MPI_Comm<MPI_Comm> : std::true_type {
-	using type = MPI_Comm;
-
-	[[nodiscard]]
-	static constexpr type convert(MPI_Comm comm) noexcept {
-		return comm;
-	}
-};
-
 template<IsMpiTraverser Traverser>
 struct to_MPI_Comm<Traverser> : std::true_type {
 	using type = decltype(std::declval<Traverser>().get_comm());
@@ -159,34 +133,6 @@ struct to_MPI_Comm<Traverser> : std::true_type {
 	[[nodiscard]]
 	static constexpr type convert(const Traverser &traverser) noexcept {
 		return traverser.get_comm();
-	}
-};
-
-template<class T>
-struct to_MPI_Datatype : std::false_type {};
-
-template<class T>
-constexpr bool to_MPI_Datatype_v = to_MPI_Datatype<T>::value;
-
-template<class T>
-using to_MPI_Datatype_t = typename to_MPI_Datatype<T>::type;
-
-template<class T>
-concept ToMPIDatatype = to_MPI_Datatype_v<std::remove_cvref_t<T>>;
-
-template<class T>
-requires ToMPIDatatype<T>
-constexpr decltype(auto) convert_to_MPI_Datatype(T &&t) noexcept {
-	return to_MPI_Datatype<std::remove_cvref_t<T>>::convert(std::forward<T>(t));
-}
-
-template<>
-struct to_MPI_Datatype<MPI_Datatype> : std::true_type {
-	using type = MPI_Datatype;
-
-	[[nodiscard]]
-	static constexpr type convert(MPI_Datatype mpi_type) noexcept {
-		return mpi_type;
 	}
 };
 
