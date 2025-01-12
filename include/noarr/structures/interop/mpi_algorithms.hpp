@@ -50,7 +50,7 @@ inline void mpi_bcast(auto structure, const ToMPIComm auto &has_comm, int rank) 
 
 inline void mpi_barrier(const ToMPIComm auto &has_comm) { MPICHK(MPI_Barrier(convert_to_MPI_Comm(has_comm))); }
 
-inline std::pair<MPI_Aint, MPI_Aint> mpi_type_get_extent(ToMPIDatatype auto has_type) {
+inline std::pair<MPI_Aint, MPI_Aint> mpi_type_get_extent(const ToMPIDatatype auto &has_type) {
 	std::pair<MPI_Aint, MPI_Aint> result;
 
 	const auto type = convert_to_MPI_Datatype(has_type);

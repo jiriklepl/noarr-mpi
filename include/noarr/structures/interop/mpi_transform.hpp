@@ -501,10 +501,12 @@ public:
 			throw std::runtime_error("Start not set");
 		}
 
+		auto start = std::move(it->second.start);
+
 		it->second.start =
-			make_size_expression<std::plus<>>(std::move(it->second.start), make_size_expression(fix.idx()));
+			make_size_expression<std::plus<>>(start->clone(), make_size_expression(fix.idx()));
 		it->second.end =
-			make_size_expression<std::plus<>>(std::move(it->second.end), make_size_expression(fix.idx() + 1));
+			make_size_expression<std::plus<>>(std::move(start), make_size_expression(fix.idx() + 1));
 	}
 
 	template<auto Dim, class T, class StartT, class LenT>
@@ -656,39 +658,48 @@ public:
 
 				assert(start <= end && end <= extent);
 
-				if (start == 0 && end == extent && stride == 1) {
+				if (stride == 1) {
 					MPI_Datatype new_type = MPI_DATATYPE_NULL;
-					MPICHK(MPI_Type_contiguous(end, parent_mpi_type, &new_type));
-					std::cerr << "MPI_Type_contiguous(" << extent << ", " << parent_mpi_type << ", " << new_type << ")"
-							  << '\n';
-					data.type = MPI_custom_type(new_type);
-				} else if (stride == 1) {
-					MPI_Datatype new_type = MPI_DATATYPE_NULL;
-					const auto displacements = static_cast<int>(start);
-					MPICHK(MPI_Type_create_indexed_block(1, end - start, &displacements, parent_mpi_type, &new_type));
-					std::cerr << "MPI_Type_create_indexed_block(1, " << end - start << ", {" << displacements << "}, "
-							  << parent_mpi_type << ", " << new_type << ")" << '\n';
-					m_graveyard.emplace_back(nullptr, dimension_data{
-														  .start = {},
-														  .end = {},
-														  .extent = {},
-														  .stride = {},
-														  .parent = {},
-														  .children = {},
-														  .type = MPI_custom_type(new_type),
-													  }); // TODO: we store a lot of data on top of the MPI_Datatype
+					if (start == 0) {
+						MPICHK(MPI_Type_contiguous(end, parent_mpi_type, &new_type));
+						std::cerr << "MPI_Type_contiguous(" << end << ", " << parent_mpi_type << ", " << new_type << ")"
+								<< '\n';
+					} else {
+						const auto displacements = static_cast<int>(start);
+						MPICHK(MPI_Type_create_indexed_block(1, end - start, &displacements, parent_mpi_type, &new_type));
+						std::cerr << "MPI_Type_create_indexed_block(1, " << end - start << ", {" << displacements << "}, "
+								<< parent_mpi_type << ", " << new_type << ")" << '\n';
+					}
 
-					MPI_Datatype padded_type = MPI_DATATYPE_NULL;
-					MPI_Aint old_lb = 0;
-					MPI_Aint old_extent = 0;
+					if (end == extent) {
+						data.type = MPI_custom_type(new_type);
+					} else if (end < extent) {
+						MPI_Datatype padded_type = MPI_DATATYPE_NULL;
+						MPI_Aint old_lb = 0;
+						MPI_Aint old_extent = 0;
 
-					MPICHK(MPI_Type_get_extent(parent_mpi_type, &old_lb, &old_extent));
+						m_graveyard.emplace_back(nullptr, dimension_data{
+															.start = {},
+															.end = {},
+															.extent = {},
+															.stride = {},
+															.parent = {},
+															.children = {},
+															.type = MPI_custom_type(new_type),
+														}); // TODO: we store a lot of data on top of the MPI_Datatype
 
-					MPICHK(MPI_Type_create_resized(new_type, 0, old_extent * extent, &padded_type));
-					std::cerr << "MPI_Type_create_resized(" << new_type << ", 0, " << old_extent * extent << ", "
-							  << padded_type << ")" << '\n';
+						MPICHK(MPI_Type_get_extent(new_type, &old_lb, &old_extent));
 
-					data.type = MPI_custom_type(padded_type);
+						assert(old_lb == 0);
+
+						MPICHK(MPI_Type_create_resized(new_type, 0, old_extent * extent, &padded_type));
+						std::cerr << "MPI_Type_create_resized(" << new_type << ", 0, " << old_extent * extent << ", "
+								<< padded_type << ")" << '\n';
+
+						data.type = MPI_custom_type(padded_type);
+					} else {
+						throw std::runtime_error("Unsupported transformation");
+					}
 				} else if (stride == 0) {
 					// it is essentially a union/broadcast; it doesn't do anything
 					MPI_Datatype new_type = MPI_DATATYPE_NULL;

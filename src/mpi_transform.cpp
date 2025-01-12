@@ -9,6 +9,8 @@
 #include <noarr/structures/extra/struct_concepts.hpp>
 #include <noarr/traversers.hpp>
 
+#include "noarr/structures/base/signature.hpp"
+#include "noarr/structures/base/utility.hpp"
 #include "noarr/structures/extra/tokenizer.hpp"
 
 #include "noarr/structures/interop/mpi_algorithms.hpp"
@@ -155,7 +157,19 @@ private:
 	static constexpr std::size_t get_impl(dim_sequence<> /*dt*/, Struct /*structure*/) noexcept { return 1; }
 };
 
-inline void mpi_scatter(auto from, auto to, IsMpiTraverser auto traverser, TODO_TYPE rank) {
+// TODO: rename this
+template<IsDim auto Dim, class Branch, class... Branches, IsState State = state<>>
+constexpr auto fix_first(dim_tree<Dim, Branch, Branches...>, State state = empty_state) noexcept {
+	return fix_first(Branch{}, state & idx<Dim>(lit<0>));
+}
+
+template<auto... Dims, IsState State = state<>> requires IsDimPack<decltype(Dims)...>
+constexpr auto fix_first(dim_sequence<Dims...>, State state = empty_state) noexcept {
+	constexpr auto zero = [](auto /*Dim*/) { return lit<0>; };
+	return state & idx<Dims...>(zero(Dims)...);
+}
+
+inline void mpi_scatter(auto from, auto to, IsMpiTraverser auto traverser, TODO_TYPE root) {
 	// TODO: make this traverser-aware, which simplifies the code like... a lot
 	const auto from_struct = convert_to_struct(from) ^ noarr::set_length(traverser.state());
 	const auto to_struct = convert_to_struct(to) ^ noarr::set_length(traverser.state());
@@ -184,6 +198,43 @@ inline void mpi_scatter(auto from, auto to, IsMpiTraverser auto traverser, TODO_
 	const std::size_t difference_size =
 		index_space_size<decltype(from_struct)>::template get<from_dim_removed>(from_struct);
 	std::vector<int> displacements(difference_size);
+
+	const int offset = from_struct ^ traverser.get_order() | noarr::offset(fix_first(to_dim_filtered{}));
+	const int rank = mpi_get_rank(comm);
+
+	const auto from_substructure = from_struct ^ fix(fix_first(from_dim_removed{}));
+
+	mpi_barrier(comm);
+
+	if (rank == root) {
+		const auto mpi_rep = mpi_transform_builder{}.process(from_substructure);
+
+		const auto [lb, extent] = mpi_type_get_extent(mpi_rep);
+
+		std::cout << "Size: " << (from_substructure | noarr::get_size()) << '\n';
+		std::cout << "Extent: " << extent << '\n';
+		std::cout << "Lower bound: " << lb << '\n';
+	}
+
+
+	mpi_barrier(comm);
+
+	MPICHK(MPI_Allgather(&offset, 1, MPI_INT, displacements.data(), 1, MPI_INT, comm));
+
+	// TODO: remove this
+	if (rank == root) {
+		int r = 0;
+		for (const auto displacement : displacements) {
+			std::cout << "Rank: " << r << ", Displacement: " << displacement << '\n';
+			++r;
+		}
+	}
+
+	mpi_barrier(comm);
+
+	std::cout << "Rank: " << rank << ", Real displacement: " << offset << '\n';
+
+	return; // TODO: remove this
 
 	const auto from_traverser = noarr::traverser(from_struct);
 	// the displacements are determined by the `from` structure and `from_dim_removed`
@@ -261,11 +312,11 @@ auto main(int argc, char **argv) -> int try {
 		std::cerr << "Checking consistency of the data types" << '\n';
 
 		{
-			const auto [d_lb, d_extent] = mpi_type_get_extent(d.get_mpi_type());
+			const auto [d_lb, d_extent] = mpi_type_get_extent(d);
 			std::cerr << "Extent: " << d_extent << '\n';
 			std::cerr << "Lower bound: " << d_lb << '\n';
 
-			const auto [b_lb, b_extent] = mpi_type_get_extent(b.get_mpi_type());
+			const auto [b_lb, b_extent] = mpi_type_get_extent(b);
 			std::cerr << "Extent: " << b_extent << '\n';
 			std::cerr << "Lower bound: " << b_lb << '\n';
 
@@ -366,9 +417,7 @@ auto main(int argc, char **argv) -> int try {
 		};
 
 		// TODO: gather the results (`b -> d`)
-		if (X + Y + Z == 0) {
-			mpi_scatter(d, b, inner, 0);
-		}
+		mpi_scatter(d, b, inner, 0);
 		// mpi_gather(b, d, inner, 0);
 	});
 
