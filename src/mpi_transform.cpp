@@ -8,8 +8,6 @@
 #include <noarr/structures/extra/struct_concepts.hpp>
 #include <noarr/traversers.hpp>
 
-#include "noarr/structures/base/utility.hpp"
-
 #include "noarr/structures/interop/mpi_algorithms.hpp"
 #include "noarr/structures/interop/mpi_traverser.hpp"
 #include "noarr/structures/interop/mpi_utility.hpp"
@@ -105,22 +103,6 @@ namespace noarr {
 // - EMPI: https://cosenza.eu/papers/SalimiBeniCCGRID23.pdf
 // - A lightweight C++ MPI library:
 // - Towards Modern C++ Language support for MPI
-
-using TODO_TYPE = int;
-
-// TODO: MPI_Comm custom wrapper with a destructor that calls MPI_Comm_free
-
-// TODO: doesn't work
-// inline void mpi_gather(auto structure, ToMPIComm auto has_comm, TODO_TYPE rank) {
-// 	MPICHK(MPI_Gather(structure.data(), 1, structure.get_mpi_type(), structure.data(), 1, structure.get_mpi_type(),
-// 	                  rank, convert_to_MPI_Comm(has_comm)));
-// }
-
-template<IsDim auto... Dims>
-struct remove_indices {
-	template<class Tag>
-	static constexpr bool value = !IsIndexIn<Tag> || !(... || (Tag::dims::template contains<Dims>));
-};
 
 } // namespace noarr
 
@@ -296,6 +278,7 @@ auto main(int argc, char **argv) -> int try {
 
 	mpi_run(trav, data, block)([x, y, z](const auto inner, const auto d, const auto b) {
 		const auto rank = mpi_get_comm_rank(inner);
+		const auto comm_size = mpi_get_comm_size(inner);
 
 		if (rank == 0) {
 			// fill the data
@@ -309,7 +292,7 @@ auto main(int argc, char **argv) -> int try {
 
 		mpi_scatter(d, b, inner, 0);
 
-		for (int i = 0; i < 8; ++i) {
+		for (int i = 0; i < comm_size; ++i) {
 			if (rank == i) {
 				inner | [=](auto state) { std::cerr << "Value: " << b[state] << ", Rank: " << rank << '\n'; };
 				std::cerr.flush();
