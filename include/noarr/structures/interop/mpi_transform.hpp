@@ -405,6 +405,7 @@ public:
 		                                                                make_size_expression(range_size, e_minor)),
 						 .stride = make_size_expression(1),
 						 .parent = e_minor,
+						 .children = {},
 						 .type = {},
 					 });
 
@@ -671,9 +672,9 @@ public:
 								<< parent_mpi_type << ", " << new_type << ")" << '\n';
 					}
 
-					if (end == extent) {
+					if (end == extent && start == 0) {
 						data.type = MPI_custom_type(new_type);
-					} else if (end < extent) {
+					} else if (end <= extent) {
 						MPI_Datatype padded_type = MPI_DATATYPE_NULL;
 						MPI_Aint old_lb = 0;
 						MPI_Aint old_extent = 0;
@@ -688,7 +689,7 @@ public:
 															.type = MPI_custom_type(new_type),
 														}); // TODO: we store a lot of data on top of the MPI_Datatype
 
-						MPICHK(MPI_Type_get_extent(new_type, &old_lb, &old_extent));
+						MPICHK(MPI_Type_get_extent(parent_mpi_type, &old_lb, &old_extent));
 
 						assert(old_lb == 0);
 
