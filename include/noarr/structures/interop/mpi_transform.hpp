@@ -504,10 +504,8 @@ public:
 
 		auto start = std::move(it->second.start);
 
-		it->second.start =
-			make_size_expression<std::plus<>>(start->clone(), make_size_expression(fix.idx()));
-		it->second.end =
-			make_size_expression<std::plus<>>(std::move(start), make_size_expression(fix.idx() + 1));
+		it->second.start = make_size_expression<std::plus<>>(start->clone(), make_size_expression(fix.idx()));
+		it->second.end = make_size_expression<std::plus<>>(std::move(start), make_size_expression(fix.idx() + 1));
 	}
 
 	template<auto Dim, class T, class StartT, class LenT>
@@ -664,12 +662,13 @@ public:
 					if (start == 0) {
 						MPICHK(MPI_Type_contiguous(end, parent_mpi_type, &new_type));
 						std::cerr << "MPI_Type_contiguous(" << end << ", " << parent_mpi_type << ", " << new_type << ")"
-								<< '\n';
+								  << '\n';
 					} else {
 						const auto displacements = static_cast<int>(start);
-						MPICHK(MPI_Type_create_indexed_block(1, end - start, &displacements, parent_mpi_type, &new_type));
-						std::cerr << "MPI_Type_create_indexed_block(1, " << end - start << ", {" << displacements << "}, "
-								<< parent_mpi_type << ", " << new_type << ")" << '\n';
+						MPICHK(
+							MPI_Type_create_indexed_block(1, end - start, &displacements, parent_mpi_type, &new_type));
+						std::cerr << "MPI_Type_create_indexed_block(1, " << end - start << ", {" << displacements
+								  << "}, " << parent_mpi_type << ", " << new_type << ")" << '\n';
 					}
 
 					if (end == extent && start == 0) {
@@ -680,14 +679,14 @@ public:
 						MPI_Aint old_extent = 0;
 
 						m_graveyard.emplace_back(nullptr, dimension_data{
-															.start = {},
-															.end = {},
-															.extent = {},
-															.stride = {},
-															.parent = {},
-															.children = {},
-															.type = MPI_custom_type(new_type),
-														}); // TODO: we store a lot of data on top of the MPI_Datatype
+															  .start = {},
+															  .end = {},
+															  .extent = {},
+															  .stride = {},
+															  .parent = {},
+															  .children = {},
+															  .type = MPI_custom_type(new_type),
+														  }); // TODO: we store a lot of data on top of the MPI_Datatype
 
 						MPICHK(MPI_Type_get_extent(parent_mpi_type, &old_lb, &old_extent));
 
@@ -695,7 +694,7 @@ public:
 
 						MPICHK(MPI_Type_create_resized(new_type, 0, old_extent * extent, &padded_type));
 						std::cerr << "MPI_Type_create_resized(" << new_type << ", 0, " << old_extent * extent << ", "
-								<< padded_type << ")" << '\n';
+								  << padded_type << ")" << '\n';
 
 						data.type = MPI_custom_type(padded_type);
 					} else {
