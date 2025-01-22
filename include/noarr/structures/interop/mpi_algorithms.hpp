@@ -44,8 +44,16 @@ constexpr auto mpi_for(IsMpiTraverser auto trav, const Bags &...bags) {
 	};
 }
 
-inline void mpi_bcast(auto structure, const ToMPIComm auto &has_comm, int rank) {
+inline void mpi_bcast(const ToStruct auto& has_struct, const ToMPIComm auto &has_comm, int rank) {
+	const auto structure = convert_to_struct(has_struct);
 	MPICHK(MPI_Bcast(structure.data(), 1, structure.get_mpi_type(), rank, convert_to_MPI_Comm(has_comm)));
+}
+
+template<class T>
+inline void mpi_bcast(T &scalar, const ToMPIComm auto &has_comm, int rank)
+requires requires { choose_mpi_type<T>::value(); }
+{
+	MPICHK(MPI_Bcast(&scalar, 1, choose_mpi_type<T>::value(), rank, convert_to_MPI_Comm(has_comm)));
 }
 
 inline void mpi_barrier(const ToMPIComm auto &has_comm) { MPICHK(MPI_Barrier(convert_to_MPI_Comm(has_comm))); }
@@ -138,19 +146,21 @@ inline void mpi_scatter(auto from, auto to, IsMpiTraverser auto traverser, int r
 	static_assert(std::is_same_v<to_dim_filtered, to_dim_tree> && std::is_same_v<to_dim_removed, dim_sequence<>>,
 	              R"(The "to" structure must be a subset of the "from" structure)");
 
+	static_assert(!std::is_same_v<to_dim_filtered, dim_sequence<>>,
+	              R"(The "to" structure must be a subset of the "from" structure)");
+
 	// contains the dimensions that are present in the "from" structure, but not in the "to" structure
 	using from_dim_removed =
 		dim_tree_filter<from_dim_tree, dim_pred_not<in_signature<typename decltype(to_struct)::signature>>>;
 
-	const std::size_t difference_size = index_space_size<from_dim_removed>(from_struct);
+	const auto difference_size = mpi_get_comm_size(comm);
 
 	std::vector<int> displacements(difference_size);
 	const std::vector<int> sendcounts(difference_size, 1);
 
-	const int offset = (from_struct ^ traverser.get_order()) | noarr::offset(fix_zeros(to_dim_filtered{}));
+	const int offset = (from_struct ^ fix(traverser.state())) | noarr::offset(fix_zeros(from_dim_tree{}));
 
 	const auto to_rep = mpi_transform_builder{}.process(to_struct);
-
 	const auto from_substructure = from_struct ^ fix(fix_zeros(from_dim_removed{}));
 	const auto from_rep = mpi_transform_builder{}.process(from_substructure);
 
@@ -163,7 +173,7 @@ inline void mpi_scatter(auto from, auto to, IsMpiTraverser auto traverser, int r
 		if (displacement < min_displacement) {
 			second_min_displacement = min_displacement;
 			min_displacement = displacement;
-		} else if (displacement < second_min_displacement) {
+		} else if (displacement < second_min_displacement && displacement != min_displacement) {
 			second_min_displacement = displacement;
 		}
 	}
@@ -200,12 +210,12 @@ inline void mpi_gather(auto from, auto to, IsMpiTraverser auto traverser, int ro
 	using to_dim_removed =
 		dim_tree_filter<to_dim_tree, dim_pred_not<in_signature<typename decltype(from_struct)::signature>>>;
 
-	const std::size_t difference_size = index_space_size<to_dim_removed>(to_struct);
+	const auto difference_size = mpi_get_comm_size(comm);
 
 	std::vector<int> displacements(difference_size);
 	const std::vector<int> recvcounts(difference_size, 1);
 
-	const int offset = (to_struct ^ traverser.get_order()) | noarr::offset(fix_zeros(from_dim_filtered{}));
+	const int offset = (to_struct ^ fix(traverser.state())) | noarr::offset(fix_zeros(to_dim_tree{}));
 
 	const auto from_rep = mpi_transform_builder{}.process(from_struct);
 	const auto to_substructure = to_struct ^ fix(fix_zeros(to_dim_removed{}));
@@ -220,7 +230,7 @@ inline void mpi_gather(auto from, auto to, IsMpiTraverser auto traverser, int ro
 		if (displacement < min_displacement) {
 			second_min_displacement = min_displacement;
 			min_displacement = displacement;
-		} else if (displacement < second_min_displacement) {
+		} else if (displacement < second_min_displacement && displacement != min_displacement) {
 			second_min_displacement = displacement;
 		}
 	}

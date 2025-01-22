@@ -205,7 +205,7 @@ struct choose_mpi_type {
 
 template<class T>
 constexpr auto choose_mpi_type_v() noexcept -> MPI_Datatype {
-	return choose_mpi_type<T>::value();
+	return choose_mpi_type<std::remove_cvref_t<T>>::value();
 }
 
 template<>
