@@ -12,18 +12,10 @@
 #include "noarr/structures/interop/mpi_traverser.hpp"
 #include "noarr/structures/interop/mpi_utility.hpp"
 
-// TODO: review the types and implement the missing ones
-
 // ---------------------------------------------------------------------------
-
-using num_t = int;
-
-namespace noarr {
 
 // for each of the functions, we want `fun(mpi_traverser, ...)`, `mpi_traverser.fun(...)` and `mpi_traverser | fun(...)`
 // variants
-
-// TODO: mpi_traverser_t <- this is a primitive that holds a traverser and a communicator
 
 // 1. the traverser has a partitioned structure as a parameter and is merged into one tiled structure + a communicator
 // dimension
@@ -103,8 +95,6 @@ namespace noarr {
 // - EMPI: https://cosenza.eu/papers/SalimiBeniCCGRID23.pdf
 // - A lightweight C++ MPI library:
 // - Towards Modern C++ Language support for MPI
-
-} // namespace noarr
 
 auto main(int argc, char **argv) -> int try {
 	const noarr::MPI_session mpi_session(argc, argv);
