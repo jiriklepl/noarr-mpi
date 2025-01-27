@@ -22,7 +22,11 @@ struct mpi_traverser_t : strict_contain<Traverser, MPI_Comm> {
 
 	[[nodiscard]]
 	constexpr auto get_bind() const noexcept {
-		return mpi_bind<Dim>(get_comm());
+		if constexpr (top_struct().template has_length<Dim, noarr::state<>>()) {
+			return mpi_fix<Dim>(get_comm());
+		} else {
+			return mpi_bind<Dim>(get_comm());
+		}
 	}
 
 	[[nodiscard]]
@@ -88,8 +92,14 @@ template<IsDim auto Dim, IsTraverser Traverser>
 constexpr auto mpi_traverser(Traverser traverser, ToMPIComm auto has_comm) noexcept {
 	const auto comm = convert_to_MPI_Comm(has_comm);
 
-	using trav = decltype(traverser ^ mpi_bind<Dim>(comm));
-	return mpi_traverser_t<Dim, trav>{traverser ^ mpi_bind<Dim>(comm), comm};
+
+	if constexpr (decltype(traverser.top_struct())::template has_length<Dim, noarr::state<>>()) {
+		using trav = decltype(traverser ^ mpi_fix<Dim>(comm));
+		return mpi_traverser_t<Dim, trav>{traverser ^ mpi_fix<Dim>(comm), comm};
+	} else {
+		using trav = decltype(traverser ^ mpi_bind<Dim>(comm));
+		return mpi_traverser_t<Dim, trav>{traverser ^ mpi_bind<Dim>(comm), comm};
+	}
 }
 
 // TODO: the version with top-dim
@@ -133,17 +143,6 @@ struct to_MPI_Comm<Traverser> : std::true_type {
 	[[nodiscard]]
 	static constexpr type convert(const Traverser &traverser) noexcept {
 		return traverser.get_comm();
-	}
-};
-
-// mpi bag
-template<class Bag>
-struct to_MPI_Datatype<mpi_bag<Bag>> : std::true_type {
-	using type = MPI_Datatype;
-
-	[[nodiscard]]
-	static constexpr type convert(const mpi_bag<Bag> &bag) noexcept {
-		return bag.get_mpi_type();
 	}
 };
 

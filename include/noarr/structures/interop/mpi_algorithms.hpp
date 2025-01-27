@@ -11,38 +11,46 @@
 #include "../interop/mpi_transform.hpp"
 #include "../interop/mpi_traverser.hpp"
 #include "../interop/mpi_utility.hpp"
+#include "noarr/structures/base/contain.hpp"
 
 namespace noarr {
+
+namespace helpers {
+
+template<class Trav, class... Bags>
+struct mpi_run_t : flexible_contain<Trav, Bags...> {
+	using base = flexible_contain<Trav, Bags...>;
+	using base::base;
+
+	template<class F>
+	constexpr decltype(auto) operator()(F&& f) const {
+		return execute_impl(std::make_index_sequence<sizeof...(Bags)>{}, std::forward<F>(f));
+	}
+
+	template<class F>
+	friend decltype(auto) operator|(const mpi_run_t &run, F&& f) {
+		return run(std::forward<F>(f));
+	}
+
+private:
+	template<std::size_t... Is, class F>
+	constexpr decltype(auto) execute_impl(std::index_sequence<Is...> /*is*/, F&& f) const {
+		const auto trav = this->template get<0>();
+		return std::forward<F>(f)(trav, mpi_bag(this->template get<Is + 1>(), mpi_transform(this->template get<Is + 1>().structure() ^ fix(trav) ^ set_length(trav)))...);
+	}
+};
+
+template<class Trav, class... Bags>
+mpi_run_t(Trav, Bags...) -> mpi_run_t<Trav, Bags...>;
+
+} // namespace helpers
 
 template<class... Bags>
 requires (... && IsBag<Bags>)
 constexpr auto mpi_run(IsMpiTraverser auto trav, const Bags &...bags) {
-	return [trav,
-	        ... custom_types =
-	            mpi_transform_builder{}.process(bags.structure() ^ fix(trav.state()) ^ set_length(trav.state())),
-	        ... bags = bags.get_ref()](auto &&F) {
-		trav | for_dims<>(
-				   [=, &F, ... types = MPI_Datatype(custom_types)](auto inner) { F(inner, mpi_bag(bags, types)...); });
-	};
+	return helpers::mpi_run_t(trav, bags.get_ref()...);
 }
 
-template<auto Dim, class... Bags>
-requires (IsDim<decltype(Dim)> && ... && IsBag<Bags>)
-constexpr auto mpi_for(IsMpiTraverser auto trav, const Bags &...bags) {
-	const auto comm = trav.get_comm();
-
-	return [trav, comm, ... custom_types = mpi_transform_builder{}.process(bags.structure()), ... bags = bags.get_ref(),
-	        // privatized bags
-	        ... privatized_structs = vectors_like(bags.structure())](auto &&init, auto &&for_each, auto &&finalize) {
-		trav | for_dims<>([=, &init, &for_each, &finalize, ... types = MPI_Datatype(custom_types)](auto inner) {
-			init(inner, mpi_bag(bags, types)...);
-
-			for_each(inner, mpi_bag(bags, types)...); // TODO: not like this...
-
-			finalize(inner, mpi_bag(bags, types)...);
-		});
-	};
-}
 
 inline void mpi_bcast(const ToStruct auto& has_struct, const ToMPIComm auto &has_comm, int rank) {
 	const auto structure = convert_to_struct(has_struct);
@@ -98,7 +106,7 @@ struct remove_indices {
 
 template<auto AlongDim, auto... AllDims, class MPITraverser>
 requires (IsDim<decltype(AlongDim)> && ... && IsDim<decltype(AllDims)>) && IsMpiTraverser<MPITraverser>
-inline auto mpi_comm_split_along(MPITraverser traverser) -> mpi_comm_guard {
+inline auto mpi_comm_split_along(const MPITraverser& traverser) -> mpi_comm_guard {
 	static_assert(dim_sequence<AllDims...>::template contains<AlongDim>,
 	              "The dimension must be present in the sequence");
 
@@ -129,8 +137,7 @@ inline int mpi_get_comm_size(const ToMPIComm auto &has_comm) {
 	return size;
 }
 
-inline void mpi_scatter(auto from, auto to, IsMpiTraverser auto traverser, int root) {
-	// TODO: make this traverser-aware, which simplifies the code like... a lot
+inline void mpi_scatter(const auto& from, const auto& to, const IsMpiTraverser auto& traverser, int root) {
 	const auto from_struct = convert_to_struct(from) ^ set_length(traverser.state());
 	const auto to_struct = convert_to_struct(to) ^ set_length(traverser.state());
 	const auto comm = convert_to_MPI_Comm(traverser);
@@ -160,9 +167,9 @@ inline void mpi_scatter(auto from, auto to, IsMpiTraverser auto traverser, int r
 
 	const int offset = (from_struct ^ fix(traverser.state())) | noarr::offset(fix_zeros(from_dim_tree{}));
 
-	const auto to_rep = mpi_transform_builder{}.process(to_struct);
+	// const auto to_rep = mpi_transform(to_struct);
 	const auto from_substructure = from_struct ^ fix(fix_zeros(from_dim_removed{}));
-	const auto from_rep = mpi_transform_builder{}.process(from_substructure);
+	const auto from_rep = mpi_transform(from_substructure);
 
 	MPICHK(MPI_Allgather(&offset, 1, MPI_INT, displacements.data(), 1, MPI_INT, comm));
 
@@ -178,19 +185,19 @@ inline void mpi_scatter(auto from, auto to, IsMpiTraverser auto traverser, int r
 		}
 	}
 
-	MPI_Datatype from_rep_cheat = MPI_DATATYPE_NULL;
-	MPICHK(MPI_Type_create_resized(convert_to_MPI_Datatype(from_rep), 0, second_min_displacement, &from_rep_cheat));
-	const MPI_custom_type from_rep_cheat_custom(from_rep_cheat);
+	MPI_Datatype from_rep_resized = MPI_DATATYPE_NULL;
+	MPICHK(MPI_Type_create_resized(convert_to_MPI_Datatype(from_rep), 0, second_min_displacement, &from_rep_resized));
+	const MPI_custom_type from_rep_resized_custom(from_rep_resized);
 
 	for (auto &displacement : displacements) {
 		displacement /= second_min_displacement;
 	}
 
-	MPICHK(MPI_Scatterv(from.data(), sendcounts.data(), displacements.data(), convert_to_MPI_Datatype(from_rep_cheat),
-	                    to.data(), 1, convert_to_MPI_Datatype(to_rep), root, comm));
+	MPICHK(MPI_Scatterv(from.data(), sendcounts.data(), displacements.data(), convert_to_MPI_Datatype(from_rep_resized),
+	                    to.data(), 1, convert_to_MPI_Datatype(to), root, comm));
 }
 
-inline void mpi_gather(auto from, auto to, IsMpiTraverser auto traverser, int root) {
+inline void mpi_gather(const auto& from, const auto& to, const IsMpiTraverser auto& traverser, int root) {
 	const auto from_struct = convert_to_struct(from) ^ set_length(traverser.state());
 	const auto to_struct = convert_to_struct(to) ^ set_length(traverser.state());
 	const auto comm = convert_to_MPI_Comm(traverser);
@@ -217,9 +224,9 @@ inline void mpi_gather(auto from, auto to, IsMpiTraverser auto traverser, int ro
 
 	const int offset = (to_struct ^ fix(traverser.state())) | noarr::offset(fix_zeros(to_dim_tree{}));
 
-	const auto from_rep = mpi_transform_builder{}.process(from_struct);
+	// const auto from_rep = mpi_transform(from_struct);
 	const auto to_substructure = to_struct ^ fix(fix_zeros(to_dim_removed{}));
-	const auto to_rep = mpi_transform_builder{}.process(to_substructure);
+	const auto to_rep = mpi_transform(to_substructure);
 
 	MPICHK(MPI_Allgather(&offset, 1, MPI_INT, displacements.data(), 1, MPI_INT, comm));
 
@@ -235,16 +242,16 @@ inline void mpi_gather(auto from, auto to, IsMpiTraverser auto traverser, int ro
 		}
 	}
 
-	MPI_Datatype to_rep_cheat = MPI_DATATYPE_NULL;
-	MPICHK(MPI_Type_create_resized(convert_to_MPI_Datatype(to_rep), 0, second_min_displacement, &to_rep_cheat));
-	const MPI_custom_type to_rep_cheat_custom(to_rep_cheat);
+	MPI_Datatype to_rep_resized = MPI_DATATYPE_NULL;
+	MPICHK(MPI_Type_create_resized(convert_to_MPI_Datatype(to_rep), 0, second_min_displacement, &to_rep_resized));
+	const MPI_custom_type to_rep_resized_custom(to_rep_resized);
 
 	for (auto &displacement : displacements) {
 		displacement /= second_min_displacement;
 	}
 
-	MPICHK(MPI_Gatherv(from.data(), 1, convert_to_MPI_Datatype(from_rep), to.data(), recvcounts.data(),
-	                   displacements.data(), convert_to_MPI_Datatype(to_rep_cheat), root, comm));
+	MPICHK(MPI_Gatherv(from.data(), 1, convert_to_MPI_Datatype(from), to.data(), recvcounts.data(),
+	                   displacements.data(), convert_to_MPI_Datatype(to_rep_resized), root, comm));
 }
 
 } // namespace noarr

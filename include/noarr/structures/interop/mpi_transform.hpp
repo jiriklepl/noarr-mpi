@@ -25,6 +25,8 @@
 
 namespace noarr {
 
+namespace helpers {
+
 class erasure {
 	class abstract_type {
 	public:
@@ -661,14 +663,10 @@ public:
 					MPI_Datatype new_type = MPI_DATATYPE_NULL;
 					if (start == 0) {
 						MPICHK(MPI_Type_contiguous(end, parent_mpi_type, &new_type));
-						std::cerr << "MPI_Type_contiguous(" << end << ", " << parent_mpi_type << ", " << new_type << ")"
-								  << '\n';
 					} else {
 						const auto displacements = static_cast<int>(start);
 						MPICHK(
 							MPI_Type_create_indexed_block(1, end - start, &displacements, parent_mpi_type, &new_type));
-						std::cerr << "MPI_Type_create_indexed_block(1, " << end - start << ", {" << displacements
-								  << "}, " << parent_mpi_type << ", " << new_type << ")" << '\n';
 					}
 
 					if (end == extent && start == 0) {
@@ -693,8 +691,6 @@ public:
 						assert(old_lb == 0);
 
 						MPICHK(MPI_Type_create_resized(new_type, 0, old_extent * extent, &padded_type));
-						std::cerr << "MPI_Type_create_resized(" << new_type << ", 0, " << old_extent * extent << ", "
-								  << padded_type << ")" << '\n';
 
 						data.type = MPI_custom_type(padded_type);
 					} else {
@@ -705,7 +701,6 @@ public:
 					MPI_Datatype new_type = MPI_DATATYPE_NULL;
 
 					MPICHK(MPI_Type_dup(parent_mpi_type, &new_type));
-					std::cerr << "MPI_Type_dup(" << parent_mpi_type << ", " << new_type << ")" << '\n';
 
 					data.type = MPI_custom_type(new_type);
 				} else {
@@ -734,7 +729,6 @@ public:
 		if (std::holds_alternative<MPI_Datatype>(root_type)) {
 			MPI_Datatype new_type = MPI_DATATYPE_NULL;
 			MPICHK(MPI_Type_dup(std::get<MPI_Datatype>(root_type), &new_type));
-			std::cerr << "MPI_Type_dup(" << std::get<MPI_Datatype>(root_type) << ", " << new_type << ")" << '\n';
 
 			return MPI_custom_type(new_type);
 		}
@@ -759,6 +753,12 @@ private:
 	std::map<erasure, dimension_data> m_dimensions;
 	std::vector<decltype(m_dimensions)::value_type> m_graveyard;
 };
+
+} // namespace helpers
+
+inline auto mpi_transform(auto arg) -> MPI_custom_type {
+	return helpers::mpi_transform_builder{}.process(arg);
+}
 
 } // namespace noarr
 

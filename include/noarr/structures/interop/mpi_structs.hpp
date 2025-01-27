@@ -21,6 +21,15 @@ inline auto mpi_bind(MPI_Comm comm) {
 	return set_length<Dim>(size) ^ fix<Dim>(rank);
 }
 
+template<IsDim auto Dim>
+inline auto mpi_fix(MPI_Comm comm) {
+	int rank = 0;
+
+	MPICHK(MPI_Comm_rank(comm, &rank));
+
+	return fix<Dim>(rank);
+}
+
 template<IsDim auto Dim, auto MajorDim = dim<[]() {}>{}>
 inline auto mpi_block(MPI_Comm comm) {
 	int rank = 0;
