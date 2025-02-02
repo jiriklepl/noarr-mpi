@@ -78,6 +78,7 @@ int main(int argc, char *argv[]) {
 
 	const noarr::MPI_session mpi_session(argc, argv);
 	const int rank = mpi_get_comm_rank(mpi_session);
+	constexpr int root = 0;
 
 	const auto set_lengths = noarr::set_length<'i'>(NI) ^ noarr::set_length<'j'>(NJ) ^ noarr::set_length<'k'>(NK);
 
@@ -92,11 +93,11 @@ int main(int argc, char *argv[]) {
 	const auto grid = grid_i ^ grid_j;
 
 	const auto C_data =
-		(rank == 0) ? std::make_unique<char[]>(C_structure | noarr::get_size()) : std::unique_ptr<char[]>{};
+		(rank == root) ? std::make_unique<char[]>(C_structure | noarr::get_size()) : std::unique_ptr<char[]>{};
 	const auto A_data =
-		(rank == 0) ? std::make_unique<char[]>(A_structure | noarr::get_size()) : std::unique_ptr<char[]>{};
+		(rank == root) ? std::make_unique<char[]>(A_structure | noarr::get_size()) : std::unique_ptr<char[]>{};
 	const auto B_data =
-		(rank == 0) ? std::make_unique<char[]>(B_structure | noarr::get_size()) : std::unique_ptr<char[]>{};
+		(rank == root) ? std::make_unique<char[]>(B_structure | noarr::get_size()) : std::unique_ptr<char[]>{};
 
 	const auto C = noarr::bag(C_structure ^ grid, C_data.get());
 	const auto A = noarr::bag(A_structure ^ grid, A_data.get());
@@ -113,7 +114,7 @@ int main(int argc, char *argv[]) {
 	num_t beta{};
 
 	// initialize data
-	if (rank == 0) {
+	if (rank == root) {
 		init_array(mpi_trav, alpha, bag(C_structure, C.data()), beta, bag(A_structure, A.data()),
 		           bag(B_structure, B.data()));
 	}
@@ -136,7 +137,7 @@ int main(int argc, char *argv[]) {
 	const auto duration = chrono::duration<double>(end - start);
 
 	// print results
-	if (rank == 0) {
+	if (rank == root) {
 		std::cerr << std::fixed << std::setprecision(6);
 		std::cerr << duration.count() << std::endl;
 		if (argc > 0 && argv[0] != ""s) {
