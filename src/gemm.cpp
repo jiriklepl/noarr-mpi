@@ -30,7 +30,7 @@ const struct tuning {
 } tuning;
 
 // initialization function
-void init_array(auto inner, num_t &alpha, num_t &beta, const auto &C, const auto &A, const auto &B) {
+void init_array(auto inner, num_t &alpha, const auto &C, num_t &beta, const auto &A, const auto &B) {
 	// C: i x j
 	// A: i x k
 	// B: k x j
@@ -57,7 +57,7 @@ void init_array(auto inner, num_t &alpha, num_t &beta, const auto &C, const auto
 
 // computation kernel
 [[gnu::flatten, gnu::noinline]]
-void kernel_gemm(auto inner, num_t alpha, num_t beta, const auto &subC, const auto &subA, const auto &subB) {
+void kernel_gemm(auto inner, num_t alpha, const auto &subC, num_t beta, const auto &subA, const auto &subB) {
 	// C: i x j
 	// A: i x k
 	// B: k x j
@@ -65,7 +65,7 @@ void kernel_gemm(auto inner, num_t alpha, num_t beta, const auto &subC, const au
 
 	inner | for_each<'i', 'j'>([&](auto state) { subC[state] *= beta; });
 
-	inner | for_each<'i', 'j', 'k'>([&](auto state) { subC[state] += alpha * subA[state] * subB[state]; });
+	inner | [&](auto state) { subC[state] += alpha * subA[state] * subB[state]; };
 }
 
 } // namespace
@@ -74,6 +74,7 @@ void kernel_gemm(auto inner, num_t alpha, num_t beta, const auto &subC, const au
 
 int main(int argc, char *argv[]) {
 	using namespace std::string_literals;
+	namespace chrono = std::chrono;
 
 	const noarr::MPI_session mpi_session(argc, argv);
 	const int rank = mpi_get_comm_rank(mpi_session);
@@ -113,26 +114,26 @@ int main(int argc, char *argv[]) {
 
 	// initialize data
 	if (rank == 0) {
-		init_array(mpi_trav, alpha, beta, bag(C_structure, C.data()), bag(A_structure, A.data()),
+		init_array(mpi_trav, alpha, bag(C_structure, C.data()), beta, bag(A_structure, A.data()),
 		           bag(B_structure, B.data()));
 	}
 
 	mpi_bcast(alpha, mpi_trav, 0);
 	mpi_bcast(beta, mpi_trav, 0);
 
-	auto start = std::chrono::high_resolution_clock::now();
+	const auto start = chrono::high_resolution_clock::now();
 	mpi_scatter(C, subC, mpi_trav, 0);
 	mpi_scatter(A, subA, mpi_trav, 0);
 	mpi_scatter(B, subB, mpi_trav, 0);
 
 	// run kernel
-	kernel_gemm(mpi_trav, alpha, beta, subC, subA, subB);
+	kernel_gemm(mpi_trav, alpha, subC, beta, subA, subB);
 
 	mpi_gather(subC, C, mpi_trav, 0);
 
-	auto end = std::chrono::high_resolution_clock::now();
+	const auto end = chrono::high_resolution_clock::now();
 
-	auto duration = std::chrono::duration<long double>(end - start);
+	const auto duration = chrono::duration<double>(end - start);
 
 	// print results
 	if (rank == 0) {
