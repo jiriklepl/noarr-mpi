@@ -20,16 +20,16 @@ include_directories(include)
 include_directories(${Noarr_SOURCE_DIR}/include)
 
 add_executable(mpi-transform src/mpi_transform.cpp)
-add_executable(matmul src/matmul.cpp)
+add_executable(gemm src/gemm.cpp)
 
 # ask the compiler to print maximum warnings
 if(MSVC)
   target_compile_options(mpi-transform PRIVATE /W4)
-  target_compile_options(matmul PRIVATE /W4)
+  target_compile_options(gemm PRIVATE /W4)
 else()
   target_compile_options(mpi-transform PRIVATE -Wall -Wextra -Wpedantic -fopenmp)
-  target_compile_options(matmul PRIVATE -Wall -Wextra -Wpedantic -fopenmp)
+  target_compile_options(gemm PRIVATE -Wall -Wextra -Wpedantic -fopenmp)
 endif()
 
 target_link_libraries(mpi-transform MPI::MPI_CXX)
-target_link_libraries(matmul MPI::MPI_CXX)
+target_link_libraries(gemm MPI::MPI_CXX)

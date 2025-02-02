@@ -92,7 +92,6 @@ template<IsDim auto Dim, IsTraverser Traverser>
 constexpr auto mpi_traverser(Traverser traverser, ToMPIComm auto has_comm) noexcept {
 	const auto comm = convert_to_MPI_Comm(has_comm);
 
-
 	if constexpr (decltype(traverser.top_struct())::template has_length<Dim, noarr::state<>>()) {
 		using trav = decltype(traverser ^ mpi_fix<Dim>(comm));
 		return mpi_traverser_t<Dim, trav>{traverser ^ mpi_fix<Dim>(comm), comm};

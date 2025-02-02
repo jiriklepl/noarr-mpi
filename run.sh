@@ -1,7 +1,7 @@
 #!/bin/bash
 
 BUILD_DIR=${BUILD_DIR:-build}
-EXECUTABLE=${EXECUTABLE:-matmul}
+EXECUTABLE=${EXECUTABLE:-gemm}
 # EXECUTABLE=${EXECUTABLE:-mpi-transform}
 NUM_JOBS=${NUM_JOBS:-4}
 

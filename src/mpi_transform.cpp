@@ -96,202 +96,6 @@
 // - A lightweight C++ MPI library:
 // - Towards Modern C++ Language support for MPI
 
-using namespace noarr;
-
-// template<auto Dim, class Branches, class Structure>
-// auto new_transform(const Structure& structure, const dim_tree<Dim, Branches> &/*unused*/) {
-//	TODO: implement
-// }
-
-template<class Structure, IsState State>
-auto new_transform_impl(const Structure& structure, const dim_sequence<> &/*unused*/, State state) -> MPI_custom_type {
-	// TODO: implement
-	using scalar = scalar_t<Structure, State>;
-	const auto datatype = choose_mpi_type_v<scalar>();
-	std::cerr << "scalar: " << typeid(scalar).name() << " -> " << datatype << std::endl;
-	MPI_Datatype new_Datatype = MPI_DATATYPE_NULL;
-	MPICHK(MPI_Type_dup(datatype, &new_Datatype));
-	std::cerr << "MPI_Type_dup(base: " << datatype << ", derived: " << new_Datatype << ")" << std::endl;
-	return MPI_custom_type{new_Datatype};
-}
-
-template<auto Dim, class Branches, class Structure, IsState State>
-auto new_transform_impl(const Structure& structure, const dim_tree<Dim, Branches> &/*unused*/, State state) -> MPI_custom_type {
-
-	// TODO: constexpr bool contiguous = IsContiguous<Structure, State>;
-	constexpr bool has_lower_bound = HasLowerBoundAlong<Structure, Dim, State>;
-	constexpr bool has_stride_along = HasStrideAlong<Structure, Dim, State>;
-	constexpr bool is_uniform_along = IsUniformAlong<Structure, Dim, State>;
-	constexpr bool has_length = Structure::template has_length<Dim, State>();
-
-	if constexpr (has_lower_bound && has_stride_along && is_uniform_along && has_length) {
-		const auto lower_bound = lower_bound_along<Dim>(structure, state);
-		const auto stride = stride_along<Dim>(structure, state);
-		const auto length = structure.template length<Dim>(state);
-
-		// TODO: probably wanna add { lower_bound_assumption(structure, state) } -> IsState
-		const MPI_custom_type sub_transformed = new_transform_impl(structure, Branches{}, state);
-
-		if (lower_bound != 0) {
-			throw std::runtime_error("Unsupported: lower bound is not zero");
-		}
-
-		MPI_Datatype new_Datatype = MPI_DATATYPE_NULL;
-
-		if (stride == 0 || length == 1) {
-			MPICHK(MPI_Type_dup((MPI_Datatype)sub_transformed, &new_Datatype));
-			std::cerr << "MPI_Type_dup(base: " << (MPI_Datatype)sub_transformed << ", derived: " << new_Datatype << ")" << std::endl;
-		} else {
-			MPICHK(MPI_Type_create_hvector(length, 1, stride, (MPI_Datatype)sub_transformed, &new_Datatype));
-			std::cerr << "MPI_Type_create_hvector(" << length << ", 1, " << stride << ", base: " << (MPI_Datatype)sub_transformed
-					  << ", derived: " << new_Datatype << ")" << std::endl;
-		}
-
-		return MPI_custom_type{new_Datatype};
-	} else {
-		if constexpr (!has_lower_bound) {
-			throw std::runtime_error("Unsupported: lower bound is not set");
-		} else if constexpr (!has_stride_along) {
-			throw std::runtime_error("Unsupported: stride is not set");
-		} else if constexpr (!is_uniform_along) {
-			throw std::runtime_error("Unsupported: non-uniform stride");
-		} else if constexpr (!has_length) {
-			throw std::runtime_error("Unsupported: length is not set for dimension " + std::to_string(Dim));
-		} else {
-			throw std::runtime_error("Unsupported transformation");
-		}
-	}
-}
-
-template<class Structure, IsTraverser Trav>
-auto new_transform(const Trav& trav, const Structure& structure) {
-	using dim_tree = sig_dim_tree<typename decltype(trav.top_struct())::signature>;
-
-	return new_transform_impl(structure, dim_tree{}, trav.state());
-}
-
-template<class... Structures, IsTraverser Trav>
-auto new_transform(const Trav& trav, const Structures &... structs) {
-	return std::make_tuple(new_transform(trav, structs)...);
-}
-
-void new_scatter(const auto& from, const auto& to, const IsMpiTraverser auto& trav, int root) {
-	const auto from_struct = convert_to_struct(from);
-	const auto to_struct = convert_to_struct(to);
-	const auto comm = convert_to_MPI_Comm(trav);
-
-	using from_dim_tree = sig_dim_tree<typename decltype(from_struct ^ set_length(trav))::signature>;
-	using to_dim_tree = sig_dim_tree<typename decltype(to_struct ^ set_length(trav))::signature>;
-
-	using to_dim_filtered = dim_tree_filter<to_dim_tree, in_signature<typename decltype(from_struct ^ set_length(trav))::signature>>;
-	using to_dim_removed =
-		dim_tree_filter<to_dim_tree, dim_pred_not<in_signature<typename decltype(from_struct ^ set_length(trav))::signature>>>;
-
-	using from_dim_filtered = dim_tree_filter<from_dim_tree, in_signature<typename decltype(to_struct ^ set_length(trav))::signature>>;
-	using from_dim_removed =
-		dim_tree_filter<from_dim_tree, dim_pred_not<in_signature<typename decltype(to_struct ^ set_length(trav))::signature>>>;
-
-	// to must be a subset of from
-	static_assert(std::is_same_v<to_dim_filtered, to_dim_tree> && std::is_same_v<to_dim_removed, dim_sequence<>>,
-	              R"(The "from" structure must be a subset of the "to" structure)");
-
-	// TODO: this is incomplete
-	const auto from_rep = new_transform_impl(from_struct, from_dim_filtered{}, trav.state());
-	const auto to_rep = new_transform_impl(to_struct, to_dim_filtered{}, trav.state());
-
-	// TODO: the following may be incorrect
-	const auto difference_size = mpi_get_comm_size(comm);
-
-	std::vector<int> displacements(difference_size);
-	const std::vector<int> sendcounts(difference_size, 1);
-
-	const int offset = (from_struct ^ set_length(trav) ^ fix(trav)) | noarr::offset(fix_zeros(from_dim_tree{}));
-
-	MPICHK(MPI_Allgather(&offset, 1, MPI_INT, displacements.data(), 1, MPI_INT, comm));
-
-	// compute the second smallest displacement
-	int min_displacement = std::numeric_limits<int>::max();
-	int second_min_displacement = std::numeric_limits<int>::max();
-	for (const auto displacement : displacements) {
-		if (displacement < min_displacement) {
-			second_min_displacement = min_displacement;
-			min_displacement = displacement;
-		} else if (displacement < second_min_displacement && displacement != min_displacement) {
-			second_min_displacement = displacement;
-		}
-	}
-
-	MPI_Datatype from_rep_resized = MPI_DATATYPE_NULL;
-	MPICHK(MPI_Type_create_resized(convert_to_MPI_Datatype(from_rep), 0, second_min_displacement, &from_rep_resized));
-	const MPI_custom_type from_rep_resized_custom(from_rep_resized);
-
-	for (auto &displacement : displacements) {
-		displacement /= second_min_displacement;
-	}
-
-	MPICHK(MPI_Scatterv(from.data(), sendcounts.data(), displacements.data(), convert_to_MPI_Datatype(from_rep_resized),
-	                    to.data(), 1, convert_to_MPI_Datatype(to), root, comm));
-}
-
-
-void new_gather(const auto& from, const auto& to, const IsMpiTraverser auto& trav, int root) {
-	const auto from_struct = convert_to_struct(from);
-	const auto to_struct = convert_to_struct(to);
-	const auto comm = convert_to_MPI_Comm(trav);
-
-	using from_dim_tree = sig_dim_tree<typename decltype(from_struct ^ set_length(trav))::signature>;
-	using to_dim_tree = sig_dim_tree<typename decltype(to_struct ^ set_length(trav))::signature>;
-
-	using to_dim_filtered = dim_tree_filter<to_dim_tree, in_signature<typename decltype(from_struct ^ set_length(trav))::signature>>;
-	using to_dim_removed =
-		dim_tree_filter<to_dim_tree, dim_pred_not<in_signature<typename decltype(from_struct ^ set_length(trav))::signature>>>;
-
-	using from_dim_filtered = dim_tree_filter<from_dim_tree, in_signature<typename decltype(to_struct ^ set_length(trav))::signature>>;
-	using from_dim_removed =
-		dim_tree_filter<from_dim_tree, dim_pred_not<in_signature<typename decltype(to_struct ^ set_length(trav))::signature>>>;
-
-	// from must be a subset of to
-	static_assert(std::is_same_v<from_dim_filtered, from_dim_tree> && std::is_same_v<from_dim_removed, dim_sequence<>>,
-	              R"(The "to" structure must be a subset of the "from" structure)");
-
-	// TODO: this is incomplete
-	const auto from_rep = new_transform_impl(from_struct, from_dim_filtered{}, trav.state());
-	const auto to_rep = new_transform_impl(to_struct, to_dim_filtered{}, trav.state());
-
-	// TODO: the following may be incorrect
-	const auto difference_size = mpi_get_comm_size(comm);
-
-	std::vector<int> displacements(difference_size);
-	const std::vector<int> sendcounts(difference_size, 1);
-
-	const int offset = (to_struct ^ set_length(trav) ^ fix(trav)) | noarr::offset(fix_zeros(to_dim_tree{}));
-
-	MPICHK(MPI_Allgather(&offset, 1, MPI_INT, displacements.data(), 1, MPI_INT, comm));
-
-	// compute the second smallest displacement
-	int min_displacement = std::numeric_limits<int>::max();
-	int second_min_displacement = std::numeric_limits<int>::max();
-	for (const auto displacement : displacements) {
-		if (displacement < min_displacement) {
-			second_min_displacement = min_displacement;
-			min_displacement = displacement;
-		} else if (displacement < second_min_displacement && displacement != min_displacement) {
-			second_min_displacement = displacement;
-		}
-	}
-
-	MPI_Datatype to_rep_resized = MPI_DATATYPE_NULL;
-	MPICHK(MPI_Type_create_resized(convert_to_MPI_Datatype(to_rep), 0, second_min_displacement, &to_rep_resized));
-	const MPI_custom_type to_rep_resized_custom(to_rep_resized);
-
-	for (auto &displacement : displacements) {
-		displacement /= second_min_displacement;
-	}
-
-	MPICHK(MPI_Gatherv(from.data(), 1, convert_to_MPI_Datatype(from), to.data(), sendcounts.data(),
-	                   displacements.data(), convert_to_MPI_Datatype(to_rep_resized), root, comm));
-}
-
 auto main(int argc, char **argv) -> int {
 	const noarr::MPI_session mpi_session(argc, argv);
 
@@ -490,9 +294,8 @@ auto main(int argc, char **argv) -> int {
 			// fill the data
 			if (rank == 0) {
 				std::size_t index = 0;
-				(traverser(d) ^ set_length(inner.state())) | [&](auto state) {
-					std::cerr << "Rank: " << rank << ", Value: " << (d[state] = index++) << '\n';
-				};
+				(traverser(d) ^ set_length(inner.state())) |
+					[&](auto state) { std::cerr << "Rank: " << rank << ", Value: " << (d[state] = index++) << '\n'; };
 			}
 		}
 
@@ -514,7 +317,7 @@ auto main(int argc, char **argv) -> int {
 			}
 		}
 
-		new_gather(b, d, inner, 0);
+		mpi_gather(b, d, inner, 0);
 
 		if (rank == 0) {
 			int index = 0;
