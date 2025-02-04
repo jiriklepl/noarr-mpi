@@ -199,171 +199,171 @@ struct to_MPI_Comm<mpi_comm_guard> : std::true_type {
 };
 
 template<class T>
-struct choose_mpi_type {
-	static_assert(always_false<T>, "Unsupported type");
+struct choose_mpi_type : std::false_type {
 };
 
 template<class T>
-constexpr auto choose_mpi_type_v() noexcept -> MPI_Datatype {
-	return choose_mpi_type<std::remove_cvref_t<T>>::value();
+constexpr auto choose_mpi_type_v() noexcept -> MPI_Datatype
+requires choose_mpi_type<T>::value {
+	return choose_mpi_type<std::remove_cvref_t<T>>::get();
 }
 
 template<>
-struct choose_mpi_type<char> {
-	static constexpr auto value() noexcept -> MPI_Datatype { return MPI_CHAR; }
+struct choose_mpi_type<char> : std::true_type {
+	static constexpr auto get() noexcept -> MPI_Datatype { return MPI_CHAR; }
 };
 
 template<>
-struct choose_mpi_type<signed char> {
-	static constexpr auto value() noexcept -> MPI_Datatype { return MPI_SIGNED_CHAR; }
+struct choose_mpi_type<signed char> : std::true_type {
+	static constexpr auto get() noexcept -> MPI_Datatype { return MPI_SIGNED_CHAR; }
 };
 
 template<>
-struct choose_mpi_type<unsigned char> {
-	static constexpr auto value() noexcept -> MPI_Datatype { return MPI_UNSIGNED_CHAR; }
+struct choose_mpi_type<unsigned char> : std::true_type {
+	static constexpr auto get() noexcept -> MPI_Datatype { return MPI_UNSIGNED_CHAR; }
 };
 
 template<>
-struct choose_mpi_type<wchar_t> {
-	static constexpr auto value() noexcept -> MPI_Datatype { return MPI_WCHAR; }
+struct choose_mpi_type<wchar_t> : std::true_type {
+	static constexpr auto get() noexcept -> MPI_Datatype { return MPI_WCHAR; }
 };
 
 template<>
-struct choose_mpi_type<short> {
-	static constexpr auto value() noexcept -> MPI_Datatype { return MPI_SHORT; }
+struct choose_mpi_type<short> : std::true_type {
+	static constexpr auto get() noexcept -> MPI_Datatype { return MPI_SHORT; }
 };
 
 template<>
-struct choose_mpi_type<unsigned short> {
-	static constexpr auto value() noexcept -> MPI_Datatype { return MPI_UNSIGNED_SHORT; }
+struct choose_mpi_type<unsigned short> : std::true_type {
+	static constexpr auto get() noexcept -> MPI_Datatype { return MPI_UNSIGNED_SHORT; }
 };
 
 template<>
-struct choose_mpi_type<int> {
-	static constexpr auto value() noexcept -> MPI_Datatype { return MPI_INT; }
+struct choose_mpi_type<int> : std::true_type {
+	static constexpr auto get() noexcept -> MPI_Datatype { return MPI_INT; }
 };
 
 template<>
-struct choose_mpi_type<unsigned int> {
-	static constexpr auto value() noexcept -> MPI_Datatype { return MPI_UNSIGNED; }
+struct choose_mpi_type<unsigned int> : std::true_type {
+	static constexpr auto get() noexcept -> MPI_Datatype { return MPI_UNSIGNED; }
 };
 
 template<>
-struct choose_mpi_type<long> {
-	static constexpr auto value() noexcept -> MPI_Datatype { return MPI_LONG; }
+struct choose_mpi_type<long> : std::true_type {
+	static constexpr auto get() noexcept -> MPI_Datatype { return MPI_LONG; }
 };
 
 template<>
-struct choose_mpi_type<unsigned long> {
-	static constexpr auto value() noexcept -> MPI_Datatype { return MPI_UNSIGNED_LONG; }
+struct choose_mpi_type<unsigned long> : std::true_type {
+	static constexpr auto get() noexcept -> MPI_Datatype { return MPI_UNSIGNED_LONG; }
 };
 
 template<>
-struct choose_mpi_type<long long> {
-	static constexpr auto value() noexcept -> MPI_Datatype { return MPI_LONG_LONG; }
+struct choose_mpi_type<long long> : std::true_type {
+	static constexpr auto get() noexcept -> MPI_Datatype { return MPI_LONG_LONG; }
 };
 
 template<>
-struct choose_mpi_type<unsigned long long> {
-	static constexpr auto value() noexcept -> MPI_Datatype { return MPI_UNSIGNED_LONG_LONG; }
+struct choose_mpi_type<unsigned long long> : std::true_type {
+	static constexpr auto get() noexcept -> MPI_Datatype { return MPI_UNSIGNED_LONG_LONG; }
 };
 
 template<>
-struct choose_mpi_type<float> {
-	static constexpr auto value() noexcept -> MPI_Datatype { return MPI_FLOAT; }
+struct choose_mpi_type<float> : std::true_type {
+	static constexpr auto get() noexcept -> MPI_Datatype { return MPI_FLOAT; }
 };
 
 template<>
-struct choose_mpi_type<double> {
-	static constexpr auto value() noexcept -> MPI_Datatype { return MPI_DOUBLE; }
+struct choose_mpi_type<double> : std::true_type {
+	static constexpr auto get() noexcept -> MPI_Datatype { return MPI_DOUBLE; }
 };
 
 template<>
-struct choose_mpi_type<long double> {
-	static constexpr auto value() noexcept -> MPI_Datatype { return MPI_LONG_DOUBLE; }
+struct choose_mpi_type<long double> : std::true_type {
+	static constexpr auto get() noexcept -> MPI_Datatype { return MPI_LONG_DOUBLE; }
 };
 
 template<class T>
 requires std::same_as<T, int8_t>
-struct choose_mpi_type<T> {
-	static constexpr auto value() noexcept -> MPI_Datatype { return MPI_INT8_T; }
+struct choose_mpi_type<T> : std::true_type {
+	static constexpr auto get() noexcept -> MPI_Datatype { return MPI_INT8_T; }
 };
 
 template<class T>
 requires std::same_as<T, int16_t>
-struct choose_mpi_type<T> {
-	static constexpr auto value() noexcept -> MPI_Datatype { return MPI_INT16_T; }
+struct choose_mpi_type<T> : std::true_type {
+	static constexpr auto get() noexcept -> MPI_Datatype { return MPI_INT16_T; }
 };
 
 template<class T>
 requires std::same_as<T, int32_t>
-struct choose_mpi_type<T> {
-	static constexpr auto value() noexcept -> MPI_Datatype { return MPI_INT32_T; }
+struct choose_mpi_type<T> : std::true_type {
+	static constexpr auto get() noexcept -> MPI_Datatype { return MPI_INT32_T; }
 };
 
 template<class T>
 requires std::same_as<T, int64_t>
-struct choose_mpi_type<T> {
-	static constexpr auto value() noexcept -> MPI_Datatype { return MPI_INT64_T; }
+struct choose_mpi_type<T> : std::true_type {
+	static constexpr auto get() noexcept -> MPI_Datatype { return MPI_INT64_T; }
 };
 
 template<class T>
 requires std::same_as<T, uint8_t>
-struct choose_mpi_type<T> {
-	static constexpr auto value() noexcept -> MPI_Datatype { return MPI_UINT8_T; }
+struct choose_mpi_type<T> : std::true_type {
+	static constexpr auto get() noexcept -> MPI_Datatype { return MPI_UINT8_T; }
 };
 
 template<class T>
 requires std::same_as<T, uint16_t>
-struct choose_mpi_type<T> {
-	static constexpr auto value() noexcept -> MPI_Datatype { return MPI_UINT16_T; }
+struct choose_mpi_type<T> : std::true_type {
+	static constexpr auto get() noexcept -> MPI_Datatype { return MPI_UINT16_T; }
 };
 
 template<class T>
 requires std::same_as<T, uint32_t>
-struct choose_mpi_type<T> {
-	static constexpr auto value() noexcept -> MPI_Datatype { return MPI_UINT32_T; }
+struct choose_mpi_type<T> : std::true_type {
+	static constexpr auto get() noexcept -> MPI_Datatype { return MPI_UINT32_T; }
 };
 
 template<class T>
 requires std::same_as<T, uint64_t>
-struct choose_mpi_type<T> {
-	static constexpr auto value() noexcept -> MPI_Datatype { return MPI_UINT64_T; }
+struct choose_mpi_type<T> : std::true_type {
+	static constexpr auto get() noexcept -> MPI_Datatype { return MPI_UINT64_T; }
 };
 
 template<>
-struct choose_mpi_type<bool> {
-	static constexpr auto value() noexcept -> MPI_Datatype { return MPI_C_BOOL; }
+struct choose_mpi_type<bool> : std::true_type {
+	static constexpr auto get() noexcept -> MPI_Datatype { return MPI_C_BOOL; }
 };
 
 template<>
-struct choose_mpi_type<std::complex<float>> {
-	static constexpr auto value() noexcept -> MPI_Datatype { return MPI_COMPLEX; }
+struct choose_mpi_type<std::complex<float>> : std::true_type {
+	static constexpr auto get() noexcept -> MPI_Datatype { return MPI_COMPLEX; }
 };
 
 template<>
-struct choose_mpi_type<std::complex<double>> {
-	static constexpr auto value() noexcept -> MPI_Datatype { return MPI_DOUBLE_COMPLEX; }
+struct choose_mpi_type<std::complex<double>> : std::true_type {
+	static constexpr auto get() noexcept -> MPI_Datatype { return MPI_DOUBLE_COMPLEX; }
 };
 
 template<>
-struct choose_mpi_type<std::complex<long double>> {
-	static constexpr auto value() noexcept -> MPI_Datatype { return MPI_C_LONG_DOUBLE_COMPLEX; }
+struct choose_mpi_type<std::complex<long double>> : std::true_type {
+	static constexpr auto get() noexcept -> MPI_Datatype { return MPI_C_LONG_DOUBLE_COMPLEX; }
 };
 
 template<>
-struct choose_mpi_type<std::pair<long, int>> {
-	static constexpr auto value() noexcept -> MPI_Datatype { return MPI_LONG_INT; }
+struct choose_mpi_type<std::pair<long, int>> : std::true_type {
+	static constexpr auto get() noexcept -> MPI_Datatype { return MPI_LONG_INT; }
 };
 
 template<>
-struct choose_mpi_type<std::pair<short, int>> {
-	static constexpr auto value() noexcept -> MPI_Datatype { return MPI_SHORT_INT; }
+struct choose_mpi_type<std::pair<short, int>> : std::true_type {
+	static constexpr auto get() noexcept -> MPI_Datatype { return MPI_SHORT_INT; }
 };
 
 template<>
-struct choose_mpi_type<std::pair<int, int>> {
-	static constexpr auto value() noexcept -> MPI_Datatype { return MPI_2INT; }
+struct choose_mpi_type<std::pair<int, int>> : std::true_type {
+	static constexpr auto get() noexcept -> MPI_Datatype { return MPI_2INT; }
 };
 
 } // namespace noarr

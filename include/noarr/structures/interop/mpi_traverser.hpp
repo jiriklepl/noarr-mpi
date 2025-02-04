@@ -22,7 +22,7 @@ struct mpi_traverser_t : strict_contain<Traverser, MPI_Comm> {
 
 	[[nodiscard]]
 	constexpr auto get_bind() const noexcept {
-		if constexpr (top_struct().template has_length<Dim, noarr::state<>>()) {
+		if constexpr (decltype(get_traverser().top_struct())::template has_length<Dim, noarr::state<>>()) {
 			return mpi_fix<Dim>(get_comm());
 		} else {
 			return mpi_bind<Dim>(get_comm());
@@ -41,7 +41,13 @@ struct mpi_traverser_t : strict_contain<Traverser, MPI_Comm> {
 
 	[[nodiscard]]
 	constexpr auto state() const noexcept {
-		return get_traverser().state();
+		return (get_traverser() ^ get_bind()).state();
+	}
+
+	constexpr auto state(int root) const noexcept {
+		int size = 0;
+		MPICHK(MPI_Comm_size(get_comm(), &size));
+		return (get_traverser() ^ set_length<Dim>(size) ^ fix<Dim>(root)).state();
 	}
 
 	[[nodiscard]]
@@ -56,25 +62,24 @@ struct mpi_traverser_t : strict_contain<Traverser, MPI_Comm> {
 
 	[[nodiscard]]
 	constexpr auto top_struct() const noexcept {
-		return get_traverser().top_struct();
+		return (get_traverser() ^ get_bind()).top_struct();
 	}
 
 	[[nodiscard]]
-	friend auto operator^(mpi_traverser_t traverser, auto order) noexcept {
-		using ordered = decltype(traverser.get_traverser() ^ order);
-		return mpi_traverser_t<Dim, ordered>{traverser.get_traverser() ^ order, traverser.get_comm()};
+	constexpr auto top_struct(int root) const noexcept {
+		return (get_traverser() ^ fix<Dim>(root) ^ get_bind()).top_struct();
 	}
 
 	template<auto... Dims, class F>
 	requires (... && IsDim<decltype(Dims)>)
 	constexpr void for_each(F &&f) const {
-		get_traverser().template for_each<Dims...>([&f, comm = get_comm()](auto state) { std::forward<F>(f)(state); });
+		(get_traverser() ^ get_bind()).template for_each<Dims...>([&f, comm = get_comm()](auto state) { std::forward<F>(f)(state); });
 	}
 
 	template<auto... Dims, class F>
 	requires (... && IsDim<decltype(Dims)>)
 	constexpr void for_sections(F &&f) const {
-		get_traverser().template for_sections<Dims...>([&f, comm = get_comm()]<class Inner>(Inner inner) {
+		(get_traverser() ^ get_bind()).template for_sections<Dims...>([&f, comm = get_comm()]<class Inner>(Inner inner) {
 			std::forward<F>(f)(mpi_traverser_t<Dim, Inner>{inner, comm});
 		});
 	}
@@ -82,7 +87,7 @@ struct mpi_traverser_t : strict_contain<Traverser, MPI_Comm> {
 	template<auto... Dims, class F>
 	requires (... && IsDim<decltype(Dims)>)
 	constexpr void for_dims(F &&f) const {
-		get_traverser().template for_dims<Dims...>([&f, comm = get_comm()]<class Inner>(Inner inner) {
+		(get_traverser() ^ get_bind()).template for_dims<Dims...>([&f, comm = get_comm()]<class Inner>(Inner inner) {
 			std::forward<F>(f)(mpi_traverser_t<Dim, Inner>{inner, comm});
 		});
 	}
@@ -92,13 +97,7 @@ template<IsDim auto Dim, IsTraverser Traverser>
 constexpr auto mpi_traverser(Traverser traverser, ToMPIComm auto has_comm) noexcept {
 	const auto comm = convert_to_MPI_Comm(has_comm);
 
-	if constexpr (decltype(traverser.top_struct())::template has_length<Dim, noarr::state<>>()) {
-		using trav = decltype(traverser ^ mpi_fix<Dim>(comm));
-		return mpi_traverser_t<Dim, trav>{traverser ^ mpi_fix<Dim>(comm), comm};
-	} else {
-		using trav = decltype(traverser ^ mpi_bind<Dim>(comm));
-		return mpi_traverser_t<Dim, trav>{traverser ^ mpi_bind<Dim>(comm), comm};
-	}
+	return mpi_traverser_t<Dim, Traverser>{traverser, comm};
 }
 
 // TODO: the version with top-dim
@@ -117,11 +116,11 @@ struct is_mpi_traverser<mpi_traverser_t<Dim, Traverser>> : std::true_type {};
 
 template<IsMpiTraverser Traverser>
 struct to_traverser<Traverser> : std::true_type {
-	using type = std::remove_cvref_t<decltype(std::declval<Traverser>().get_traverser())>;
+	using type = std::remove_cvref_t<decltype(std::declval<Traverser>().get_traverser() ^ std::declval<Traverser>().get_bind())>;
 
 	[[nodiscard]]
 	static constexpr type convert(const Traverser &traverser) noexcept {
-		return traverser.get_traverser();
+		return traverser.get_traverser() ^ traverser.get_bind();
 	}
 };
 
@@ -131,7 +130,7 @@ struct to_state<Traverser> : std::true_type {
 
 	[[nodiscard]]
 	static constexpr type convert(const Traverser &traverser) noexcept {
-		return traverser.get_traverser().state();
+		return traverser.state();
 	}
 };
 

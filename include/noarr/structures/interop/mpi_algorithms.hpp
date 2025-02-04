@@ -52,16 +52,17 @@ constexpr auto mpi_run(IsMpiTraverser auto trav, const Bags &...bags) {
 	return helpers::mpi_run_t(trav, bags.get_ref()...);
 }
 
-inline void mpi_bcast(const ToStruct auto &has_struct, const ToMPIComm auto &has_comm, int rank) {
+inline void mpi_bcast(const ToStruct auto &has_struct, const IsMpiTraverser auto &trav, int rank) {
 	const auto structure = convert_to_struct(has_struct);
-	MPICHK(MPI_Bcast(structure.data(), 1, structure.get_mpi_type(), rank, convert_to_MPI_Comm(has_comm)));
+	const auto type = mpi_transform(trav, structure);
+	MPICHK(MPI_Bcast(has_struct.data(), 1, convert_to_MPI_Datatype(type), rank, convert_to_MPI_Comm(trav)));
 }
 
 template<class T>
 inline void mpi_bcast(T &scalar, const ToMPIComm auto &has_comm, int rank)
-requires requires { choose_mpi_type<T>::value(); }
+requires choose_mpi_type<T>::value
 {
-	MPICHK(MPI_Bcast(&scalar, 1, choose_mpi_type<T>::value(), rank, convert_to_MPI_Comm(has_comm)));
+	MPICHK(MPI_Bcast(&scalar, 1, choose_mpi_type<T>::get(), rank, convert_to_MPI_Comm(has_comm)));
 }
 
 inline void mpi_barrier(const ToMPIComm auto &has_comm) { MPICHK(MPI_Barrier(convert_to_MPI_Comm(has_comm))); }
@@ -162,8 +163,8 @@ inline void mpi_scatter(const auto &from, const auto &to, const IsMpiTraverser a
 	              R"(The "from" structure must be a subset of the "to" structure)");
 
 	// TODO: this is incomplete
-	const auto from_rep = mpi_transform_impl(from_struct, to_dim_filtered{}, trav.state());
-	const auto to_rep = mpi_transform_impl(to_struct, to_dim_filtered{}, trav.state());
+	const auto from_rep = mpi_transform_impl(from_struct, to_dim_filtered{}, trav.state(/*TODO*/0));
+	const auto to_rep = mpi_transform_impl(to_struct, to_dim_filtered{}, trav.state(/*TODO*/0));
 
 	// TODO: the following may be incorrect
 	const auto difference_size = mpi_get_comm_size(comm);
@@ -224,8 +225,8 @@ inline void mpi_gather(const auto &from, const auto &to, const IsMpiTraverser au
 	              R"(The "to" structure must be a subset of the "from" structure)");
 
 	// TODO: this is incomplete
-	const auto from_rep = mpi_transform_impl(from_struct, from_dim_filtered{}, trav.state());
-	const auto to_rep = mpi_transform_impl(to_struct, from_dim_filtered{}, trav.state());
+	const auto from_rep = mpi_transform_impl(from_struct, from_dim_filtered{}, trav.state(/*TODO*/0));
+	const auto to_rep = mpi_transform_impl(to_struct, from_dim_filtered{}, trav.state(/*TODO*/0));
 
 	// TODO: the following may be incorrect
 	const auto difference_size = mpi_get_comm_size(comm);

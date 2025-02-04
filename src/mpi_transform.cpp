@@ -1,7 +1,6 @@
 #include <cassert>
 #include <expected>
 #include <iostream>
-#include <typeinfo>
 
 #include <mpi.h>
 
@@ -112,7 +111,8 @@ auto main(int argc, char **argv) -> int {
 	std::cerr << "x: " << x << ", y: " << y << ", z: " << z << '\n';
 	std::cerr << "Size: " << x * y * z << '\n';
 
-	const int rank = mpi_get_comm_rank(mpi_session);
+	const auto rank = mpi_get_comm_rank(mpi_session);
+	const auto comm_size = mpi_get_comm_size(mpi_session);
 
 	auto data_input = noarr::scalar<int>() ^ noarr::vectors<'x', 'y', 'z'>(2 * x, 2 * y, 2 * z);
 
@@ -139,204 +139,66 @@ auto main(int argc, char **argv) -> int {
 
 	mpi_barrier(trav);
 
-	// if (rank == 0) {
-	// 	auto block_layout = new_transform(convert_to_traverser(trav), block.structure());
-	// 	auto block2_layout = new_transform(convert_to_traverser(trav), block2.structure());
-	// 	int counter = 0;
-	// 	traverser(block) ^ hoist<'x', 'y', 'z'>() | [&](auto state) {
-	// 		block[state] = counter++;
-	// 	};
-
-	// 	MPICHK(MPI_Sendrecv(block.data(), 1, (MPI_Datatype)block_layout, 0, 0,
-	// 	block2.data(), 1, (MPI_Datatype)block2_layout, 0, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE));
-
-	// 	traverser(block2) ^ hoist<'x', 'y', 'z'>() | [&](auto state) {
-	// 		std::cerr << block2[state] << '\n';
-	// 	};
-	// }
-	// return 0;
-
-	// MPI_Aint lb = 0;
-	// MPI_Aint extent = 0;
-
-	// MPICHK(MPI_Type_get_extent((MPI_Datatype)mpi_rep, &lb, &extent));
-	// std::cerr << "Extent: " << extent << '\n';
-	// std::cerr << "Lower bound: " << lb << '\n';
-
-	// TODO `block -> b` is not the most elegant solution
-	// mpi_run(trav, data, block)([x, y, z](const auto inner, const auto d, const auto b) {
-	// 	// TODO: magical scatter `d -> b`
-	// 	// mpi_scatter(d, b, inner, 0);
-
-	// 	mpi_barrier(inner);
-
-	// 	std::cerr << "Checking consistency of the data types" << '\n';
-
-	// 	{
-	// 		std::cerr << "Data:" << '\n';
-	// 		const auto [d_lb, d_extent] = mpi_type_get_extent(d);
-	// 		std::cerr << "  Extent: " << d_extent << '\n';
-	// 		std::cerr << "  Lower bound: " << d_lb << '\n';
-
-	// 		std::cerr << "Block:" << '\n';
-	// 		const auto [b_lb, b_extent] = mpi_type_get_extent(b);
-	// 		std::cerr << "  Extent: " << b_extent << '\n';
-	// 		std::cerr << "  Lower bound: " << b_lb << '\n';
-
-	// 		if (d_lb != b_lb * 8 || d_extent != b_extent * 8) {
-	// 			std::cerr << "Error: " << d_lb << " != " << b_lb * 8 << " or " << d_extent << " != " << b_extent * 8
-	// 					  << std::endl;
-
-	// 			throw std::runtime_error("Data types are not consistent");
-	// 		}
-	// 	}
-
-	// 	mpi_barrier(inner);
-
-	// 	std::cerr << "Data types are consistent" << '\n';
-
-	// 	// get the indices of the corresponding block
-	// 	const auto [X, Y, Z] = noarr::get_indices<'X', 'Y', 'Z'>(inner);
-
-	// 	// communicate along X
-	// 	// MPICHK(MPI_Comm_split(MPI_COMM_WORLD, Y * z + Z, X, &x_comm));
-	// 	auto x_comm = noarr::mpi_comm_split_along<'X', /*all_dims: */ 'X', 'Y', 'Z'>(inner);
-
-	// 	// communicate along Y
-	// 	// MPICHK(MPI_Comm_split(MPI_COMM_WORLD, Z * x + X, Y, &y_comm));
-	// 	auto y_comm = noarr::mpi_comm_split_along<'Y', /*all_dims: */ 'X', 'Y', 'Z'>(inner);
-
-	// 	// communicate along Z
-	// 	// MPICHK(MPI_Comm_split(MPI_COMM_WORLD, X * y + Y, Z, &z_comm));
-	// 	auto z_comm = noarr::mpi_comm_split_along<'Z', /*all_dims: */ 'X', 'Y', 'Z'>(inner);
-
-	// 	// -> we wanna create a shortcut for `MPI_Comm_split(the original communicator, all other indices, the index
-	// 	// we are communicating along, &the new communicator)`
-	// 	// -> we wanna generalize the above to `split(the original communicator, all other indices, the indices we
-	// 	// are communicating along, &the new communicator)`
-
-	// 	// the following is just normal noarr code
-	// 	if (X + Y + Z == 0) {
-	// 		inner | [b](auto state) {
-	// 			auto [x, y, z] = noarr::get_indices<'x', 'y', 'z'>(state);
-
-	// 			b[state] = 1 + x + y + z;
-	// 		};
-	// 	}
-
-	// 	// broadcast along the communicators
-	// 	// MPICHK(MPI_Bcast(b.data(), 1, b.get_mpi_type(), 0, x_comm));
-	// 	mpi_bcast(b, x_comm, 0);
-
-	// 	static_assert(requires {
-	// 		// broadcast globally in the traverser; just compile, never execute
-	// 		{ mpi_bcast(b, inner, 0) } -> std::same_as<void>;
-	// 	});
-
-	// 	// -> we wanna generalize the above to `broadcast(b, the communicator we are broadcasting along)`
-
-	// 	if (Y == 0 && Z == 0) {
-	// 		inner | [b](auto state) {
-	// 			auto [x, y, z] = noarr::get_indices<'x', 'y', 'z'>(state);
-
-	// 			if ((std::size_t)b[state] != 1 + x + y + z) {
-	// 				std::cerr << "Error: " << b[state] << " != " << 1 + x + y + z << std::endl;
-	// 			}
-	// 		};
-	// 	} else {
-	// 		inner | [b](auto state) {
-	// 			if ((std::size_t)b[state] != 0) {
-	// 				std::cerr << "Error: " << b[state] << " != 0" << std::endl;
-	// 			}
-	// 		};
-	// 	}
-
-	// 	// MPICHK(MPI_Bcast(b.data(), 1, b.get_mpi_type(), 0, y_comm));
-	// 	mpi_bcast(b, y_comm, 0);
-
-	// 	if (Z == 0) {
-	// 		inner | [b](auto state) {
-	// 			auto [x, y, z] = noarr::get_indices<'x', 'y', 'z'>(state);
-
-	// 			if ((std::size_t)b[state] != 1 + x + y + z) {
-	// 				std::cerr << "Error: " << b[state] << " != " << 1 + x + y + z << std::endl;
-	// 			}
-	// 		};
-	// 	} else {
-	// 		inner | [b](auto state) {
-	// 			if ((std::size_t)b[state] != 0) {
-	// 				std::cerr << "Error: " << b[state] << " != 0" << std::endl;
-	// 			}
-	// 		};
-	// 	}
-
-	// 	// MPICHK(MPI_Bcast(b.data(), 1, b.get_mpi_type(), 0, z_comm));
-	// 	mpi_bcast(b, z_comm, 0);
-
-	// 	inner | [b](auto state) {
-	// 		auto [x, y, z] = noarr::get_indices<'x', 'y', 'z'>(state);
-
-	// 		if ((std::size_t)b[state] != 1 + x + y + z) {
-	// 			std::cerr << "Error: " << b[state] << " != " << 1 + x + y + z << std::endl;
-	// 		}
-	// 	};
-
-	// 	// TODO: gather the results (`b -> d`)
-	// 	mpi_scatter(d, b, inner, 0);
-	// 	// mpi_gather(b, d, inner, 0);
-	// });
-
-	mpi_run(trav, data, block)([x, y, z](const auto inner, const auto d, const auto b) {
-		const auto rank = mpi_get_comm_rank(inner);
-		const auto comm_size = mpi_get_comm_size(inner);
-
+	if (rank == 0) {
+		// fill the data
 		if (rank == 0) {
-			// fill the data
-			if (rank == 0) {
-				std::size_t index = 0;
-				(traverser(d) ^ set_length(inner.state())) |
-					[&](auto state) { std::cerr << "Rank: " << rank << ", Value: " << (d[state] = index++) << '\n'; };
-			}
+			std::size_t index = 0;
+			(traverser(data) ^ set_length(trav.state())) |
+				[&](auto state) { std::cerr << "Rank: " << rank << ", Value: " << (data[state] = index++) << '\n'; };
 		}
+	}
 
-		mpi_scatter(d, b, inner, 0);
+	mpi_scatter(data, block, trav, 0);
 
-		for (int i = 0; i < comm_size; ++i) {
-			if (rank == i) {
-				inner | [&](auto state) { std::cerr << "Value: " << b[state] << ", Rank: " << rank << '\n'; };
-				std::cerr.flush();
-			}
-			mpi_barrier(inner);
+	for (int i = 0; i < comm_size; ++i) {
+		if (rank == i) {
+			trav | [&](auto state) { std::cerr << "Value: " << block[state] << ", Rank: " << rank << '\n'; };
+			std::cerr.flush();
 		}
+		mpi_barrier(trav);
+	}
 
+	if (rank == 0) {
+		// reset the data
 		if (rank == 0) {
-			// reset the data
-			if (rank == 0) {
-				(traverser(d) ^ set_length(inner.state())) |
-					[&](auto state) { std::cerr << "Rank: " << rank << ", Value: " << (d[state] = 0) << '\n'; };
-			}
+			(traverser(data) ^ set_length(trav.state())) |
+				[&](auto state) { std::cerr << "Rank: " << rank << ", Value: " << (data[state] = 0) << '\n'; };
 		}
+	}
 
-		mpi_gather(b, d, inner, 0);
+	mpi_gather(block, data, trav, 0);
 
-		if (rank == 0) {
-			int index = 0;
-			bool failed = false;
+	if (rank == 0) {
+		int index = 0;
+		bool failed = false;
 
-			(traverser(d) ^ set_length(inner.state())) | [&](auto state) {
-				if (d[state] != index++) {
-					failed = true;
-				}
-				std::cerr << "Rank: " << rank << ", Value: " << d[state] << '\n';
-			};
-
-			if (failed) {
-				throw std::runtime_error("Data is not consistent");
+		(traverser(data) ^ set_length(trav.state())) | [&](auto state) {
+			if (data[state] != index++) {
+				failed = true;
 			}
+			std::cerr << "Rank: " << rank << ", Value: " << data[state] << '\n';
+		};
+
+		if (failed) {
+			throw std::runtime_error("Data is not consistent");
 		}
-	});
+	}
 
 	mpi_barrier(mpi_session);
 
 	std::cerr << "end" << '\n';
+
+	if (rank == 1) {
+		block[idx<'x', 'y', 'z'>(0, 0, 1)] = 42;
+	}
+
+	// mpi_bcast(block.get_ref(), trav, 1);
+	mpi_bcast(block.get_ref() ^ fix<'x', 'y', 'z'>(0, 0, 1), trav, 1);
+
+	if (rank == 0) {
+		std::cerr << "Value: " << block[idx<'x', 'y', 'z'>(0, 0, 1)] << '\n';
+	}
+
+	mpi_barrier(mpi_session);
+
 }
