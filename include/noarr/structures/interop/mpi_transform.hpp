@@ -36,19 +36,17 @@ inline auto mpi_transform_impl(const Structure &structure, const dim_sequence<> 
 		const auto offset = offset_of<scalar<scalar_type>>(structure, state);
 		const auto datatype = choose_mpi_type_v<scalar_type>();
 
+		MPI_Datatype new_Datatype = MPI_DATATYPE_NULL;
 		if (offset == 0) {
-			MPI_Datatype new_Datatype = MPI_DATATYPE_NULL;
 			MPICHK(MPI_Type_dup(datatype, &new_Datatype));
-			return MPI_custom_type{new_Datatype};
 		} else {
 			const auto block_lengths = std::array{1};
 			const auto offsets = std::array{static_cast<MPI_Aint>(offset)};
 
-			MPI_Datatype new_Datatype = MPI_DATATYPE_NULL;
 			MPICHK(MPI_Type_create_hindexed(1, block_lengths.data(), offsets.data(), datatype, &new_Datatype));
-
-			return MPI_custom_type{new_Datatype};
 		}
+
+		return MPI_custom_type{new_Datatype};
 	} else {
 		throw std::runtime_error("Unsupported: no offset");
 	}
@@ -57,7 +55,8 @@ inline auto mpi_transform_impl(const Structure &structure, const dim_sequence<> 
 template<auto Dim, class Branches, class Structure, IsState State>
 inline auto mpi_transform_impl(const Structure &structure, const dim_tree<Dim, Branches> & /*unused*/, State state)
 	-> MPI_custom_type
-requires (Structure::signature::template any_accept<Dim>) {
+requires (Structure::signature::template any_accept<Dim>)
+{
 	// TODO: constexpr bool contiguous = IsContiguous<Structure, State>;
 	constexpr bool has_lower_bound = HasLowerBoundAlong<Structure, Dim, State>;
 	constexpr bool has_stride_along = HasStrideAlong<Structure, Dim, State>;
@@ -70,7 +69,8 @@ requires (Structure::signature::template any_accept<Dim>) {
 		const auto length = structure.template length<Dim>(state);
 
 		// TODO: probably wanna add { lower_bound_assumption(structure, state) } -> IsState
-		const MPI_custom_type sub_transformed = mpi_transform_impl(structure, Branches{}, state.template with<index_in<Dim>>(/*TODO*/0));
+		const auto sub_transformed =
+			mpi_transform_impl(structure, Branches{}, state.template with<index_in<Dim>>(/*TODO*/ 0));
 
 		if (lower_bound != 0) {
 			throw std::runtime_error("Unsupported: lower bound is not zero");
@@ -103,7 +103,8 @@ requires (Structure::signature::template any_accept<Dim>) {
 template<auto Dim, class Branches, class Structure, IsState State>
 inline auto mpi_transform_impl(const Structure &structure, const dim_tree<Dim, Branches> & /*unused*/, State state)
 	-> MPI_custom_type
-requires (!Structure::signature::template any_accept<Dim>) {
+requires (!Structure::signature::template any_accept<Dim>)
+{
 	return mpi_transform_impl(structure, Branches{}, state);
 }
 

@@ -199,12 +199,12 @@ struct to_MPI_Comm<mpi_comm_guard> : std::true_type {
 };
 
 template<class T>
-struct choose_mpi_type : std::false_type {
-};
+struct choose_mpi_type : std::false_type {};
 
 template<class T>
 constexpr auto choose_mpi_type_v() noexcept -> MPI_Datatype
-requires choose_mpi_type<T>::value {
+requires choose_mpi_type<T>::value
+{
 	return choose_mpi_type<std::remove_cvref_t<T>>::get();
 }
 

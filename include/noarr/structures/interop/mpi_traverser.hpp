@@ -73,15 +73,18 @@ struct mpi_traverser_t : strict_contain<Traverser, MPI_Comm> {
 	template<auto... Dims, class F>
 	requires (... && IsDim<decltype(Dims)>)
 	constexpr void for_each(F &&f) const {
-		(get_traverser() ^ get_bind()).template for_each<Dims...>([&f, comm = get_comm()](auto state) { std::forward<F>(f)(state); });
+		(get_traverser() ^ get_bind()).template for_each<Dims...>([&f, comm = get_comm()](auto state) {
+			std::forward<F>(f)(state);
+		});
 	}
 
 	template<auto... Dims, class F>
 	requires (... && IsDim<decltype(Dims)>)
 	constexpr void for_sections(F &&f) const {
-		(get_traverser() ^ get_bind()).template for_sections<Dims...>([&f, comm = get_comm()]<class Inner>(Inner inner) {
-			std::forward<F>(f)(mpi_traverser_t<Dim, Inner>{inner, comm});
-		});
+		(get_traverser() ^ get_bind())
+			.template for_sections<Dims...>([&f, comm = get_comm()]<class Inner>(Inner inner) {
+				std::forward<F>(f)(mpi_traverser_t<Dim, Inner>{inner, comm});
+			});
 	}
 
 	template<auto... Dims, class F>
@@ -116,7 +119,8 @@ struct is_mpi_traverser<mpi_traverser_t<Dim, Traverser>> : std::true_type {};
 
 template<IsMpiTraverser Traverser>
 struct to_traverser<Traverser> : std::true_type {
-	using type = std::remove_cvref_t<decltype(std::declval<Traverser>().get_traverser() ^ std::declval<Traverser>().get_bind())>;
+	using type =
+		std::remove_cvref_t<decltype(std::declval<Traverser>().get_traverser() ^ std::declval<Traverser>().get_bind())>;
 
 	[[nodiscard]]
 	static constexpr type convert(const Traverser &traverser) noexcept {

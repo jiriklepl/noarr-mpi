@@ -200,5 +200,4 @@ auto main(int argc, char **argv) -> int {
 	}
 
 	mpi_barrier(mpi_session);
-
 }

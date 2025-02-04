@@ -163,8 +163,8 @@ inline void mpi_scatter(const auto &from, const auto &to, const IsMpiTraverser a
 	              R"(The "from" structure must be a subset of the "to" structure)");
 
 	// TODO: this is incomplete
-	const auto from_rep = mpi_transform_impl(from_struct, to_dim_filtered{}, trav.state(/*TODO*/0));
-	const auto to_rep = mpi_transform_impl(to_struct, to_dim_filtered{}, trav.state(/*TODO*/0));
+	const auto from_rep = mpi_transform_impl(from_struct, to_dim_filtered{}, trav.state(/*TODO*/ 0));
+	const auto to_rep = mpi_transform_impl(to_struct, to_dim_filtered{}, trav.state(/*TODO*/ 0));
 
 	// TODO: the following may be incorrect
 	const auto difference_size = mpi_get_comm_size(comm);
@@ -225,8 +225,8 @@ inline void mpi_gather(const auto &from, const auto &to, const IsMpiTraverser au
 	              R"(The "to" structure must be a subset of the "from" structure)");
 
 	// TODO: this is incomplete
-	const auto from_rep = mpi_transform_impl(from_struct, from_dim_filtered{}, trav.state(/*TODO*/0));
-	const auto to_rep = mpi_transform_impl(to_struct, from_dim_filtered{}, trav.state(/*TODO*/0));
+	const auto from_rep = mpi_transform_impl(from_struct, from_dim_filtered{}, trav.state(/*TODO*/ 0));
+	const auto to_rep = mpi_transform_impl(to_struct, from_dim_filtered{}, trav.state(/*TODO*/ 0));
 
 	// TODO: the following may be incorrect
 	const auto difference_size = mpi_get_comm_size(comm);
