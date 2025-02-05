@@ -4,6 +4,7 @@
 #include <mpi.h>
 
 #include <noarr/structures/base/contain.hpp>
+#include "noarr/structures/base/state.hpp"
 #include <noarr/structures/base/utility.hpp>
 #include <noarr/structures/extra/traverser.hpp>
 
@@ -21,11 +22,21 @@ struct mpi_traverser_t : strict_contain<Traverser, MPI_Comm> {
 	static constexpr auto dim = Dim;
 
 	[[nodiscard]]
-	constexpr auto get_bind() const noexcept {
+	constexpr auto get_bind() const {
+		int rank = 0;
+		int size = 0;
+
+		MPICHK(MPI_Comm_rank(get_comm(), &rank));
+		MPICHK(MPI_Comm_size(get_comm(), &size));
+
 		if constexpr (decltype(get_traverser().top_struct())::template has_length<Dim, noarr::state<>>()) {
-			return mpi_fix<Dim>(get_comm());
+			if (get_traverser().top_struct().template length<Dim>(empty_state) != size) {
+				throw std::runtime_error("The MPI communicator size does not match the structure length");
+			}
+
+			return fix<Dim>(rank);
 		} else {
-			return mpi_bind<Dim>(get_comm());
+			return set_length<Dim>(size) ^ fix<Dim>(rank);
 		}
 	}
 
@@ -40,7 +51,7 @@ struct mpi_traverser_t : strict_contain<Traverser, MPI_Comm> {
 	}
 
 	[[nodiscard]]
-	constexpr auto state() const noexcept {
+	constexpr auto state() const {
 		return (get_traverser() ^ get_bind()).state();
 	}
 
@@ -61,12 +72,12 @@ struct mpi_traverser_t : strict_contain<Traverser, MPI_Comm> {
 	}
 
 	[[nodiscard]]
-	constexpr auto top_struct() const noexcept {
+	constexpr auto top_struct() const {
 		return (get_traverser() ^ get_bind()).top_struct();
 	}
 
 	[[nodiscard]]
-	constexpr auto top_struct(int root) const noexcept {
+	constexpr auto top_struct(int root) const {
 		return (get_traverser() ^ fix<Dim>(root) ^ get_bind()).top_struct();
 	}
 
@@ -102,8 +113,6 @@ constexpr auto mpi_traverser(Traverser traverser, ToMPIComm auto has_comm) noexc
 
 	return mpi_traverser_t<Dim, Traverser>{traverser, comm};
 }
-
-// TODO: the version with top-dim
 
 template<class T>
 struct is_mpi_traverser : std::false_type {};
