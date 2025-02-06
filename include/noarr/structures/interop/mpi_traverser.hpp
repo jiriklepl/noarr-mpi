@@ -4,7 +4,7 @@
 #include <mpi.h>
 
 #include <noarr/structures/base/contain.hpp>
-#include "noarr/structures/base/state.hpp"
+#include <noarr/structures/base/state.hpp>
 #include <noarr/structures/base/utility.hpp>
 #include <noarr/structures/extra/traverser.hpp>
 
