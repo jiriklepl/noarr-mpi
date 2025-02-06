@@ -15,26 +15,34 @@ SLURM_PARTITION=${SLURM_PARTITION:-mpi-homo-short}
 SLURM_ACCOUNT=${SLURM_ACCOUNT:-kdss}
 
 if [ ! -f "${BUILD_DIR}/${EXECUTABLE}" ]; then
-  echo "Executable not found. Run build.sh first." >&2
+  echo "Error: Executable not found. Run build.sh first." >&2
   exit 1
+fi
+
+TASKS_PER_NODE=$((NUM_TASKS / NUM_NODES))
+REMAINDER=$((NUM_TASKS % NUM_NODES))
+
+if [ "${REMAINDER}" -ne 0 ]; then
+	echo "Error: the number of tasks (${NUM_TASKS}) is not divisible by the number of nodes (${NUM_NODES})"
+	exit 1
 fi
 
 case "${EXECUTABLE}" in
   *-mpi*)
 	if [ "${USE_SLURM}" -eq 1 ]; then
-	  srun -n "${NUM_TASKS}" -N "${NUM_NODES}" -c "${CPUS_PER_TASK}" \
+	  srun -n "${NUM_TASKS}" -N "${NUM_NODES}" --ntasks-per-node="${TASKS_PER_NODE}" -c "${CPUS_PER_TASK}" \
 	  	-p "${SLURM_PARTITION}" -A "${SLURM_ACCOUNT}" \
 	  	-- "${BUILD_DIR}/${EXECUTABLE}"
-	elif [ "${NUM_NODES}" -gt 1 ] || [ "${CPUS_PER_TASK}" -gt 1 ]; then
-	  echo "For multi-node or multi-cpu-per-task runs, use SLURM." >&2
+	elif [ "${CPUS_PER_TASK}" -gt 1 ]; then
+	  echo "Error: For multi-cpu-per-task runs, use SLURM." >&2
 	  exit 1
 	else
-	  mpirun -N "${NUM_TASKS}" --host="$(hostname):${NUM_TASKS}" "${BUILD_DIR}/${EXECUTABLE}"
+	  mpirun -np "${NUM_TASKS}" --npernode "${TASKS_PER_NODE}" "${BUILD_DIR}/${EXECUTABLE}"
 	fi
 	;;
   *)
 	if [ "${USE_SLURM}" -eq 1 ]; then
-	  srun -n 1 -N 1 -c "${CPUS_PER_TASK}" \
+	  srun -n 1 -N 1 --ntasks-per-node="${TASKS_PER_NODE}" -c "${CPUS_PER_TASK}" \
 	  	-p "${SLURM_PARTITION}" -A "${SLURM_ACCOUNT}" \
 	  	-- "${BUILD_DIR}/${EXECUTABLE}"
 	else
