@@ -166,4 +166,6 @@ int main(int argc, char *argv[]) {
 			noarr::serialize_data(std::cout, C.get_ref() ^ set_length(mpi_trav) ^ noarr::hoist<'I', 'i', 'J', 'j'>());
 		}
 	}
+
+	mpi_barrier(mpi_trav);
 }

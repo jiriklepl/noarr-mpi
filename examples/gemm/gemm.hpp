@@ -21,8 +21,8 @@
 #	define NK 1200
 #elif defined(EXTRALARGE_DATASET)
 #	define NI 2000
-#	define NJ 2300
-#	define NK 2600
+#	define NJ 2400
+#	define NK 2800
 #endif
 
 #endif // GEMM_HPP
