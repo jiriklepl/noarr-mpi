@@ -14,7 +14,7 @@ FetchContent_MakeAvailable(Noarr)
 
 find_package(MPI REQUIRED)
 
-set(CMAKE_CXX_STANDARD 23)
+set(CMAKE_CXX_STANDARD 20)
 
 include_directories(include)
 include_directories(${Noarr_SOURCE_DIR}/include)
