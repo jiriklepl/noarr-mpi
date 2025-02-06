@@ -4,7 +4,7 @@ include(FetchContent)
 
 project(noarr_mpi
         VERSION 1.0
-        DESCRIPTION "noarr-mpi (WIP)"
+        DESCRIPTION "noarr-mpi"
         LANGUAGES CXX)
 
 FetchContent_Declare(Noarr
@@ -20,7 +20,7 @@ include_directories(include)
 include_directories(${Noarr_SOURCE_DIR}/include)
 
 add_executable(mpi-transform src/mpi_transform.cpp)
-add_executable(gemm src/gemm.cpp)
+add_executable(gemm examples/gemm/gemm.cpp)
 
 # ask the compiler to print maximum warnings
 if(MSVC)
