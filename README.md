@@ -30,21 +30,21 @@ The script `configure.sh` creates a build directory and runs CMake to configure 
 
 - `gemm` - the baseline GEMM kernel implemented in the Noarr library
 
-  the code for this variant is located in [examples/gemm/gemm.cpp](examples/gemm/gemm.cpp)
+  The code for this variant is located in [examples/gemm/gemm.cpp](examples/gemm/gemm.cpp)
 
 - `gemm-mpi` - the distributed GEMM kernel using the proposed Noarr MPI abstraction; slight modification of `gemm`
 
-  the code for this variant is located in [examples/gemm/gemm-mpi.cpp](examples/gemm/gemm-mpi.cpp)
+  The code for this variant is located in [examples/gemm/gemm-mpi.cpp](examples/gemm/gemm-mpi.cpp)
 
 - `gemm-mpi-tilea-transpose` - the same distributed GEMM kernel, differing solely in the layout of the distributed sub-matrices of the input matrix `A` (no other code is changed, the code for matrix initialization and the GEMM kernel is the same as in `gemm-mpi`)
 
-  the code for this variant is located in [examples/gemm/gemm-mpi.cpp](examples/gemm/gemm-mpi.cpp) as well. It is compiled with an additional preprocessor definition `A_TILE_K_MAJOR` that changes the layout of sub-matrix tiles of `A`.
+  The code for this variant is located in [examples/gemm/gemm-mpi.cpp](examples/gemm/gemm-mpi.cpp) as well. It is compiled with an additional preprocessor definition `A_TILE_K_MAJOR` that changes the layout of sub-matrix tiles of `A`.
 
 The two MPI-distributed GEMM kernels are proof of concept implementations of the proposed Noarr MPI abstraction that showcase the proposed layout-agnostic design. They test two different layout configurations to demonstrate that the abstraction is indeed layout-agnostic.
 
 ## How to run
 
-To run the script that automatically runs the each of the GEMM variants using `mpirun`, run the following command:
+To run the script that automatically runs each of the GEMM variants using `mpirun`, run the following command:
 
 ```bash
 ./compare.sh
