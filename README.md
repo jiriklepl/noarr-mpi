@@ -2,7 +2,7 @@
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](./LICENSE)
 
-This repository contains the proof of concept implementation of the paper "TODO PAPER NAME".
+This repository contains the proof of concept implementation of the paper "Layout-Agnostic MPI Abstraction for Modern C++".
 
 ## About
 
@@ -58,11 +58,13 @@ You can control the number of mpi processes using the `NUM_TASKS` variable (defa
 
 ### Slurm
 
-To run the same experiment on a Slurm cluster (such as <https://gitlab.mff.cuni.cz/mff/hpc/clusters>), modify the command as follows:
+To run the same experiment on a Slurm cluster (such as <https://gitlab.mff.cuni.cz/mff/hpc/clusters>), modify the command as follows (replace `YOUR_ACCOUNT` and `YOUR_PARTITION` with your Slurm account and partition):
 
 ```bash
 USE_SLURM=1 NUM_NODES=4 NUM_TASKS=64 ACCOUNT=YOUR_ACCOUNT PARTITION=YOUR_PARTITION ./compare.sh
 ```
+
+[data/compare-example-slurm.csv](data/compare-example-slurm.csv) shows a possible output of the script when run on a Slurm cluster with the specified parameters.
 
 ### Single run
 
@@ -72,7 +74,7 @@ To run a single run of a particular GEMM variant, use the following command:
 ./run.sh gemm-mpi
 ```
 
-Again, you can use the `USE_SLURM` variable to run the experiment on a Slurm cluster.
+Again, you can use the `USE_SLURM` variable to run the experiment on a Slurm cluster or the `NUM_NODES` and `NUM_TASKS` variables to control the number of nodes and MPI processes.
 
 ## License
 
