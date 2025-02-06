@@ -91,8 +91,6 @@ void kernel_gemm(auto trav, num_t alpha, auto C, num_t beta, auto A, auto B) {
 
 } // namespace
 
-// TODO: fails if NJ % 4 != 0 || NI % 2 != 0
-
 int main(int argc, char *argv[]) {
 	using namespace std::string_literals;
 	namespace chrono = std::chrono;
