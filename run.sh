@@ -28,19 +28,17 @@ if [ "${REMAINDER}" -ne 0 ]; then
 fi
 
 case "${EXECUTABLE}" in
-	*-mpi*)
+	(*-mpi*)
 		if [ "${USE_SLURM}" -eq 1 ]; then
 			srun -n "${NUM_TASKS}" -N "${NUM_NODES}" --ntasks-per-node="${TASKS_PER_NODE}" -c "${CPUS_PER_TASK}" \
 				-p "${SLURM_PARTITION}" -A "${SLURM_ACCOUNT}" \
 				-- "${BUILD_DIR}/${EXECUTABLE}"
-		elif [ "${CPUS_PER_TASK}" -gt 1 ]; then
-			echo "Error: For multi-cpu-per-task runs, use SLURM." >&2
-			exit 1
 		else
-			mpirun -np "${NUM_TASKS}" --npernode "${TASKS_PER_NODE}" "${BUILD_DIR}/${EXECUTABLE}"
+			mpirun -np "${NUM_TASKS}" --map-by "ppr:${TASKS_PER_NODE}:node:PE=${CPUS_PER_TASK}" \
+				"${BUILD_DIR}/${EXECUTABLE}"
 		fi
 	;;
-	*)
+	(*)
 		if [ "${USE_SLURM}" -eq 1 ]; then
 			srun -n 1 -N 1 --ntasks-per-node="${TASKS_PER_NODE}" -c "${CPUS_PER_TASK}" \
 				-p "${SLURM_PARTITION}" -A "${SLURM_ACCOUNT}" \
