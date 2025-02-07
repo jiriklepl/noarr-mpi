@@ -4,4 +4,6 @@ set -e
 
 BUILD_DIR=${BUILD_DIR:-build}
 
-ctest --test-dir "${BUILD_DIR}"
+CONFIG=${1:-Release}
+
+ctest --test-dir "${BUILD_DIR}" -C "${CONFIG}"
