@@ -138,18 +138,18 @@ int main(int argc, char *argv[]) {
 		           bag(B_structure, B.data()));
 	}
 
-	mpi_bcast(alpha, mpi_trav, 0);
-	mpi_bcast(beta, mpi_trav, 0);
+	mpi_bcast(alpha, mpi_trav, root);
+	mpi_bcast(beta, mpi_trav, root);
 
 	const auto start = chrono::high_resolution_clock::now();
-	mpi_scatter(C, tileC, mpi_trav, 0);
-	mpi_scatter(A, tileA, mpi_trav, 0);
-	mpi_scatter(B, tileB, mpi_trav, 0);
+	mpi_scatter(C, tileC, mpi_trav, root);
+	mpi_scatter(A, tileA, mpi_trav, root);
+	mpi_scatter(B, tileB, mpi_trav, root);
 
 	// run kernel
 	kernel_gemm(mpi_trav, alpha, tileC.get_ref(), beta, tileA.get_ref(), tileB.get_ref());
 
-	mpi_gather(tileC, C, mpi_trav, 0);
+	mpi_gather(tileC, C, mpi_trav, root);
 
 	const auto end = chrono::high_resolution_clock::now();
 
