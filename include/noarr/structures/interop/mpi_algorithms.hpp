@@ -142,6 +142,7 @@ inline void mpi_scatter(const auto &from, const auto &to, const IsMpiTraverser a
 	const auto from_struct = convert_to_struct(from);
 	const auto to_struct = convert_to_struct(to);
 	const auto comm = convert_to_MPI_Comm(trav);
+	const int comm_size = mpi_get_comm_size(comm);
 
 	using from_sig = typename decltype(from_struct ^ set_length(trav))::signature;
 	using to_sig = typename decltype(to_struct ^ set_length(trav))::signature;
@@ -173,31 +174,32 @@ inline void mpi_scatter(const auto &from, const auto &to, const IsMpiTraverser a
 	static_assert(std::is_same_v<trav_dim_in_from, trav_dim_in_to>,
 	              R"(The traverser must contain the same dimensions for both the "from" and "to" structures)");
 
-	// TODO: this is incomplete
-	const auto from_rep = mpi_transform_impl(from_struct, to_dim_filtered{}, trav.state(/*TODO*/ 0));
-	const auto to_rep = mpi_transform_impl(to_struct, to_dim_filtered{}, trav.state(/*TODO*/ 0));
+	std::vector<int> displacements(comm_size);
+	const std::vector<int> sendcounts(comm_size, 1);
 
-	// TODO: the following may be incorrect
-	const auto difference_size = mpi_get_comm_size(comm);
-
-	std::vector<int> displacements(difference_size);
-	const std::vector<int> sendcounts(difference_size, 1);
-
-	const int offset = (from_struct ^ set_length(trav) ^ fix(trav)) | noarr::offset(fix_zeros(from_dim_tree{}));
-
-	MPICHK(MPI_Allgather(&offset, 1, MPI_INT, displacements.data(), 1, MPI_INT, comm));
+	for (int i = 0; i < comm_size; ++i) {
+		const auto state = trav.state(i);
+		const auto offset_getter = offset(fix_zeros(from_dim_tree{}));
+		displacements[i] = (from_struct ^ set_length(state) ^ fix(state)) | offset_getter;
+	}
 
 	// compute the second smallest displacement
 	int min_displacement = std::numeric_limits<int>::max();
 	int second_min_displacement = std::numeric_limits<int>::max();
-	for (const auto displacement : displacements) {
+	int min_rank = std::numeric_limits<int>::max();
+	for (int i = 0; i < comm_size; ++i) {
+		const auto displacement = displacements[i];
 		if (displacement < min_displacement) {
 			second_min_displacement = min_displacement;
 			min_displacement = displacement;
+			min_rank = i;
 		} else if (displacement < second_min_displacement && displacement != min_displacement) {
 			second_min_displacement = displacement;
 		}
 	}
+
+	const auto from_rep = mpi_transform_impl(from_struct, to_dim_filtered{}, trav.state(min_rank));
+	const auto to_rep = mpi_transform_impl(to_struct, to_dim_filtered{}, trav.state(min_rank));
 
 	MPI_Datatype from_rep_resized = MPI_DATATYPE_NULL;
 	MPICHK(MPI_Type_create_resized(convert_to_MPI_Datatype(from_rep), 0, second_min_displacement, &from_rep_resized));
@@ -215,6 +217,7 @@ inline void mpi_gather(const auto &from, const auto &to, const IsMpiTraverser au
 	const auto from_struct = convert_to_struct(from);
 	const auto to_struct = convert_to_struct(to);
 	const auto comm = convert_to_MPI_Comm(trav);
+	const int comm_size = mpi_get_comm_size(comm);
 
 	using from_sig = typename decltype(from_struct ^ set_length(trav))::signature;
 	using to_sig = typename decltype(to_struct ^ set_length(trav))::signature;
@@ -246,31 +249,32 @@ inline void mpi_gather(const auto &from, const auto &to, const IsMpiTraverser au
 	static_assert(std::is_same_v<trav_dim_in_from, trav_dim_in_to>,
 	              R"(The traverser must contain the same dimensions for both the "from" and "to" structures)");
 
-	// TODO: this is incomplete
-	const auto from_rep = mpi_transform_impl(from_struct, from_dim_filtered{}, trav.state(/*TODO*/ 0));
-	const auto to_rep = mpi_transform_impl(to_struct, from_dim_filtered{}, trav.state(/*TODO*/ 0));
+	std::vector<int> displacements(comm_size);
+	const std::vector<int> sendcounts(comm_size, 1);
 
-	// TODO: the following may be incorrect
-	const auto difference_size = mpi_get_comm_size(comm);
-
-	std::vector<int> displacements(difference_size);
-	const std::vector<int> sendcounts(difference_size, 1);
-
-	const int offset = (to_struct ^ set_length(trav) ^ fix(trav)) | noarr::offset(fix_zeros(to_dim_tree{}));
-
-	MPICHK(MPI_Allgather(&offset, 1, MPI_INT, displacements.data(), 1, MPI_INT, comm));
+	for (int i = 0; i < comm_size; ++i) {
+		const auto state = trav.state(i);
+		const auto offset_getter = offset(fix_zeros(to_dim_tree{}));
+		displacements[i] = (to_struct ^ set_length(state) ^ fix(state)) | offset_getter;
+	}
 
 	// compute the second smallest displacement
 	int min_displacement = std::numeric_limits<int>::max();
 	int second_min_displacement = std::numeric_limits<int>::max();
-	for (const auto displacement : displacements) {
+	int min_rank = std::numeric_limits<int>::max();
+	for (int i = 0; i < comm_size; ++i) {
+		const auto displacement = displacements[i];
 		if (displacement < min_displacement) {
 			second_min_displacement = min_displacement;
 			min_displacement = displacement;
+			min_rank = i;
 		} else if (displacement < second_min_displacement && displacement != min_displacement) {
 			second_min_displacement = displacement;
 		}
 	}
+
+	const auto from_rep = mpi_transform_impl(from_struct, from_dim_filtered{}, trav.state(min_rank));
+	const auto to_rep = mpi_transform_impl(to_struct, from_dim_filtered{}, trav.state(min_rank));
 
 	MPI_Datatype to_rep_resized = MPI_DATATYPE_NULL;
 	MPICHK(MPI_Type_create_resized(convert_to_MPI_Datatype(to_rep), 0, second_min_displacement, &to_rep_resized));
