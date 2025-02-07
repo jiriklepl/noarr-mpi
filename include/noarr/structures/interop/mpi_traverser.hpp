@@ -108,7 +108,7 @@ struct mpi_traverser_t : strict_contain<Traverser, MPI_Comm> {
 };
 
 template<IsDim auto Dim, IsTraverser Traverser>
-constexpr auto mpi_traverser(Traverser traverser, ToMPIComm auto has_comm) noexcept {
+constexpr auto mpi_traverser(Traverser traverser, const ToMPIComm auto& has_comm) noexcept {
 	const auto comm = convert_to_MPI_Comm(has_comm);
 
 	return mpi_traverser_t<Dim, Traverser>{traverser, comm};

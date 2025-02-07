@@ -76,6 +76,18 @@ To run a single run of a particular GEMM variant, use the following command:
 
 Again, you can use the `USE_SLURM` variable to run the experiment on a Slurm cluster or the `NUM_NODES` and `NUM_TASKS` variables to control the number of nodes and MPI processes.
 
+## Testing
+
+To run the tests that verify various aspects of the Noarr MPI abstraction, run the following command:
+
+```bash
+./test.sh
+```
+
+The result of the command is a list of tests and their outcomes. All tests should pass.
+
+Some tests verify that a particular function won't compile (for example, due to type mismatch or incompatible layout) and they report \texttt{Passed} if the compilation fails.
+
 ## License
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.

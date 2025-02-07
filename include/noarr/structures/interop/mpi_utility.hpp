@@ -48,7 +48,7 @@ public:
 	auto operator=(MPI_session &&) -> MPI_session & = delete;
 
 	[[nodiscard]]
-	auto get_comm() const noexcept {
+	constexpr auto get_comm() const noexcept {
 		return comm;
 	}
 };
@@ -120,7 +120,7 @@ public:
 
 	~MPI_custom_type() noexcept(false) { reset(MPI_DATATYPE_NULL); }
 
-	explicit operator MPI_Datatype() const { return value; }
+	constexpr explicit operator MPI_Datatype() const { return value; }
 };
 
 template<>
@@ -185,7 +185,7 @@ public:
 
 	~mpi_comm_guard() noexcept(false) { MPICHK(MPI_Comm_free(&value)); }
 
-	explicit operator MPI_Comm() const { return value; }
+	constexpr explicit operator MPI_Comm() const { return value; }
 };
 
 template<>

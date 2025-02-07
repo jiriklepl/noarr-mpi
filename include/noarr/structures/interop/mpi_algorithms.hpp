@@ -143,24 +143,32 @@ inline void mpi_scatter(const auto &from, const auto &to, const IsMpiTraverser a
 	const auto to_struct = convert_to_struct(to);
 	const auto comm = convert_to_MPI_Comm(trav);
 
-	using from_dim_tree = sig_dim_tree<typename decltype(from_struct ^ set_length(trav))::signature>;
-	using to_dim_tree = sig_dim_tree<typename decltype(to_struct ^ set_length(trav))::signature>;
+	using from_sig = typename decltype(from_struct ^ set_length(trav) ^ fix(trav))::signature;
+	using to_sig = typename decltype(to_struct ^ set_length(trav) ^ fix(trav))::signature;
+	using trav_sig = typename decltype(trav.top_struct())::signature;
 
-	using to_dim_filtered =
-		dim_tree_filter<to_dim_tree, in_signature<typename decltype(from_struct ^ set_length(trav))::signature>>;
-	using to_dim_removed =
-		dim_tree_filter<to_dim_tree,
-	                    dim_pred_not<in_signature<typename decltype(from_struct ^ set_length(trav))::signature>>>;
+	using from_dim_tree = sig_dim_tree<from_sig>;
+	using to_dim_tree = sig_dim_tree<to_sig>;
+	using trav_dim_tree = sig_dim_tree<trav_sig>;
 
-	using from_dim_filtered =
-		dim_tree_filter<from_dim_tree, in_signature<typename decltype(to_struct ^ set_length(trav))::signature>>;
-	using from_dim_removed =
-		dim_tree_filter<from_dim_tree,
-	                    dim_pred_not<in_signature<typename decltype(to_struct ^ set_length(trav))::signature>>>;
+	using to_dim_filtered = dim_tree_filter<to_dim_tree, in_signature<from_sig>>;
+	using to_dim_removed = dim_tree_filter<to_dim_tree, dim_pred_not<in_signature<from_sig>>>;
+
+	using to_dim_in_trav = dim_tree_filter<to_dim_tree, in_signature<trav_sig>>;
+	using from_dim_in_trav = dim_tree_filter<from_dim_tree, in_signature<trav_sig>>;
+
+	using trav_dim_in_from = dim_tree_filter<trav_dim_tree, in_signature<from_sig>>;
+	using trav_dim_in_to = dim_tree_filter<trav_dim_tree, in_signature<to_sig>>;
 
 	// to must be a subset of from
 	static_assert(std::is_same_v<to_dim_filtered, to_dim_tree> && std::is_same_v<to_dim_removed, dim_sequence<>>,
-	              R"(The "from" structure must be a subset of the "to" structure)");
+	              R"(The "to" structure must be a nontrivial subset of the "from" structure)");
+
+	static_assert(std::is_same_v<from_dim_tree, from_dim_in_trav> && std::is_same_v<to_dim_tree, to_dim_in_trav>,
+	              R"(The traverser must contain all dimensions of the "from" and "to" structures)");
+
+	static_assert(std::is_same_v<trav_dim_in_from, trav_dim_in_to>,
+	              R"(The traverser must contain the same dimensions for both the "from" and "to" structures)");
 
 	// TODO: this is incomplete
 	const auto from_rep = mpi_transform_impl(from_struct, to_dim_filtered{}, trav.state(/*TODO*/ 0));
@@ -205,24 +213,32 @@ inline void mpi_gather(const auto &from, const auto &to, const IsMpiTraverser au
 	const auto to_struct = convert_to_struct(to);
 	const auto comm = convert_to_MPI_Comm(trav);
 
-	using from_dim_tree = sig_dim_tree<typename decltype(from_struct ^ set_length(trav))::signature>;
-	using to_dim_tree = sig_dim_tree<typename decltype(to_struct ^ set_length(trav))::signature>;
+	using from_sig = typename decltype(from_struct ^ set_length(trav) ^ fix(trav))::signature;
+	using to_sig = typename decltype(to_struct ^ set_length(trav) ^ fix(trav))::signature;
+	using trav_sig = typename decltype(trav.top_struct())::signature;
 
-	using to_dim_filtered =
-		dim_tree_filter<to_dim_tree, in_signature<typename decltype(from_struct ^ set_length(trav))::signature>>;
-	using to_dim_removed =
-		dim_tree_filter<to_dim_tree,
-	                    dim_pred_not<in_signature<typename decltype(from_struct ^ set_length(trav))::signature>>>;
+	using from_dim_tree = sig_dim_tree<from_sig>;
+	using to_dim_tree = sig_dim_tree<to_sig>;
+	using trav_dim_tree = sig_dim_tree<trav_sig>;
 
-	using from_dim_filtered =
-		dim_tree_filter<from_dim_tree, in_signature<typename decltype(to_struct ^ set_length(trav))::signature>>;
-	using from_dim_removed =
-		dim_tree_filter<from_dim_tree,
-	                    dim_pred_not<in_signature<typename decltype(to_struct ^ set_length(trav))::signature>>>;
+	using from_dim_filtered = dim_tree_filter<from_dim_tree, in_signature<to_sig>>;
+	using from_dim_removed = dim_tree_filter<from_dim_tree, dim_pred_not<in_signature<to_sig>>>;
+
+	using to_dim_in_trav = dim_tree_filter<to_dim_tree, in_signature<trav_sig>>;
+	using from_dim_in_trav = dim_tree_filter<from_dim_tree, in_signature<trav_sig>>;
+
+	using trav_dim_in_from = dim_tree_filter<trav_dim_tree, in_signature<from_sig>>;
+	using trav_dim_in_to = dim_tree_filter<trav_dim_tree, in_signature<to_sig>>;
 
 	// from must be a subset of to
 	static_assert(std::is_same_v<from_dim_filtered, from_dim_tree> && std::is_same_v<from_dim_removed, dim_sequence<>>,
-	              R"(The "to" structure must be a subset of the "from" structure)");
+	              R"(The "from" structure must be a nontrivial subset of the "to" structure)");
+
+	static_assert(std::is_same_v<from_dim_tree, from_dim_in_trav> && std::is_same_v<to_dim_tree, to_dim_in_trav>,
+	              R"(The traverser must contain all dimensions of the "from" and "to" structures)");
+
+	static_assert(std::is_same_v<trav_dim_in_from, trav_dim_in_to>,
+	              R"(The traverser must contain the same dimensions for both the "from" and "to" structures)");
 
 	// TODO: this is incomplete
 	const auto from_rep = mpi_transform_impl(from_struct, from_dim_filtered{}, trav.state(/*TODO*/ 0));
