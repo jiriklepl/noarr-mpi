@@ -22,5 +22,5 @@ int main() {
 	auto tile_bag = bag(scalar<int>() ^ vectors_like<'x', 'y', 'z'>(mpi_trav));
 
 	// The following function call is incorrect (the root structure and the tile structure are swapped), fails at compile time
-	mpi_scatter(root_bag, tile_bag, mpi_trav, root);
+	mpi_gather(root_bag, tile_bag, mpi_trav, root);
 }
