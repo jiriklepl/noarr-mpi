@@ -64,12 +64,12 @@ requires (Structure::signature::template any_accept<Dim>)
 
 	if constexpr (has_lower_bound && has_stride_along && is_uniform_along && has_length) {
 		const auto lower_bound = lower_bound_along<Dim>(structure, state);
+		const auto lb_at = lower_bound_at<Dim>(structure, state);
 		const auto stride = stride_along<Dim>(structure, state);
 		const auto length = structure.template length<Dim>(state);
 
-		// TODO: probably wanna add { lower_bound_assumption(structure, state) } -> IsState
 		const auto sub_transformed =
-			mpi_transform_impl(structure, Branches{}, state.template with<index_in<Dim>>(/*TODO*/ 0));
+			mpi_transform_impl(structure, Branches{}, state.template with<index_in<Dim>>(lb_at));
 
 		if (lower_bound != 0) {
 			throw std::runtime_error("Unsupported: lower bound is not zero");
