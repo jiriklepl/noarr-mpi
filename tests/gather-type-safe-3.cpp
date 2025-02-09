@@ -9,7 +9,6 @@ constexpr int root = 0;
 
 int main() {
 	MPI_session mpi_session;
-	const auto rank = mpi_get_comm_rank(mpi_session);
 
 	const auto root_structure = scalar<int>() ^ vectors<'x', 'y', 'z'>(2, 2, 2);
 	const auto grid = into_blocks<'x', 'X'>() ^ into_blocks<'y', 'Y'>() ^ into_blocks<'z', 'Z'>();
