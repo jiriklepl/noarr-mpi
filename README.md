@@ -10,7 +10,7 @@ Message Passing Interface (MPI) has been a well-established technology in the do
 
 ## Library
 
-The project contains a header-only extension of the Noarr library that provides a layout-agnostic C++ abstraction for MPI. The whole library can be included using the following include directive (assuming an MPI implementation is available on the system and the [include](include) directory is in the include path):
+The project contains a header-only extension of the Noarr library that provides a layout-agnostic C++ abstraction for MPI. The library can be included using the following include directive (assuming an MPI implementation is available on the system and the [include](include) directory is in the include path):
 
 ```cpp
 #include <noarr/structures/mpi.hpp>
