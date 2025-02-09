@@ -165,11 +165,13 @@ inline void mpi_scatter(const auto &from, const auto &to, const IsMpiTraverser a
 	using trav_dim_in_to = dim_tree_filter<trav_dim_tree, in_signature<to_sig>>;
 
 	// to must be a subset of from
-	static_assert(std::is_same_v<to_dim_filtered, to_dim_tree> && !std::is_same_v<to_dim_filtered, dim_sequence<>> && std::is_same_v<to_dim_removed, dim_sequence<>>,
+	static_assert(std::is_same_v<to_dim_filtered, to_dim_tree> && !std::is_same_v<to_dim_filtered, dim_sequence<>> &&
+	                  std::is_same_v<to_dim_removed, dim_sequence<>>,
 	              R"(The "to" structure must be a nontrivial subset of the "from" structure)");
 
-	static_assert(std::is_same_v<from_dim_filtered, from_dim_in_trav> && std::is_same_v<to_dim_tree, to_dim_in_trav>,
-	              R"(The traverser must contain all dimensions of the "from" structure and bind the difference in the index spaces)");
+	static_assert(
+		std::is_same_v<from_dim_filtered, from_dim_in_trav> && std::is_same_v<to_dim_tree, to_dim_in_trav>,
+		R"(The traverser must contain all dimensions of the "from" structure and bind the difference in the index spaces)");
 
 	static_assert(std::is_same_v<trav_dim_in_from, trav_dim_in_to>,
 	              R"(The traverser must contain the same dimensions for both the "from" and "to" structures)");
@@ -240,7 +242,9 @@ inline void mpi_gather(const auto &from, const auto &to, const IsMpiTraverser au
 	using trav_dim_in_to = dim_tree_filter<trav_dim_tree, in_signature<to_sig>>;
 
 	// from must be a subset of to
-	static_assert(std::is_same_v<from_dim_filtered, from_dim_tree> && !std::is_same_v<from_dim_filtered, dim_sequence<>> && std::is_same_v<from_dim_removed, dim_sequence<>>,
+	static_assert(std::is_same_v<from_dim_filtered, from_dim_tree> &&
+	                  !std::is_same_v<from_dim_filtered, dim_sequence<>> &&
+	                  std::is_same_v<from_dim_removed, dim_sequence<>>,
 	              R"(The "from" structure must be a nontrivial subset of the "to" structure)");
 
 	static_assert(std::is_same_v<from_dim_tree, from_dim_in_trav> && std::is_same_v<to_dim_filtered, to_dim_in_trav>,
