@@ -20,11 +20,6 @@ namespace noarr {
 
 namespace helpers {
 
-// template<auto Dim, class Branches, class Structure>
-// auto mpi_transform(const Structure& structure, const dim_tree<Dim, Branches> &/*unused*/) {
-//	TODO: implement
-// }
-
 template<class Structure, IsState State>
 inline auto mpi_transform_impl(const Structure &structure, const dim_sequence<> & /*unused*/, State state)
 	-> MPI_custom_type {
