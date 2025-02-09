@@ -88,6 +88,15 @@ The result of the command is a list of tests and their outcomes. All tests shoul
 
 Some tests verify that a particular function won't compile (for example, due to type mismatch or incompatible layout) and they report \texttt{Passed} if the compilation fails.
 
+## Main abstractions
+
+The paper describes type transformation from Noarr structures to MPI data types and MPI traversers. These two abstractions are implemented in the following files:
+
+- [include/noarr/structures/interop/mpi_transform.hpp](include/noarr/structures/interop/mpi_transform.hpp) - defines the `mpi_transform` function that transforms Noarr structures to MPI data types.
+- [include/noarr/structures/interop/mpi_traverser.hpp](include/noarr/structures/interop/mpi_traverser.hpp) - defines the `mpi_traverser_t` class that associates a Noarr traverser with an MPI communicator.
+
+The MPI bindings for collective operations (broadcast, scatter, gather) are implemented in [include/noarr/structures/interop/mpi_algorithms.hpp](include/noarr/structures/interop/mpi_algorithms.hpp).
+
 ## License
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
