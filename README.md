@@ -2,15 +2,25 @@
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](./LICENSE)
 
-This repository contains the proof of concept implementation of the paper "Layout-Agnostic MPI Abstraction for Modern C++".
+This repository contains the proof of concept implementation of the paper *Layout-Agnostic MPI Abstraction for Modern C++*.
 
 ## About
 
 Message Passing Interface (MPI) has been a well-established technology in the domain of distributed high-performance computing for several decades. However, one of its greatest drawbacks is a rather ancient pure-C interface. It lacks many useful features of modern languages (namely C++), like basic type-checking or support for generic code design. We propose a novel abstraction for MPI, which we implemented as an extension of the C++ Noarr library. It follows Noarr paradigms (first-class types and traverser abstraction) and offers layout-agnostic design of MPI applications. We also implemented a layout agnostic distributed GEMM kernel as a proof of concept that our abstraction is viable.
 
+## Library
+
+The project contains a header-only extension of the Noarr library that provides a layout-agnostic C++ abstraction for MPI. The whole library can be included using the following include directive (assuming an MPI implementation is available on the system and the [include](include) directory is in the include path):
+
+```cpp
+#include <noarr/structures/mpi.hpp>
+```
+
+To showcase the proposed abstraction, we implemented a distributed GEMM kernel using the proposed Noarr MPI abstraction. The project contains the source code of the GEMM kernel and the necessary scripts to build, run, and compare the kernel with a baseline GEMM kernel implemented in the Noarr library.
+
 ## How to build
 
-To build the project, you need to have CMake and a C++ compiler installed. The project assumes support for C++20 or later and requires MPI to be installed on your system (and the mpi.h header file must be available). The other dependency, the Noarr library, is retrieved automatically by CMake.
+To build the project, you need to have CMake and a C++ compiler installed. The project assumes support for C++20 or later and requires MPI to be installed on your system (and the `mpi.h` header file must be available). The other dependency, the Noarr library, is retrieved automatically by CMake.
 
 To build the project, run the following commands:
 
@@ -32,15 +42,15 @@ The script `configure.sh` creates a build directory and runs CMake to configure 
 
   The code for this variant is located in [examples/gemm/gemm.cpp](examples/gemm/gemm.cpp)
 
-- `gemm-mpi` - the distributed GEMM kernel using the proposed Noarr MPI abstraction; slight modification of `gemm`
+- `gemm-mpi` - the distributed GEMM kernel using the proposed Noarr MPI abstraction; a slight modification of the original `gemm`
 
   The code for this variant is located in [examples/gemm/gemm-mpi.cpp](examples/gemm/gemm-mpi.cpp)
 
 - `gemm-mpi-tilea-transpose` - the same distributed GEMM kernel, differing solely in the layout of the distributed sub-matrices of the input matrix `A` (no other code is changed, the code for matrix initialization and the GEMM kernel is the same as in `gemm-mpi`)
 
-  The code for this variant is located in [examples/gemm/gemm-mpi.cpp](examples/gemm/gemm-mpi.cpp) as well. It is compiled with an additional preprocessor definition `A_TILE_K_MAJOR` that changes the layout of sub-matrix tiles of `A`.
+  The code for this variant is located in [examples/gemm/gemm-mpi.cpp](examples/gemm/gemm-mpi.cpp) as well. It is compiled with an additional preprocessor definition `A_TILE_K_MAJOR`, which changes the layout of sub-matrix tiles of `A`.
 
-The two MPI-distributed GEMM kernels are proof of concept implementations of the proposed Noarr MPI abstraction that showcase the proposed layout-agnostic design. They test two different layout configurations to demonstrate that the abstraction is indeed layout-agnostic.
+The two MPI-distributed GEMM kernels are proof-of-concept implementations of the proposed Noarr MPI abstraction showcasing the proposed layout-agnostic design. They test two different layout configurations to demonstrate that the abstraction can handle different layouts without changing the GEMM kernel code.
 
 ## How to run
 
@@ -85,8 +95,6 @@ To run the tests that verify various aspects of the Noarr MPI abstraction, run t
 ```
 
 The result of the command is a list of tests and their outcomes. All tests should pass.
-
-Some tests verify that a particular function won't compile (for example, due to type mismatch or incompatible layout) and they report `Passed` if the compilation fails.
 
 ## Main abstractions
 
