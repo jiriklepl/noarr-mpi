@@ -10,7 +10,7 @@ include(CTest)
 
 FetchContent_Declare(Noarr
                     GIT_REPOSITORY https://github.com/jiriklepl/noarr-structures.git
-                    GIT_TAG        experimental)
+                    GIT_TAG        main)
 FetchContent_MakeAvailable(Noarr)
 
 find_package(MPI REQUIRED)

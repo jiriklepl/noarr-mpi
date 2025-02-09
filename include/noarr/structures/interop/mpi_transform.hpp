@@ -57,7 +57,6 @@ inline auto mpi_transform_impl(const Structure &structure, const dim_tree<Dim, B
 	-> MPI_custom_type
 requires (Structure::signature::template any_accept<Dim>)
 {
-	// TODO: constexpr bool contiguous = IsContiguous<Structure, State>;
 	constexpr bool has_lower_bound = HasLowerBoundAlong<Structure, Dim, State>;
 	constexpr bool has_stride_along = HasStrideAlong<Structure, Dim, State>;
 	constexpr bool is_uniform_along = IsUniformAlong<Structure, Dim, State>;
