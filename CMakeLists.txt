@@ -20,9 +20,6 @@ set(CMAKE_CXX_STANDARD 20)
 include_directories(include)
 include_directories(${Noarr_SOURCE_DIR}/include)
 
-add_executable(mpi-transform src/mpi_transform.cpp)
-target_link_libraries(mpi-transform MPI::MPI_CXX)
-
 add_executable(gemm examples/gemm/gemm.cpp)
 target_compile_definitions(gemm PRIVATE EXTRALARGE_DATASET DATA_TYPE_IS_FLOAT)
 
@@ -67,7 +64,6 @@ set_tests_properties(gather-type-safe-3 PROPERTIES WILL_FAIL TRUE)
 
 # ask the compiler to print maximum warnings
 if(MSVC)
-  target_compile_options(mpi-transform PRIVATE /W4)
   target_compile_options(gemm PRIVATE /W4)
   target_compile_options(gemm-mpi PRIVATE /W4)
   target_compile_options(gemm-mpi-tilea-transpose PRIVATE /W4)
@@ -79,7 +75,6 @@ if(MSVC)
   target_compile_options(gather-type-safe-2 PRIVATE /W4)
   target_compile_options(gather-type-safe-3 PRIVATE /W4)
 else()
-  target_compile_options(mpi-transform PRIVATE -Wall -Wextra -Wpedantic)
   target_compile_options(gemm PRIVATE -Wall -Wextra -Wpedantic)
   target_compile_options(gemm-mpi PRIVATE -Wall -Wextra -Wpedantic)
   target_compile_options(gemm-mpi-tilea-transpose PRIVATE -Wall -Wextra -Wpedantic)
