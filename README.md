@@ -50,7 +50,7 @@ To run the script that automatically runs each of the GEMM variants using `mpiru
 ./compare.sh
 ```
 
-The script performs $5$ warm-up runs and $10$ measurement runs of each GEMM variant. All outputs (the resulting $C$ matrix) are discarded for all runs except the last one for each variant. The execution times are printed in seconds in a CSV format. [data/compare-example.csv](data/compare-example.csv) shows a possible output of the script.
+The script performs 5 warm-up runs and 10 measurement runs of each GEMM variant. All outputs (the elements in the resulting *C* matrix) are discarded for all runs except the last one for each variant. The execution times are printed in seconds in a CSV format. [data/compare-example.csv](data/compare-example.csv) shows a possible output of the script.
 
 After all measurements are done, the script then compares the results of each variant and, if they differ, prints an error message.
 
@@ -86,7 +86,7 @@ To run the tests that verify various aspects of the Noarr MPI abstraction, run t
 
 The result of the command is a list of tests and their outcomes. All tests should pass.
 
-Some tests verify that a particular function won't compile (for example, due to type mismatch or incompatible layout) and they report \texttt{Passed} if the compilation fails.
+Some tests verify that a particular function won't compile (for example, due to type mismatch or incompatible layout) and they report `Passed` if the compilation fails.
 
 ## Main abstractions
 
