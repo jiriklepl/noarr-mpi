@@ -90,7 +90,7 @@ Some tests verify that a particular function won't compile (for example, due to 
 
 ## Main abstractions
 
-The paper describes type transformation from Noarr structures to MPI data types and MPI traversers. These two abstractions are implemented in the following files:
+The paper describes type transformation from Noarr structures to MPI data types and MPI traversers. Proof-of-concept implementations of these abstractions are located in the following files:
 
 - [include/noarr/structures/interop/mpi_transform.hpp](include/noarr/structures/interop/mpi_transform.hpp) - defines the `mpi_transform` function that transforms Noarr structures to MPI data types.
 - [include/noarr/structures/interop/mpi_traverser.hpp](include/noarr/structures/interop/mpi_traverser.hpp) - defines the `mpi_traverser_t` class that associates a Noarr traverser with an MPI communicator.
