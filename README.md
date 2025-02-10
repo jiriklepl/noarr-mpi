@@ -52,7 +52,7 @@ The script `configure.sh` creates a build directory and runs CMake to configure 
 
 The two MPI-distributed GEMM kernels are proof-of-concept implementations of the proposed Noarr MPI abstraction showcasing the proposed layout-agnostic design. They test two different layout configurations to demonstrate that the abstraction can handle different layouts without changing the GEMM kernel code, possibly improving performance by optimizing the data layout.
 
-The baseline `gemm` kernel and `gemm-mpi` kernel use inefficient data layout for the `B` matrix. The `gemm-mpi-tileb-transpose` kernel uses the same (inefficient) layout as the initial input matrix, but changes the layout during the `scatter` operation to a more efficient one for the per-node computation. The transposition of the layout involves no extra data movement and is implicitly handled by constructing appropriate MPI data types using the [mpi_transform](include/noarr/structures/interop/mpi_transform.hpp) function inside the Noarr MPI abstraction.
+The baseline `gemm` kernel and the `gemm-mpi` kernel use an inefficient data layout for the `B` matrix. The `gemm-mpi-tileb-transpose` kernel uses the same (inefficient) layout as the initial input matrix but changes the layout during the `scatter` operation to a more efficient one for the per-node computation. The transposition of the layout involves no extra data movement and is implicitly handled by constructing appropriate MPI data types using the [mpi_transform](include/noarr/structures/interop/mpi_transform.hpp) function inside the Noarr MPI abstraction.
 
 ## How to run
 
