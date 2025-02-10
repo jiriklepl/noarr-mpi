@@ -23,7 +23,7 @@ constexpr auto k_vec = noarr::vector<'k'>();
 const struct tuning {
 	DEFINE_PROTO_STRUCT(c_layout, j_vec ^ i_vec);
 	DEFINE_PROTO_STRUCT(a_layout, k_vec ^ i_vec);
-	DEFINE_PROTO_STRUCT(b_layout, j_vec ^ k_vec);
+	DEFINE_PROTO_STRUCT(b_layout, k_vec ^ j_vec);
 
 #ifdef C_TILE_J_MAJOR
 	DEFINE_PROTO_STRUCT(c_tile_layout, i_vec ^ j_vec);
@@ -38,9 +38,9 @@ const struct tuning {
 #endif
 
 #ifdef B_TILE_J_MAJOR
-	DEFINE_PROTO_STRUCT(b_tile_layout, k_vec ^ j_vec);
-#else
 	DEFINE_PROTO_STRUCT(b_tile_layout, j_vec ^ k_vec);
+#else
+	DEFINE_PROTO_STRUCT(b_tile_layout, k_vec ^ j_vec);
 #endif
 } tuning;
 

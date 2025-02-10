@@ -38,19 +38,21 @@ cd noarr-mpi
 
 The script `configure.sh` creates a build directory and runs CMake to configure the project. The script `build.sh` builds three executables:
 
-- `gemm` - the baseline GEMM kernel implemented in the Noarr library
+- `gemm` - the baseline GEMM kernel from PolyBench/C 4.2.1 implemented using the Noarr library; the layout of the `B` matrix is, for demonstration purposes, switched to a less efficient one.
 
   The code for this variant is located in [examples/gemm/gemm.cpp](examples/gemm/gemm.cpp)
 
-- `gemm-mpi` - the distributed GEMM kernel using the proposed Noarr MPI abstraction; a slight modification of the original `gemm`
+- `gemm-mpi` - the distributed GEMM kernel using the proposed Noarr MPI abstraction; a slight modification of the `gemm` kernel (shares most of the code with the baseline GEMM kernel, all data structure layouts are the same)
 
   The code for this variant is located in [examples/gemm/gemm-mpi.cpp](examples/gemm/gemm-mpi.cpp)
 
-- `gemm-mpi-tilea-transpose` - the same distributed GEMM kernel, differing solely in the layout of the distributed sub-matrices of the input matrix `A` (no other code is changed, the code for matrix initialization and the GEMM kernel is the same as in `gemm-mpi`)
+- `gemm-mpi-tileb-transpose` - the same distributed GEMM kernel, differing solely in the layout of the distributed sub-matrices of the input matrix `B` (no other code is changed, the code for matrix initialization and the GEMM kernel is the same as in `gemm-mpi`)
 
-  The code for this variant is located in [examples/gemm/gemm-mpi.cpp](examples/gemm/gemm-mpi.cpp) as well. It is compiled with an additional preprocessor definition `A_TILE_K_MAJOR`, which changes the layout of sub-matrix tiles of `A`.
+  The code for this variant is located in [examples/gemm/gemm-mpi.cpp](examples/gemm/gemm-mpi.cpp) as well. It is compiled with an additional preprocessor definition `B_TILE_J_MAJOR`, which changes the layout of sub-matrix tiles of `B`.
 
-The two MPI-distributed GEMM kernels are proof-of-concept implementations of the proposed Noarr MPI abstraction showcasing the proposed layout-agnostic design. They test two different layout configurations to demonstrate that the abstraction can handle different layouts without changing the GEMM kernel code.
+The two MPI-distributed GEMM kernels are proof-of-concept implementations of the proposed Noarr MPI abstraction showcasing the proposed layout-agnostic design. They test two different layout configurations to demonstrate that the abstraction can handle different layouts without changing the GEMM kernel code, possibly improving performance by optimizing the data layout.
+
+The baseline `gemm` kernel and `gemm-mpi` kernel use inefficient data layout for the `B` matrix. The `gemm-mpi-tileb-transpose` kernel uses the same (inefficient) layout as the initial input matrix, but changes the layout during the `scatter` operation to a more efficient one for the per-node computation. The transposition of the layout involves no extra data movement and is implicitly handled by constructing appropriate MPI data types using the [mpi_transform](include/noarr/structures/interop/mpi_transform.hpp) function inside the Noarr MPI abstraction.
 
 ## How to run
 
@@ -60,7 +62,7 @@ To run the script that automatically runs each of the GEMM variants using `mpiru
 ./compare.sh
 ```
 
-The script performs 5 warm-up runs and 10 measurement runs of each GEMM variant. All outputs (the elements in the resulting *C* matrix) are discarded for all runs except the last one for each variant. The execution times are printed in seconds in a CSV format. [data/compare-example.csv](data/compare-example.csv) shows a possible output of the script.
+The script performs 3 warm-up runs and 5 measurement runs of each GEMM variant. All outputs (the elements in the resulting *C* matrix) are discarded for all runs except the last one for each variant. The execution times are printed in seconds in a CSV format. [data/compare-example.csv](data/compare-example.csv) shows a possible output of the script. Note that each execution may take up to a minute due to data initialization and result dumping (even for the warm-up runs), so the measurements start to appear after a short delay.
 
 After all measurements are done, the script then compares the results of each variant and, if they differ, prints an error message.
 
@@ -88,7 +90,7 @@ Again, you can use the `USE_SLURM` variable to run the experiment on a Slurm clu
 
 ## Testing
 
-To run the tests that verify various aspects of the Noarr MPI abstraction, run the following command:
+To run the tests that verify the type safety of the Noarr MPI abstraction (requires `ctest`), run the following command:
 
 ```bash
 ./test.sh

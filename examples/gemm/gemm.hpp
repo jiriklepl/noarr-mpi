@@ -22,7 +22,7 @@
 #elif defined(EXTRALARGE_DATASET)
 #	define NI 2048
 #	define NJ 2560
-#	define NK 2816
+#	define NK 1408
 #endif
 
 #endif // GEMM_HPP
