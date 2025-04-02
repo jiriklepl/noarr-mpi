@@ -8,9 +8,9 @@
 #	define NJ 28
 #	define NK 30
 #elif defined(SMALL_DATASET)
-#	define NI 60
-#	define NJ 70
-#	define NK 80
+#	define NI 64
+#	define NJ 192
+#	define NK 128
 #elif defined(MEDIUM_DATASET)
 #	define NI 200
 #	define NJ 220

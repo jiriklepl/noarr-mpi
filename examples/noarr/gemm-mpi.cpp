@@ -5,9 +5,7 @@
 #include <noarr/introspection.hpp>
 #include <noarr/traversers.hpp>
 
-#include "noarr/structures/interop/mpi_algorithms.hpp"
-#include "noarr/structures/interop/mpi_traverser.hpp"
-#include "noarr/structures/interop/mpi_utility.hpp"
+#include "noarr/mpi.hpp"
 
 #include "defines.hpp"
 #include "gemm.hpp"
@@ -83,9 +81,11 @@ void kernel_gemm(auto trav, num_t alpha, auto C, num_t beta, auto A, auto B) {
 			C[state] *= beta;
 		});
 
-		inner | [=](auto state) {
-			C[state] += alpha * A[state] * B[state];
-		};
+		inner | for_dims<'j'>([=](auto inner) {
+			inner | for_each<'k'>([=](auto state) {
+				C[state] += alpha * A[state] * B[state];
+			});
+		});
 	});
 }
 
@@ -142,15 +142,16 @@ int main(int argc, char *argv[]) {
 	mpi_bcast(beta, mpi_trav, root);
 
 	const auto start = chrono::high_resolution_clock::now();
-	mpi_scatter(C, tileC, mpi_trav, root);
-	mpi_scatter(A, tileA, mpi_trav, root);
-	mpi_scatter(B, tileB, mpi_trav, root);
+	{
+		mpi_scatter(C, tileC, mpi_trav, root);
+		mpi_scatter(A, tileA, mpi_trav, root);
+		mpi_scatter(B, tileB, mpi_trav, root);
 
-	// run kernel
-	kernel_gemm(mpi_trav, alpha, tileC.get_ref(), beta, tileA.get_ref(), tileB.get_ref());
+		// run kernel
+		kernel_gemm(mpi_trav, alpha, tileC.get_ref(), beta, tileA.get_ref(), tileB.get_ref());
 
-	mpi_gather(tileC, C, mpi_trav, root);
-
+		mpi_gather(tileC, C, mpi_trav, root);
+	}
 	const auto end = chrono::high_resolution_clock::now();
 
 	const auto duration = chrono::duration<double>(end - start);
