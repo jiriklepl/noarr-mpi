@@ -19,7 +19,6 @@ include_directories(${Noarr_SOURCE_DIR}/include)
 
 add_subdirectory(examples/mpl)
 add_subdirectory(examples/noarr)
-add_subdirectory(examples/boost-mpi)
 
 #tests
 add_executable(scatter-type-safe-1 EXCLUDE_FROM_ALL tests/scatter-type-safe-1.cpp)
