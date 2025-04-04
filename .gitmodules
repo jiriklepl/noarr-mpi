@@ -1,0 +1,4 @@
+[submodule "vendor/kokkos-comm"]
+	path = vendor/kokkos-comm
+	url = https://github.com/kokkos/kokkos-comm.git
+	branch = v0.0.2
