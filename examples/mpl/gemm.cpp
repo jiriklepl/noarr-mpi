@@ -11,7 +11,6 @@
 #include <mpl/mpl.hpp>
 
 #include "defines.hpp"
-#include "mpl/layout.hpp"
 #include "gemm.hpp"
 
 using num_t = DATA_TYPE;
@@ -167,6 +166,7 @@ void kernel_gemm(num_t alpha, auto C, num_t beta, auto A, auto B,
 	// C: i x j
 	// A: i x k
 	// B: k x j
+
 	for (std::size_t i = 0; i < SI; ++i) {
 		for (std::size_t j = 0; j < SJ; ++j) {
 			C(i, j) *= beta;
@@ -232,15 +232,15 @@ int main(int argc, char *argv[]) {
 
 	for (int i = 0; i < comm_size; ++i) {
 		auto c_tile_layout_parameter = mpl::subarray_layout<num_t>::parameter{
-			/* first dimension */ {NI, SI, /* index of the first element */ SI * (i / (comm_size / 2))},
-			/* second dimension */ {NJ, SJ, /* index of the first element */ SJ * (i % (comm_size / 2))}};
+			/* first dimension */ {NI, (int)SI, /* index of the first element */ (int)(SI * (i / (comm_size / 2)))},
+			/* second dimension */ {NJ, (int)SJ, /* index of the first element */ (int)(SJ * (i % (comm_size / 2)))}};
 
 		auto a_tile_layout_parameter = mpl::subarray_layout<num_t>::parameter{
-			/* first dimension */ {NI, SI, /* index of the first element */ SI * (i / (comm_size / 2))},
+			/* first dimension */ {NI, (int)SI, /* index of the first element */ (int)(SI * (i / (comm_size / 2)))},
 			/* second dimension */ {NK, NK, /* index of the first element */ 0}};
 
 		auto b_tile_layout_parameter = mpl::subarray_layout<num_t>::parameter{
-			/* first dimension */ {NJ, SJ, /* index of the first element */ SJ * (i % (comm_size / 2))},
+			/* first dimension */ {NJ, (int)SJ, /* index of the first element */ (int)(SJ * (i % (comm_size / 2)))},
 			/* second dimension */ {NK, NK, /* index of the first element */ 0},
 		};
 

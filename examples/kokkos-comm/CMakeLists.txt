@@ -1,0 +1,14 @@
+cmake_minimum_required(VERSION 3.15)
+
+set(Kokkos_ENABLE_SERIAL ON CACHE BOOL "" FORCE)
+set(Kokkos_ENABLE_OPENMP ON CACHE BOOL "" FORCE)
+
+include(FetchContent)
+
+find_package(KokkosComm REQUIRED)
+
+add_executable(gemm-kokkosComm gemm.cpp)
+target_compile_definitions(gemm-kokkosComm PRIVATE SMALL_DATASET DATA_TYPE_IS_FLOAT)
+target_include_directories(gemm-kokkosComm PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/../include)
+
+target_link_libraries(gemm-kokkosComm KokkosComm::KokkosComm)
