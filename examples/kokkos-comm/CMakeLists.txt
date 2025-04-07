@@ -8,7 +8,7 @@ include(FetchContent)
 find_package(KokkosComm REQUIRED)
 
 add_executable(gemm-kokkosComm gemm.cpp)
-target_compile_definitions(gemm-kokkosComm PRIVATE SMALL_DATASET DATA_TYPE_IS_FLOAT)
+target_compile_definitions(gemm-kokkosComm PRIVATE ${DATASET}_DATASET DATA_TYPE_IS_${DATATYPE})
 target_include_directories(gemm-kokkosComm PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/../include)
 
 target_link_libraries(gemm-kokkosComm KokkosComm::KokkosComm)
