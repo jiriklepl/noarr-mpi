@@ -270,8 +270,6 @@ int main(int argc, char *argv[]) {
 	kernel_gemm(alpha, tileC, beta, tileA, tileB, SI, SJ, NK);
 
 	comm_world.gatherv(root, tileC_data.get(), c_tile_layout, C_data.get(), c_layouts);
-	comm_world.gatherv(root, tileA_data.get(), a_tile_layout, A_data.get(), a_layouts);
-	comm_world.gatherv(root, tileB_data.get(), b_tile_layout, B_data.get(), b_layouts);
 
 	const auto end = chrono::high_resolution_clock::now();
 

@@ -11,4 +11,4 @@ add_executable(gemm-kokkosComm gemm.cpp)
 target_compile_definitions(gemm-kokkosComm PRIVATE ${DATASET}_DATASET DATA_TYPE_IS_${DATATYPE})
 target_include_directories(gemm-kokkosComm PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/../include)
 
-target_link_libraries(gemm-kokkosComm KokkosComm::KokkosComm)
+target_link_libraries(gemm-kokkosComm PRIVATE KokkosComm::KokkosComm)
