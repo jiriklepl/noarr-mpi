@@ -189,24 +189,23 @@ int main(int argc, char *argv[]) {
 	const mpl::communicator &comm_world{mpl::environment::comm_world()};
 
 	// const noarr::MPI_session mpi_session(argc, argv);
-	const int comm_rank = comm_world.rank();
+	const int rank = comm_world.rank();
+	const int size = comm_world.size();
 	constexpr int root = 0;
 
-	const int comm_size = comm_world.size();
-
 	const auto C_data =
-		(comm_rank == root) ? std::make_unique<num_t[]>(NI * NJ) : nullptr;
+		(rank == root) ? std::make_unique<num_t[]>(NI * NJ) : nullptr;
 	const auto A_data =
-		(comm_rank == root) ? std::make_unique<num_t[]>(NI * NK) : nullptr;
+		(rank == root) ? std::make_unique<num_t[]>(NI * NK) : nullptr;
 	const auto B_data =
-		(comm_rank == root) ? std::make_unique<num_t[]>(NK * NJ) : nullptr;
+		(rank == root) ? std::make_unique<num_t[]>(NK * NJ) : nullptr;
 
 	const auto C = tuning.c_layout(C_data.get(), NI, NJ);
 	const auto A = tuning.a_layout(A_data.get(), NI, NK);
 	const auto B = tuning.b_layout(B_data.get(), NJ, NK);
 
 	const std::size_t SI = NI / 2;
-	const std::size_t SJ = NJ / (comm_size / 2);
+	const std::size_t SJ = NJ / (size / 2);
 
 	const auto tileC_data = std::make_unique<num_t[]>(SI * SJ);
 	const auto tileA_data = std::make_unique<num_t[]>(SI * NK);
@@ -219,7 +218,7 @@ int main(int argc, char *argv[]) {
 	num_t alpha{};
 	num_t beta{};
 
-	if (comm_rank == root) {
+	if (rank == root) {
 		init_array(alpha, C, beta, A, B);
 	}
 
@@ -230,17 +229,17 @@ int main(int argc, char *argv[]) {
 	mpl::layouts<num_t> a_layouts;
 	mpl::layouts<num_t> b_layouts;
 
-	for (int i = 0; i < comm_size; ++i) {
+	for (int i = 0; i < size; ++i) {
 		auto c_tile_layout_parameter = mpl::subarray_layout<num_t>::parameter{
-			/* first dimension */ {NI, (int)SI, /* index of the first element */ (int)(SI * (i / (comm_size / 2)))},
-			/* second dimension */ {NJ, (int)SJ, /* index of the first element */ (int)(SJ * (i % (comm_size / 2)))}};
+			/* first dimension */ {NI, (int)SI, /* index of the first element */ (int)(SI * (i / (size / 2)))},
+			/* second dimension */ {NJ, (int)SJ, /* index of the first element */ (int)(SJ * (i % (size / 2)))}};
 
 		auto a_tile_layout_parameter = mpl::subarray_layout<num_t>::parameter{
-			/* first dimension */ {NI, (int)SI, /* index of the first element */ (int)(SI * (i / (comm_size / 2)))},
+			/* first dimension */ {NI, (int)SI, /* index of the first element */ (int)(SI * (i / (size / 2)))},
 			/* second dimension */ {NK, NK, /* index of the first element */ 0}};
 
 		auto b_tile_layout_parameter = mpl::subarray_layout<num_t>::parameter{
-			/* first dimension */ {NJ, (int)SJ, /* index of the first element */ (int)(SJ * (i % (comm_size / 2)))},
+			/* first dimension */ {NJ, (int)SJ, /* index of the first element */ (int)(SJ * (i % (size / 2)))},
 			/* second dimension */ {NK, NK, /* index of the first element */ 0},
 		};
 
@@ -276,7 +275,7 @@ int main(int argc, char *argv[]) {
 	const auto duration = chrono::duration<double>(end - start);
 
 	// print results
-	if (comm_rank == root) {
+	if (rank == root) {
 		std::cerr << std::fixed << std::setprecision(6);
 		std::cerr << duration.count() << std::endl;
 		if (argc > 0 && argv[0] != ""s) {
