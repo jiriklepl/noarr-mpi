@@ -154,7 +154,7 @@ void init_array(num_t &alpha, auto C, num_t &beta, auto A, auto B) {
 
 	for (std::size_t j = 0; j < NJ; ++j) {
 		for (std::size_t k = 0; k < NK; ++k) {
-			B(j, k) = (num_t)(k * (j + 2) % NJ) / NJ;
+			B(k, j) = (num_t)(k * (j + 2) % NJ) / NJ;
 		}
 	}
 }
@@ -174,7 +174,7 @@ void kernel_gemm(num_t alpha, auto C, num_t beta, auto A, auto B,
 
 		for (std::size_t j = 0; j < SJ; ++j) {
 			for (std::size_t k = 0; k < SK; ++k) {
-				C(i, j) += alpha * A(i, k) * B(j, k);
+				C(i, j) += alpha * A(i, k) * B(k, j);
 			}
 		}
 	}
@@ -202,18 +202,21 @@ int main(int argc, char *argv[]) {
 
 	const auto C = tuning.c_layout(C_data.get(), NI, NJ);
 	const auto A = tuning.a_layout(A_data.get(), NI, NK);
-	const auto B = tuning.b_layout(B_data.get(), NJ, NK);
+	const auto B = tuning.b_layout(B_data.get(), NK, NJ);
 
-	const std::size_t SI = NI / 2;
-	const std::size_t SJ = NJ / (size / 2);
+	const int i_tiles = (argc > 1) ? std::atoi(argv[1]) : 1;
+	const int j_tiles = size / i_tiles;
 
-	const auto tileC_data = std::make_unique<num_t[]>(SI * SJ);
-	const auto tileA_data = std::make_unique<num_t[]>(SI * NK);
-	const auto tileB_data = std::make_unique<num_t[]>(SJ * NK);
+	const int SI = NI / i_tiles;
+	const int SJ = NJ / j_tiles;
+
+	const auto tileC_data = std::make_unique<num_t[]>((std::size_t)(SI * SJ));
+	const auto tileA_data = std::make_unique<num_t[]>((std::size_t)(SI * NK));
+	const auto tileB_data = std::make_unique<num_t[]>((std::size_t)(SJ * NK));
 
 	const auto tileC = tuning.c_tile_layout(tileC_data.get(), SI, SJ);
 	const auto tileA = tuning.a_tile_layout(tileA_data.get(), SI, NK);
-	const auto tileB = tuning.b_tile_layout(tileB_data.get(), SJ, NK);
+	const auto tileB = tuning.b_tile_layout(tileB_data.get(), NK, SJ);
 
 	num_t alpha{};
 	num_t beta{};
@@ -229,19 +232,21 @@ int main(int argc, char *argv[]) {
 	mpl::layouts<num_t> a_layouts;
 	mpl::layouts<num_t> b_layouts;
 
-	for (int i = 0; i < size; ++i) {
+	for (int r = 0; r < size; ++r) {
+		const int i = r / j_tiles;
+		const int j = r % j_tiles;
+
 		auto c_tile_layout_parameter = mpl::subarray_layout<num_t>::parameter{
-			/* first dimension */ {NI, (int)SI, /* index of the first element */ (int)(SI * (i / (size / 2)))},
-			/* second dimension */ {NJ, (int)SJ, /* index of the first element */ (int)(SJ * (i % (size / 2)))}};
+			/* first dimension */ {NI, (int)SI, /* index of the first element */ (int)(SI * i)},
+			/* second dimension */ {NJ, (int)SJ, /* index of the first element */ (int)(SJ * j)}};
 
 		auto a_tile_layout_parameter = mpl::subarray_layout<num_t>::parameter{
-			/* first dimension */ {NI, (int)SI, /* index of the first element */ (int)(SI * (i / (size / 2)))},
+			/* first dimension */ {NI, (int)SI, /* index of the first element */ (int)(SI * i)},
 			/* second dimension */ {NK, NK, /* index of the first element */ 0}};
 
 		auto b_tile_layout_parameter = mpl::subarray_layout<num_t>::parameter{
-			/* first dimension */ {NJ, (int)SJ, /* index of the first element */ (int)(SJ * (i % (size / 2)))},
 			/* second dimension */ {NK, NK, /* index of the first element */ 0},
-		};
+			/* first dimension */ {NJ, (int)SJ, /* index of the first element */ (int)(SJ * j)}};
 
 		const auto c_tile_layout = mpl::subarray_layout<num_t>{c_tile_layout_parameter};
 		const auto a_tile_layout = mpl::subarray_layout<num_t>{a_tile_layout_parameter};
@@ -258,9 +263,9 @@ int main(int argc, char *argv[]) {
 	const auto a_layout = mpl::contiguous_layout<num_t>{NI * NK};
 	const auto b_layout = mpl::contiguous_layout<num_t>{NK * NJ};
 
-	const auto c_tile_layout =  mpl::contiguous_layout<num_t>{SI * SJ};
-	const auto a_tile_layout =  mpl::contiguous_layout<num_t>{SI * NK};
-	const auto b_tile_layout =  mpl::contiguous_layout<num_t>{SJ * NK};
+	const auto c_tile_layout =  mpl::contiguous_layout<num_t>{(std::size_t)(SI * SJ)};
+	const auto a_tile_layout =  mpl::contiguous_layout<num_t>{(std::size_t)(SI * NK)};
+	const auto b_tile_layout =  mpl::contiguous_layout<num_t>{(std::size_t)(SJ * NK)};
 
 	comm_world.scatterv(root, C_data.get(), c_layouts, tileC_data.get(), c_tile_layout);
 	comm_world.scatterv(root, A_data.get(), a_layouts, tileA_data.get(), a_tile_layout);

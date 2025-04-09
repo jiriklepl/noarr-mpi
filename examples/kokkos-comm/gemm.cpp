@@ -75,7 +75,7 @@ void init_array(num_t &alpha, auto C, num_t &beta, auto A, auto B) {
 
 	for (std::size_t j = 0; j < NJ; ++j) {
 		for (std::size_t k = 0; k < NK; ++k) {
-			B(j, k) = (num_t)(k * (j + 2) % NJ) / NJ;
+			B(k, j) = (num_t)(k * (j + 2) % NJ) / NJ;
 		}
 	}
 }
@@ -95,7 +95,7 @@ void kernel_gemm(num_t alpha, auto C, num_t beta, auto A, auto B,
 
 		for (std::size_t j = 0; j < SJ; ++j) {
 			for (std::size_t k = 0; k < SK; ++k) {
-				C(i, j) += alpha * A(i, k) * B(j, k);
+				C(i, j) += alpha * A(i, k) * B(k, j);
 			}
 		}
 	}
@@ -122,12 +122,13 @@ void run(int argc, char *argv[]) {
 
 	const auto C = tuning.c_layout(C_data.get(), NI, NJ);
 	const auto A = tuning.a_layout(A_data.get(), NI, NK);
-	const auto B = tuning.b_layout(B_data.get(), NJ, NK);
+	const auto B = tuning.b_layout(B_data.get(), NK, NJ);
 
-	const int i_tiles = 2;
+	const int i_tiles = (argc > 1) ? std::atoi(argv[1]) : 1;
+	const int j_tiles = size / i_tiles;
 
 	const std::size_t SI = NI / i_tiles;
-	const std::size_t SJ = NJ / (size / i_tiles);
+	const std::size_t SJ = NJ / j_tiles;
 
 	const auto tileC_data = std::make_unique<num_t[]>(SI * SJ);
 	const auto tileA_data = std::make_unique<num_t[]>(SI * NK);
@@ -135,7 +136,7 @@ void run(int argc, char *argv[]) {
 
 	const auto tileC = tuning.c_tile_layout(tileC_data.get(), SI, SJ);
 	const auto tileA = tuning.a_tile_layout(tileA_data.get(), SI, NK);
-	const auto tileB = tuning.b_tile_layout(tileB_data.get(), SJ, NK);
+	const auto tileB = tuning.b_tile_layout(tileB_data.get(), NK, SJ);
 
 	num_t alpha{};
 	num_t beta{};
@@ -153,12 +154,12 @@ void run(int argc, char *argv[]) {
 
 	if (rank == root) {
 		for (int r = 0; r < size; ++r) {
-			int i = r / (size / i_tiles);
-			int j = r % (size / i_tiles);
+			int i = r / j_tiles;
+			int j = r % j_tiles;
 
 			const auto c_subview = Kokkos::subview(C, std::make_pair<int, int>(i * SI, (i + 1) * SI), std::make_pair<int, int>(j * SJ, (j + 1) * SJ));
 			const auto a_subview = Kokkos::subview(A, std::make_pair<int, int>(i * SI, (i + 1) * SI), Kokkos::ALL);
-			const auto b_subview = Kokkos::subview(B, std::make_pair<int, int>(j * SJ, (j + 1) * SJ), Kokkos::ALL);
+			const auto b_subview = Kokkos::subview(B, Kokkos::ALL, std::make_pair<int, int>(j * SJ, (j + 1) * SJ));
 
 			reqs.push_back(KokkosComm::send(handle, c_subview, r));
 			reqs.push_back(KokkosComm::send(handle, a_subview, r));
@@ -180,8 +181,8 @@ void run(int argc, char *argv[]) {
 
 	if (rank == root) {
 		for (int r = 0; r < size; ++r) {
-			int i = r / (size / i_tiles);
-			int j = r % (size / i_tiles);
+			int i = r / j_tiles;
+			int j = r % j_tiles;
 
 			const auto c_subview = Kokkos::subview(C, std::make_pair<int, int>(i * SI, (i + 1) * SI), std::make_pair<int, int>(j * SJ, (j + 1) * SJ));
 
@@ -191,7 +192,6 @@ void run(int argc, char *argv[]) {
 
 	KokkosComm::wait_all(reqs);
 	reqs.clear();
-
 
 	const auto end = chrono::high_resolution_clock::now();
 

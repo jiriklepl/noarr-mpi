@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.15)
+cmake_minimum_required(VERSION 3.20)
 
 project(noarr_mpi
         VERSION 1.0
@@ -10,11 +10,11 @@ include(CTest)
 
 find_package(MPI REQUIRED)
 
-set(CMAKE_CXX_STANDARD 20)
+set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
-set(DATASET "SMALL" CACHE STRING "Dataset size")
+set(DATASET "EXTRALARGE" CACHE STRING "Dataset size")
 set_property(CACHE DATASET PROPERTY STRINGS SMALL MEDIUM LARGE EXTRALARGE)
 
 set(DATATYPE "FLOAT" CACHE STRING "Data type")
@@ -26,6 +26,7 @@ include_directories(${Noarr_SOURCE_DIR}/include)
 add_subdirectory(examples/mpl)
 add_subdirectory(examples/noarr)
 add_subdirectory(examples/kokkos-comm)
+add_subdirectory(examples/boost)
 
 #tests
 add_executable(scatter-type-safe-1 EXCLUDE_FROM_ALL tests/scatter-type-safe-1.cpp)
