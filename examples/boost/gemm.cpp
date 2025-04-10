@@ -12,8 +12,8 @@
 
 #include <experimental/mdspan>
 
-#include <boost/archive/text_oarchive.hpp>
 #include <boost/archive/text_iarchive.hpp>
+#include <boost/archive/text_oarchive.hpp>
 #include <boost/mpi.hpp>
 
 #include "defines.hpp"
@@ -32,24 +32,21 @@ public:
 	using index_type = typename MDSpan::index_type;
 
 	matrix() = default;
+
 	explicit matrix(MDSpan data) : _data(data) {}
 
-	const MDSpan &mdspan() const {
-		return _data;
-	}
+	const MDSpan &mdspan() const { return _data; }
 
-	MDSpan &mdspan() {
-		return _data;
-	}
+	MDSpan &mdspan() { return _data; }
 
 private:
 	friend class boost::serialization::access;
 
 	template<class Archive>
-	void serialize(Archive & ar, const unsigned int version) const {
+	void serialize(Archive &ar, const unsigned int version) const {
 		for (index_type i_row = 0; i_row < _data.extent(0); ++i_row) {
 			for (index_type i_col = 0; i_col < _data.extent(1); ++i_col) {
-				ar & _data[i_row, i_col];
+				ar &_data[i_row, i_col];
 			}
 		}
 	}
@@ -61,32 +58,42 @@ template<typename MDSpan>
 class matrix_factory {
 public:
 	using data_handle_type = typename MDSpan::data_handle_type;
+
 	constexpr matrix<MDSpan> operator()(data_handle_type data, std::size_t rows, std::size_t cols) const {
 		return matrix<MDSpan>{MDSpan{data, rows, cols}};
 	}
 };
 
 const struct tuning {
-	DEFINE_PROTO_STRUCT(c_layout, matrix_factory<stdex::mdspan<num_t, stdex::dextents<std::size_t, 2>, stdex::layout_right>>{});
-	DEFINE_PROTO_STRUCT(a_layout, matrix_factory<stdex::mdspan<num_t, stdex::dextents<std::size_t, 2>, stdex::layout_right>>{});
-	DEFINE_PROTO_STRUCT(b_layout, matrix_factory<stdex::mdspan<num_t, stdex::dextents<std::size_t, 2>, stdex::layout_right>>{});
+	DEFINE_PROTO_STRUCT(c_layout,
+	                    matrix_factory<stdex::mdspan<num_t, stdex::dextents<std::size_t, 2>, stdex::layout_right>>{});
+	DEFINE_PROTO_STRUCT(a_layout,
+	                    matrix_factory<stdex::mdspan<num_t, stdex::dextents<std::size_t, 2>, stdex::layout_right>>{});
+	DEFINE_PROTO_STRUCT(b_layout,
+	                    matrix_factory<stdex::mdspan<num_t, stdex::dextents<std::size_t, 2>, stdex::layout_right>>{});
 
 #ifdef C_TILE_J_MAJOR
-	DEFINE_PROTO_STRUCT(c_tile_layout, matrix_factory<stdex::mdspan<num_t, stdex::dextents<std::size_t, 2>, stdex::layout_left>>{});
+	DEFINE_PROTO_STRUCT(c_tile_layout,
+	                    matrix_factory<stdex::mdspan<num_t, stdex::dextents<std::size_t, 2>, stdex::layout_left>>{});
 #else
-	DEFINE_PROTO_STRUCT(c_tile_layout, matrix_factory<stdex::mdspan<num_t, stdex::dextents<std::size_t, 2>, stdex::layout_right>>{});
+	DEFINE_PROTO_STRUCT(c_tile_layout,
+	                    matrix_factory<stdex::mdspan<num_t, stdex::dextents<std::size_t, 2>, stdex::layout_right>>{});
 #endif
 
 #ifdef A_TILE_K_MAJOR
-	DEFINE_PROTO_STRUCT(a_tile_layout, matrix_factory<stdex::mdspan<num_t, stdex::dextents<std::size_t, 2>, stdex::layout_left>>{});
+	DEFINE_PROTO_STRUCT(a_tile_layout,
+	                    matrix_factory<stdex::mdspan<num_t, stdex::dextents<std::size_t, 2>, stdex::layout_left>>{});
 #else
-	DEFINE_PROTO_STRUCT(a_tile_layout, matrix_factory<stdex::mdspan<num_t, stdex::dextents<std::size_t, 2>, stdex::layout_right>>{});
+	DEFINE_PROTO_STRUCT(a_tile_layout,
+	                    matrix_factory<stdex::mdspan<num_t, stdex::dextents<std::size_t, 2>, stdex::layout_right>>{});
 #endif
 
 #ifdef B_TILE_J_MAJOR
-	DEFINE_PROTO_STRUCT(b_tile_layout, matrix_factory<stdex::mdspan<num_t, stdex::dextents<std::size_t, 2>, stdex::layout_left>>{});
+	DEFINE_PROTO_STRUCT(b_tile_layout,
+	                    matrix_factory<stdex::mdspan<num_t, stdex::dextents<std::size_t, 2>, stdex::layout_left>>{});
 #else
-	DEFINE_PROTO_STRUCT(b_tile_layout, matrix_factory<stdex::mdspan<num_t, stdex::dextents<std::size_t, 2>, stdex::layout_right>>{});
+	DEFINE_PROTO_STRUCT(b_tile_layout,
+	                    matrix_factory<stdex::mdspan<num_t, stdex::dextents<std::size_t, 2>, stdex::layout_right>>{});
 #endif
 } tuning;
 
@@ -120,8 +127,7 @@ void init_array(num_t &alpha, auto C, num_t &beta, auto A, auto B) {
 
 // computation kernel
 [[gnu::flatten, gnu::noinline]]
-void kernel_gemm(num_t alpha, auto C, num_t beta, auto A, auto B,
-				 std::size_t SI, std::size_t SJ, std::size_t SK) {
+void kernel_gemm(num_t alpha, auto C, num_t beta, auto A, auto B, std::size_t SI, std::size_t SJ, std::size_t SK) {
 	// C: i x j
 	// A: i x k
 	// B: k x j
@@ -153,12 +159,9 @@ int main(int argc, char *argv[]) {
 	const int size = world.size();
 	constexpr int root = 0;
 
-	const auto C_data =
-		(rank == root) ? std::make_unique<num_t[]>(NI * NJ) : nullptr;
-	const auto A_data =
-		(rank == root) ? std::make_unique<num_t[]>(NI * NK) : nullptr;
-	const auto B_data =
-		(rank == root) ? std::make_unique<num_t[]>(NK * NJ) : nullptr;
+	const auto C_data = (rank == root) ? std::make_unique<num_t[]>(NI * NJ) : nullptr;
+	const auto A_data = (rank == root) ? std::make_unique<num_t[]>(NI * NK) : nullptr;
+	const auto B_data = (rank == root) ? std::make_unique<num_t[]>(NK * NJ) : nullptr;
 
 	const auto C = tuning.c_layout(C_data.get(), NI, NJ);
 	const auto A = tuning.a_layout(A_data.get(), NI, NK);
@@ -196,17 +199,20 @@ int main(int argc, char *argv[]) {
 		const int i = r / j_tiles;
 		const int j = r % j_tiles;
 
-		c_layouts.emplace_back(stdex::submdspan(C.mdspan(),
-			/* first dimension */ std::tuple<std::size_t, std::size_t>{SI * i, SI * (i + 1)},
-			/* second dimension */ std::tuple<std::size_t, std::size_t>{SJ * j, SJ * (j + 1)}));
+		c_layouts.emplace_back(
+			stdex::submdspan(C.mdspan(),
+		                     /* first dimension */ std::tuple<std::size_t, std::size_t>{SI * i, SI * (i + 1)},
+		                     /* second dimension */ std::tuple<std::size_t, std::size_t>{SJ * j, SJ * (j + 1)}));
 
-		a_layouts.emplace_back(stdex::submdspan(A.mdspan(),
-			/* first dimension */ std::tuple<std::size_t, std::size_t>{SI * i, SI * (i + 1)},
-			/* second dimension */ stdex::full_extent));
+		a_layouts.emplace_back(
+			stdex::submdspan(A.mdspan(),
+		                     /* first dimension */ std::tuple<std::size_t, std::size_t>{SI * i, SI * (i + 1)},
+		                     /* second dimension */ stdex::full_extent));
 
-		b_layouts.emplace_back(stdex::submdspan(B.mdspan(),
-			/* first dimension */ stdex::full_extent,
-			/* second dimension */ std::tuple<std::size_t, std::size_t>{SJ * j, SJ * (j + 1)}));
+		b_layouts.emplace_back(
+			stdex::submdspan(B.mdspan(),
+		                     /* first dimension */ stdex::full_extent,
+		                     /* second dimension */ std::tuple<std::size_t, std::size_t>{SJ * j, SJ * (j + 1)}));
 	}
 
 	const auto start = chrono::high_resolution_clock::now();

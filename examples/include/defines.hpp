@@ -6,8 +6,7 @@
 
 #define AUTO_FIELD(name, ...) decltype(__VA_ARGS__) name = __VA_ARGS__
 
-#define DEFINE_PROTO_STRUCT(name, ...)                                                                                 \
-	AUTO_FIELD(name, __VA_ARGS__)
+#define DEFINE_PROTO_STRUCT(name, ...) AUTO_FIELD(name, __VA_ARGS__)
 
 #if !defined(MINI_DATASET) && !defined(SMALL_DATASET) && !defined(MEDIUM_DATASET) && !defined(LARGE_DATASET) &&        \
 	!defined(EXTRALARGE_DATASET)

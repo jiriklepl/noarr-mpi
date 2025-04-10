@@ -11,8 +11,8 @@
 
 #include <mpi.h>
 
-#include <Kokkos_Core.hpp>
 #include <KokkosComm/KokkosComm.hpp>
+#include <Kokkos_Core.hpp>
 
 #include "defines.hpp"
 #include "gemm.hpp"
@@ -29,9 +29,9 @@ struct matrix_factory {
 };
 
 const struct tuning {
-DEFINE_PROTO_STRUCT(c_layout, matrix_factory<num_t, Kokkos::LayoutRight>{});
-DEFINE_PROTO_STRUCT(a_layout, matrix_factory<num_t, Kokkos::LayoutRight>{});
-DEFINE_PROTO_STRUCT(b_layout, matrix_factory<num_t, Kokkos::LayoutRight>{});
+	DEFINE_PROTO_STRUCT(c_layout, matrix_factory<num_t, Kokkos::LayoutRight>{});
+	DEFINE_PROTO_STRUCT(a_layout, matrix_factory<num_t, Kokkos::LayoutRight>{});
+	DEFINE_PROTO_STRUCT(b_layout, matrix_factory<num_t, Kokkos::LayoutRight>{});
 
 #ifdef C_TILE_J_MAJOR
 	DEFINE_PROTO_STRUCT(c_tile_layout, matrix_factory<num_t, Kokkos::LayoutLeft>{});
@@ -82,8 +82,7 @@ void init_array(num_t &alpha, auto C, num_t &beta, auto A, auto B) {
 
 // computation kernel
 [[gnu::flatten, gnu::noinline]]
-void kernel_gemm(num_t alpha, auto C, num_t beta, auto A, auto B,
-				 std::size_t SI, std::size_t SJ, std::size_t SK) {
+void kernel_gemm(num_t alpha, auto C, num_t beta, auto A, auto B, std::size_t SI, std::size_t SJ, std::size_t SK) {
 	// C: i x j
 	// A: i x k
 	// B: j x k
@@ -113,12 +112,9 @@ void run(int argc, char *argv[]) {
 	const int size = handle.size();
 	constexpr int root = 0;
 
-	const auto C_data =
-		(rank == root) ? std::make_unique<num_t[]>(NI * NJ) : nullptr;
-	const auto A_data =
-		(rank == root) ? std::make_unique<num_t[]>(NI * NK) : nullptr;
-	const auto B_data =
-		(rank == root) ? std::make_unique<num_t[]>(NK * NJ) : nullptr;
+	const auto C_data = (rank == root) ? std::make_unique<num_t[]>(NI * NJ) : nullptr;
+	const auto A_data = (rank == root) ? std::make_unique<num_t[]>(NI * NK) : nullptr;
+	const auto B_data = (rank == root) ? std::make_unique<num_t[]>(NK * NJ) : nullptr;
 
 	const auto C = tuning.c_layout(C_data.get(), NI, NJ);
 	const auto A = tuning.a_layout(A_data.get(), NI, NK);
@@ -157,7 +153,8 @@ void run(int argc, char *argv[]) {
 			int i = r / j_tiles;
 			int j = r % j_tiles;
 
-			const auto c_subview = Kokkos::subview(C, std::make_pair<int, int>(i * SI, (i + 1) * SI), std::make_pair<int, int>(j * SJ, (j + 1) * SJ));
+			const auto c_subview = Kokkos::subview(C, std::make_pair<int, int>(i * SI, (i + 1) * SI),
+			                                       std::make_pair<int, int>(j * SJ, (j + 1) * SJ));
 			const auto a_subview = Kokkos::subview(A, std::make_pair<int, int>(i * SI, (i + 1) * SI), Kokkos::ALL);
 			const auto b_subview = Kokkos::subview(B, Kokkos::ALL, std::make_pair<int, int>(j * SJ, (j + 1) * SJ));
 
@@ -178,13 +175,13 @@ void run(int argc, char *argv[]) {
 
 	reqs.push_back(KokkosComm::send(handle, tileC, root));
 
-
 	if (rank == root) {
 		for (int r = 0; r < size; ++r) {
 			int i = r / j_tiles;
 			int j = r % j_tiles;
 
-			const auto c_subview = Kokkos::subview(C, std::make_pair<int, int>(i * SI, (i + 1) * SI), std::make_pair<int, int>(j * SJ, (j + 1) * SJ));
+			const auto c_subview = Kokkos::subview(C, std::make_pair<int, int>(i * SI, (i + 1) * SI),
+			                                       std::make_pair<int, int>(j * SJ, (j + 1) * SJ));
 
 			reqs.push_back(KokkosComm::recv(handle, c_subview, r));
 		}

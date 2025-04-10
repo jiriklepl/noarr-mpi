@@ -77,14 +77,10 @@ void kernel_gemm(auto trav, num_t alpha, auto C, num_t beta, auto A, auto B) {
 	using namespace noarr;
 
 	trav | for_dims<'i'>([=](auto inner) {
-		inner | for_each<'j'>([=](auto state) {
-			C[state] *= beta;
-		});
+		inner | for_each<'j'>([=](auto state) { C[state] *= beta; });
 
 		inner | for_dims<'j'>([=](auto inner) {
-			inner | for_each<'k'>([=](auto state) {
-				C[state] += alpha * A[state] * B[state];
-			});
+			inner | for_each<'k'>([=](auto state) { C[state] += alpha * A[state] * B[state]; });
 		});
 	});
 }
@@ -124,7 +120,8 @@ int main(int argc, char *argv[]) {
 
 	const std::size_t i_tiles = (argc > 1) ? std::atoi(argv[1]) : 1;
 
-	const auto trav = noarr::traverser(C, A, B) ^ noarr::set_length<'I'>(i_tiles) ^ noarr::merge_blocks<'I', 'J', 'r'>();
+	const auto trav =
+		noarr::traverser(C, A, B) ^ noarr::set_length<'I'>(i_tiles) ^ noarr::merge_blocks<'I', 'J', 'r'>();
 	const auto mpi_trav = noarr::mpi_traverser<'r'>(trav, MPI_COMM_WORLD);
 
 	const auto tileC = noarr::bag(scalar ^ tuning.c_tile_layout ^ lengths_like<'j', 'i'>(mpi_trav));

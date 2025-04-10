@@ -1,4 +1,5 @@
-// From: https://github.com/jiriklepl/ParCo2024-artifact/blob/c0b2befc1980b3df7002b0fa77efc7d64044b232/PolybenchC-Noarr/linear-algebra/blas/gemm/gemm.cpp
+// From:
+// https://github.com/jiriklepl/ParCo2024-artifact/blob/c0b2befc1980b3df7002b0fa77efc7d64044b232/PolybenchC-Noarr/linear-algebra/blas/gemm/gemm.cpp
 #include <chrono>
 #include <iomanip>
 #include <iostream>
@@ -56,17 +57,13 @@ void kernel_gemm(num_t alpha, num_t beta, auto C, auto A, auto B) {
 	// B: k x j
 	using namespace noarr;
 
-	#pragma scop
+#pragma scop
 	traverser(C, A, B) | for_dims<'i'>([=](auto inner) {
-		inner | for_each<'j'>([=](auto state) {
-			C[state] *= beta;
-		});
+		inner | for_each<'j'>([=](auto state) { C[state] *= beta; });
 
-		inner | [=](auto state) {
-			C[state] += alpha * A[state] * B[state];
-		};
+		inner | [=](auto state) { C[state] += alpha * A[state] * B[state]; };
 	});
-	#pragma endscop
+#pragma endscop
 }
 
 } // namespace

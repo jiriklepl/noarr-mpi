@@ -17,10 +17,7 @@ using num_t = DATA_TYPE;
 
 namespace {
 
-enum MatrixOrder : std::uint8_t {
-	COrder,
-	FOrder
-};
+enum MatrixOrder : std::uint8_t { COrder, FOrder };
 
 constexpr MatrixOrder RowMajor = COrder;
 constexpr MatrixOrder ColMajor = FOrder;
@@ -52,49 +49,35 @@ public:
 		return _rows * _cols;
 	}
 
-	constexpr reference operator()(size_type i_row, size_type i_col) const requires(Order == RowMajor) {
+	constexpr reference operator()(size_type i_row, size_type i_col) const
+	requires (Order == RowMajor)
+	{
 		return _data[i_row * _cols + i_col];
 	}
 
-	constexpr reference operator()(size_type i_row, size_type i_col) const requires(Order == ColMajor) {
+	constexpr reference operator()(size_type i_row, size_type i_col) const
+	requires (Order == ColMajor)
+	{
 		return _data[i_col * _rows + i_row];
 	}
 
-	constexpr reference operator[](size_type i) const {
-		return _data[i];
-	}
+	constexpr reference operator[](size_type i) const { return _data[i]; }
 
-	constexpr pointer begin() const {
-		return _data;
-	}
+	constexpr pointer begin() const { return _data; }
 
-	constexpr pointer end() const {
-		return _data + size();
-	}
+	constexpr pointer end() const { return _data + size(); }
 
-	constexpr const_pointer cbegin() const {
-		return _data;
-	}
+	constexpr const_pointer cbegin() const { return _data; }
 
-	constexpr const_pointer cend() const {
-		return _data + size();
-	}
+	constexpr const_pointer cend() const { return _data + size(); }
 
-	constexpr pointer data() const {
-		return _data;
-	}
+	constexpr pointer data() const { return _data; }
 
-	constexpr const_pointer cdata() const {
-		return _data;
-	}
+	constexpr const_pointer cdata() const { return _data; }
 
-	constexpr size_type rows() const {
-		return _rows;
-	}
+	constexpr size_type rows() const { return _rows; }
 
-	constexpr size_type cols() const {
-		return _cols;
-	}
+	constexpr size_type cols() const { return _cols; }
 };
 
 template<typename T, MatrixOrder Order = RowMajor>
@@ -161,8 +144,7 @@ void init_array(num_t &alpha, auto C, num_t &beta, auto A, auto B) {
 
 // computation kernel
 [[gnu::flatten, gnu::noinline]]
-void kernel_gemm(num_t alpha, auto C, num_t beta, auto A, auto B,
-				 std::size_t SI, std::size_t SJ, std::size_t SK) {
+void kernel_gemm(num_t alpha, auto C, num_t beta, auto A, auto B, std::size_t SI, std::size_t SJ, std::size_t SK) {
 	// C: i x j
 	// A: i x k
 	// B: k x j
@@ -193,12 +175,9 @@ int main(int argc, char *argv[]) {
 	const int size = comm_world.size();
 	constexpr int root = 0;
 
-	const auto C_data =
-		(rank == root) ? std::make_unique<num_t[]>(NI * NJ) : nullptr;
-	const auto A_data =
-		(rank == root) ? std::make_unique<num_t[]>(NI * NK) : nullptr;
-	const auto B_data =
-		(rank == root) ? std::make_unique<num_t[]>(NK * NJ) : nullptr;
+	const auto C_data = (rank == root) ? std::make_unique<num_t[]>(NI * NJ) : nullptr;
+	const auto A_data = (rank == root) ? std::make_unique<num_t[]>(NI * NK) : nullptr;
+	const auto B_data = (rank == root) ? std::make_unique<num_t[]>(NK * NJ) : nullptr;
 
 	const auto C = tuning.c_layout(C_data.get(), NI, NJ);
 	const auto A = tuning.a_layout(A_data.get(), NI, NK);
@@ -263,9 +242,9 @@ int main(int argc, char *argv[]) {
 	const auto a_layout = mpl::contiguous_layout<num_t>{NI * NK};
 	const auto b_layout = mpl::contiguous_layout<num_t>{NK * NJ};
 
-	const auto c_tile_layout =  mpl::contiguous_layout<num_t>{(std::size_t)(SI * SJ)};
-	const auto a_tile_layout =  mpl::contiguous_layout<num_t>{(std::size_t)(SI * NK)};
-	const auto b_tile_layout =  mpl::contiguous_layout<num_t>{(std::size_t)(SJ * NK)};
+	const auto c_tile_layout = mpl::contiguous_layout<num_t>{(std::size_t)(SI * SJ)};
+	const auto a_tile_layout = mpl::contiguous_layout<num_t>{(std::size_t)(SI * NK)};
+	const auto b_tile_layout = mpl::contiguous_layout<num_t>{(std::size_t)(SJ * NK)};
 
 	comm_world.scatterv(root, C_data.get(), c_layouts, tileC_data.get(), c_tile_layout);
 	comm_world.scatterv(root, A_data.get(), a_layouts, tileA_data.get(), a_tile_layout);
