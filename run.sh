@@ -4,7 +4,6 @@ set -e
 
 EXECUTABLE=${1:-gemm-mpi}
 
-BUILD_DIR=${BUILD_DIR:-build}
 USE_SLURM=${USE_SLURM:-0}
 NUM_TASKS=${NUM_TASKS:-4}
 NUM_NODES=${NUM_NODES:-1}
@@ -14,8 +13,8 @@ CPUS_PER_TASK=${CPUS_PER_TASK:-1}
 SLURM_PARTITION=${SLURM_PARTITION:-mpi-homo-short}
 SLURM_ACCOUNT=${SLURM_ACCOUNT:-kdss}
 
-if [ ! -f "${BUILD_DIR}/${EXECUTABLE}" ]; then
-	echo "Error: Executable not found. Run build.sh first." >&2
+if [ ! -f "${EXECUTABLE}" ]; then
+	echo "Error: Executable ${EXECUTABLE} not found. Run build.sh first." >&2
 	exit 1
 fi
 
@@ -28,23 +27,23 @@ if [ "${REMAINDER}" -ne 0 ]; then
 fi
 
 case "${EXECUTABLE}" in
-	(*-mpi*)
+	(*-nompi*)
 		if [ "${USE_SLURM}" -eq 1 ]; then
-			srun -n "${NUM_TASKS}" -N "${NUM_NODES}" --ntasks-per-node="${TASKS_PER_NODE}" -c "${CPUS_PER_TASK}" \
+			srun -n 1 -N 1 --ntasks-per-node="${TASKS_PER_NODE}" -c "${CPUS_PER_TASK}" \
 				-p "${SLURM_PARTITION}" -A "${SLURM_ACCOUNT}" \
-				-- "${BUILD_DIR}/${EXECUTABLE}"
+				-- "${EXECUTABLE}"
 		else
-			mpirun -np "${NUM_TASKS}" --map-by "ppr:${TASKS_PER_NODE}:node:PE=${CPUS_PER_TASK}" \
-				"${BUILD_DIR}/${EXECUTABLE}"
+			"${EXECUTABLE}"
 		fi
 	;;
 	(*)
 		if [ "${USE_SLURM}" -eq 1 ]; then
-			srun -n 1 -N 1 --ntasks-per-node="${TASKS_PER_NODE}" -c "${CPUS_PER_TASK}" \
+			srun -n "${NUM_TASKS}" -N "${NUM_NODES}" --ntasks-per-node="${TASKS_PER_NODE}" -c "${CPUS_PER_TASK}" \
 				-p "${SLURM_PARTITION}" -A "${SLURM_ACCOUNT}" \
-				-- "${BUILD_DIR}/${EXECUTABLE}"
+				-- "${EXECUTABLE}"
 		else
-			"${BUILD_DIR}/${EXECUTABLE}"
+			mpirun -np "${NUM_TASKS}" --map-by "ppr:${TASKS_PER_NODE}:node:PE=${CPUS_PER_TASK}" \
+				"${EXECUTABLE}"
 		fi
 	;;
 esac

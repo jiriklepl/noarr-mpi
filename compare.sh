@@ -1,6 +1,6 @@
 #!/bin/bash
 
-set -e
+set -euo pipefail
 
 tmpdir=$(mktemp -d)
 trap 'rm -rf "${tmpdir}"' EXIT
@@ -18,25 +18,16 @@ NUM_RUNS=${NUM_RUNS:-5}
 SLURM_PARTITION=${SLURM_PARTITION:-mpi-homo-short}
 SLURM_ACCOUNT=${SLURM_ACCOUNT:-kdss}
 
-algorithms=(gemm gemm-mpi gemm-mpi-tileb-transpose)
+echo "algorithm,framework,dataset,datatype,c_tile,a_tile,b_tile,time"
+find "$BUILD_DIR/examples/" -mindepth 2 -maxdepth 2 -type f -executable -name "gemm-*-*-*-*-*-*" |
+	while read -r file; do
+		IFS="-" read algorithm framework dataset datatype c_tile a_tile b_tile <<< "${file}"
 
-echo "algorithm,seconds"
-for algorithm in "${algorithms[@]}"; do
-	for _ in $(seq "${WARMUP_RUNS}"); do
-		bash ./run.sh "${algorithm}" &>/dev/null
-	done
-	for i in $(seq "${NUM_RUNS}"); do
-		printf "%s" "${algorithm},"
-		if [ "${i}" -eq "${NUM_RUNS}" ]; then
-			{ bash ./run.sh "${algorithm}" >"${tmpdir}/${algorithm}.out"; } 2>&1
+		echo "Running benchmark for ${algorithm} with ${framework} on ${dataset}..." >&2
+
+		if output_time=$(bash ./run.sh "${file}" | tail -n1); then
+			echo "${algorithm},${framework},${dataset},${datatype},${c_tile},${a_tile},${b_tile},${output_time}"
 		else
-			{ bash ./run.sh "${algorithm}" >/dev/null; } 2>&1
+			echo "${algorithm},${framework},${dataset},${datatype},${c_tile},${a_tile},${b_tile},ERROR"
 		fi
 	done
-done
-
-for algorithm in "${algorithms[@]}"; do
-	if [ "${algorithm}" != "gemm" ]; then
-		cmp "${tmpdir}/${algorithm}.out" "${tmpdir}/gemm.out"
-	fi
-done

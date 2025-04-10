@@ -199,8 +199,6 @@ void run(int argc, char *argv[]) {
 
 	// print results
 	if (rank == root) {
-		std::cerr << std::fixed << std::setprecision(6);
-		std::cerr << duration.count() << std::endl;
 		if (argc > 0 && argv[0] != ""s) {
 			std::cout << std::fixed << std::setprecision(2);
 			for (auto i = 0; i < NI; ++i) {
@@ -209,6 +207,9 @@ void run(int argc, char *argv[]) {
 				}
 			}
 		}
+
+		std::cout << std::fixed << std::setprecision(6);
+		std::cout << duration.count() << std::endl;
 	}
 
 	KokkosComm::barrier((KokkosComm::Handle<>)handle);

@@ -45,6 +45,7 @@ git submodule update --init --recursive
 
 # Configure Kokkos
 cmake -B "${BUILD_DIR}/kokkos-build" -S vendor/kokkos \
+	-G "Unix Makefiles" \
 	-D CMAKE_BUILD_TYPE="${CONFIG}" \
 	-D CMAKE_INSTALL_PREFIX="${BUILD_DIR}/kokkos-install" \
 	-D Kokkos_ENABLE_OPENMP=ON \
@@ -58,6 +59,7 @@ CMAKE_PREFIX_PATH="${BUILD_DIR}/kokkos-install${CMAKE_PREFIX_PATH:+;$CMAKE_PREFI
 
 # Configure Kokkos-comm
 cmake -B "${BUILD_DIR}/kokkos-comm-build" -S vendor/kokkos-comm \
+	-G "Unix Makefiles" \
 	-D CMAKE_BUILD_TYPE="${CONFIG}" \
 	-D CMAKE_PREFIX_PATH="${CMAKE_PREFIX_PATH}" \
 	-D CMAKE_INSTALL_PREFIX="${BUILD_DIR}/kokkos-comm-install" \
@@ -69,6 +71,7 @@ cmake --build "${BUILD_DIR}/kokkos-comm-build" --target install --config "${CONF
 CMAKE_PREFIX_PATH="${BUILD_DIR}/kokkos-comm-install${CMAKE_PREFIX_PATH:+;$CMAKE_PREFIX_PATH}"
 
 cmake -B "${BUILD_DIR}" -S . \
+	-G "Unix Makefiles" \
 	-D CMAKE_BUILD_TYPE="${CONFIG}" \
 	-D DATASET="${DATASET}" \
 	-D DATATYPE="${DATATYPE}" \
