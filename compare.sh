@@ -19,15 +19,15 @@ SLURM_PARTITION=${SLURM_PARTITION:-mpi-homo-short}
 SLURM_ACCOUNT=${SLURM_ACCOUNT:-kdss}
 
 echo "algorithm,framework,dataset,datatype,c_tile,a_tile,b_tile,time"
-find "$BUILD_DIR/examples/" -mindepth 2 -maxdepth 2 -type f -executable -name "gemm-*-*-*-*-*-*" |
-	while read -r file; do
-		IFS="-" read algorithm framework dataset datatype c_tile a_tile b_tile <<< "${file}"
+files=$(find "$BUILD_DIR/examples/" -mindepth 2 -maxdepth 2 -type f -executable -name "gemm-*-*-*-*-*-*")
+for file in ${files}; do
+	IFS="-" read -r algorithm framework dataset datatype c_tile a_tile b_tile <<< "${file}"
 
-		echo "Running benchmark for ${algorithm} with ${framework} on ${dataset}..." >&2
+	echo "Running benchmark for ${algorithm} with ${framework} on ${dataset}..." >&2
 
-		if output_time=$(bash ./run.sh "${file}" | tail -n1); then
-			echo "${algorithm},${framework},${dataset},${datatype},${c_tile},${a_tile},${b_tile},${output_time}"
-		else
-			echo "${algorithm},${framework},${dataset},${datatype},${c_tile},${a_tile},${b_tile},ERROR"
-		fi
-	done
+	if output_time=$(bash ./run.sh "${file}" | tail -n1); then
+		echo "${algorithm},${framework},${dataset},${datatype},${c_tile},${a_tile},${b_tile},${output_time}"
+	else
+		echo "${algorithm},${framework},${dataset},${datatype},${c_tile},${a_tile},${b_tile},ERROR"
+	fi
+done

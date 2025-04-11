@@ -1,11 +1,12 @@
 #include <cstddef>
 #include <cstdint>
+#include <cstdlib>
 
 #include <chrono>
+#include <fstream>
 #include <iomanip>
 #include <iostream>
 #include <memory>
-#include <type_traits>
 #include <utility>
 #include <vector>
 
@@ -14,6 +15,7 @@
 #include <KokkosComm/KokkosComm.hpp>
 #include <Kokkos_Core.hpp>
 
+#include "common.hpp"
 #include "defines.hpp"
 #include "gemm.hpp"
 
@@ -102,7 +104,7 @@ void kernel_gemm(num_t alpha, auto C, num_t beta, auto A, auto B, std::size_t SI
 
 } // namespace
 
-void run(int argc, char *argv[]) {
+int run(int argc, char *argv[]) {
 	using namespace std::string_literals;
 	namespace chrono = std::chrono;
 
@@ -194,13 +196,30 @@ void run(int argc, char *argv[]) {
 
 	const auto duration = chrono::duration<double>(end - start);
 
+	int return_code = EXIT_SUCCESS;
 	// print results
 	if (rank == root) {
 		if (argc > 0 && argv[0] != ""s) {
-			std::cout << std::fixed << std::setprecision(2);
-			for (auto i = 0; i < NI; ++i) {
-				for (auto j = 0; j < NJ; ++j) {
-					std::cout << C(i, j) << std::endl;
+			if (argc > 2) {
+				std::ifstream file(argv[2]);
+				stream_check check(file);
+
+				for (auto i = 0; i < NI; ++i) {
+					for (auto j = 0; j < NJ; ++j) {
+						check << C(i, j) << '\n';
+					}
+				}
+
+				if (!check.is_valid()) {
+					std::cerr << "Validation failed!" << '\n';
+					return_code = EXIT_FAILURE;
+				}
+			} else {
+				std::cout << std::fixed << std::setprecision(2);
+				for (auto i = 0; i < NI; ++i) {
+					for (auto j = 0; j < NJ; ++j) {
+						std::cout << C(i, j) << '\n';
+					}
 				}
 			}
 		}
@@ -209,7 +228,9 @@ void run(int argc, char *argv[]) {
 		std::cout << duration.count() << std::endl;
 	}
 
-	KokkosComm::barrier((KokkosComm::Handle<>)handle);
+	MPI_Bcast(&return_code, 1, MPI_INT, root, handle.mpi_comm());
+
+	return return_code;
 }
 
 int main(int argc, char *argv[]) {
@@ -220,9 +241,10 @@ int main(int argc, char *argv[]) {
 		MPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
 	}
 
+	int return_code = EXIT_FAILURE;
 	try {
 		Kokkos::initialize(argc, argv);
-		run(argc, argv);
+		return_code = run(argc, argv);
 	} catch (const std::exception &e) {
 		std::cerr << "Exception: " << e.what() << std::endl;
 		MPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
@@ -232,4 +254,6 @@ int main(int argc, char *argv[]) {
 	}
 
 	MPI_Finalize();
+
+	return return_code;
 }

@@ -1,4 +1,9 @@
+#include <cstddef>
+#include <cstdint>
+#include <cstdlib>
+
 #include <chrono>
+#include <fstream>
 #include <iomanip>
 #include <iostream>
 
@@ -7,6 +12,7 @@
 
 #include "noarr/mpi.hpp"
 
+#include "common.hpp"
 #include "defines.hpp"
 #include "gemm.hpp"
 
@@ -155,16 +161,32 @@ int main(int argc, char *argv[]) {
 
 	const auto duration = chrono::duration<double>(end - start);
 
+	int return_code = EXIT_SUCCESS;
 	// print results
 	if (rank == root) {
 		if (argc > 0 && argv[0] != ""s) {
-			std::cout << std::fixed << std::setprecision(2);
-			noarr::serialize_data(std::cout, C.get_ref() ^ set_length(mpi_trav) ^ noarr::hoist<'I', 'i', 'J', 'j'>());
+			if (argc > 2) {
+				std::ifstream file(argv[2]);
+				stream_check check(file);
+
+				noarr::serialize_data(check, C.get_ref() ^ set_length(mpi_trav) ^ noarr::hoist<'I', 'i', 'J', 'j'>());
+
+				if (!check.is_valid()) {
+					std::cerr << "Result mismatch!" << std::endl;
+					return_code = EXIT_FAILURE;
+				}
+			} else {
+				std::cout << std::fixed << std::setprecision(2);
+				noarr::serialize_data(std::cout,
+				                      C.get_ref() ^ set_length(mpi_trav) ^ noarr::hoist<'I', 'i', 'J', 'j'>());
+			}
 		}
 
 		std::cout << std::fixed << std::setprecision(6);
 		std::cout << duration.count() << std::endl;
 	}
 
-	mpi_barrier(mpi_trav);
+	mpi_bcast(return_code, mpi_trav, root);
+
+	return return_code;
 }

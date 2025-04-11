@@ -1,7 +1,9 @@
 #include <cstddef>
 #include <cstdint>
+#include <cstdlib>
 
 #include <chrono>
+#include <fstream>
 #include <iomanip>
 #include <iostream>
 #include <memory>
@@ -10,6 +12,7 @@
 
 #include <mpl/mpl.hpp>
 
+#include "common.hpp"
 #include "defines.hpp"
 #include "gemm.hpp"
 
@@ -258,13 +261,30 @@ int main(int argc, char *argv[]) {
 
 	const auto duration = chrono::duration<double>(end - start);
 
+	int return_code = EXIT_SUCCESS;
 	// print results
 	if (rank == root) {
 		if (argc > 0 && argv[0] != ""s) {
-			std::cout << std::fixed << std::setprecision(2);
-			for (auto i = 0; i < NI; ++i) {
-				for (auto j = 0; j < NJ; ++j) {
-					std::cout << C(i, j) << std::endl;
+			if (argc > 2) {
+				std::ifstream file(argv[2]);
+				stream_check check(file);
+
+				for (auto i = 0; i < NI; ++i) {
+					for (auto j = 0; j < NJ; ++j) {
+						check << C(i, j) << '\n';
+					}
+				}
+
+				if (!check.is_valid()) {
+					std::cerr << "Validation failed!" << std::endl;
+					return_code = EXIT_FAILURE;
+				}
+			} else {
+				std::cout << std::fixed << std::setprecision(2);
+				for (auto i = 0; i < NI; ++i) {
+					for (auto j = 0; j < NJ; ++j) {
+						std::cout << C(i, j) << '\n';
+					}
 				}
 			}
 		}
@@ -273,5 +293,7 @@ int main(int argc, char *argv[]) {
 		std::cout << duration.count() << std::endl;
 	}
 
-	comm_world.barrier();
+	comm_world.bcast(root, return_code);
+
+	return return_code;
 }

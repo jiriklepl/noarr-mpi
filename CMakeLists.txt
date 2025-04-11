@@ -14,11 +14,19 @@ set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
-set(DATASET_LIST "SMALL;MEDIUM;LARGE;EXTRALARGE")
+set(DATASET_LIST "MINI;SMALL;MEDIUM;LARGE;EXTRALARGE")
 set(DATATYPE_LIST "FLOAT;DOUBLE;INT")
 set(C_TILE_OPTIONS "C_TILE_I_MAJOR;C_TILE_J_MAJOR")
 set(A_TILE_OPTIONS "A_TILE_I_MAJOR;A_TILE_K_MAJOR")
 set(B_TILE_OPTIONS "B_TILE_K_MAJOR;B_TILE_J_MAJOR")
+
+if (DEFINED DEMO)
+  set(DATASET_LIST "MINI")
+  set(DATATYPE_LIST "FLOAT")
+  set(C_TILE_OPTIONS "C_TILE_I_MAJOR")
+  set(A_TILE_OPTIONS "A_TILE_I_MAJOR")
+  set(B_TILE_OPTIONS "B_TILE_K_MAJOR")
+endif()
 
 function(define_executable name framework)
   foreach(dataset ${DATASET_LIST})
@@ -39,12 +47,6 @@ function(define_executable name framework)
   endforeach()
 endfunction()
 
-set(DATASET "EXTRALARGE" CACHE STRING "Dataset size")
-set_property(CACHE DATASET PROPERTY STRINGS SMALL MEDIUM LARGE EXTRALARGE)
-
-set(DATATYPE "FLOAT" CACHE STRING "Data type")
-set_property(CACHE DATATYPE PROPERTY STRINGS FLOAT DOUBLE INT)
-
 include_directories(include)
 include_directories(${Noarr_SOURCE_DIR}/include)
 
@@ -52,6 +54,13 @@ add_subdirectory(examples/mpl)
 add_subdirectory(examples/noarr)
 add_subdirectory(examples/kokkos-comm)
 add_subdirectory(examples/boost)
+
+foreach(dataset ${DATASET_LIST})
+  foreach(datatype ${DATATYPE_LIST})
+    set(test_file_name examples/test/gemm-${dataset}-${datatype}.data)
+    configure_file(${test_file_name} ${CMAKE_BINARY_DIR}/gemm-${dataset}-${datatype}.data COPYONLY)
+  endforeach()
+endforeach()
 
 #tests
 add_executable(scatter-type-safe-1 EXCLUDE_FROM_ALL tests/scatter-type-safe-1.cpp)
