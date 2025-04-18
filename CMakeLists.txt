@@ -62,7 +62,7 @@ include_directories(${Noarr_SOURCE_DIR}/include)
 
 add_subdirectory(examples/mpl)
 add_subdirectory(examples/noarr)
-add_subdirectory(examples/kokkos-comm)
+add_subdirectory(examples/kokkosComm)
 add_subdirectory(examples/boost)
 
 foreach(dataset ${DATASET_LIST})
