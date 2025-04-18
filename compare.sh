@@ -13,21 +13,23 @@ CPUS_PER_TASK=${CPUS_PER_TASK:-1}
 
 WARMUP_RUNS=${WARMUP_RUNS:-3}
 NUM_RUNS=${NUM_RUNS:-5}
+I_TILES=${I_TILES:-2}
 
 # Slurm settings (defaults specific to <https://gitlab.mff.cuni.cz/mff/hpc/clusters>)
 SLURM_PARTITION=${SLURM_PARTITION:-mpi-homo-short}
 SLURM_ACCOUNT=${SLURM_ACCOUNT:-kdss}
 
-echo "algorithm,framework,dataset,datatype,c_tile,a_tile,b_tile,time"
+echo "algorithm,framework,dataset,datatype,c_tile,a_tile,b_tile,i_tiles,time,valid"
 files=$(find "$BUILD_DIR/examples/" -mindepth 2 -maxdepth 2 -type f -executable -name "gemm-*-*-*-*-*-*")
 for file in ${files}; do
-	IFS="-" read -r algorithm framework dataset datatype c_tile a_tile b_tile <<< "${file}"
+	IFS="-" read -r algorithmRaw framework dataset datatype c_tile a_tile b_tile <<< "${file}"
+	IFS="/" read -r buildDir examplesDir frameworkDir algorithm <<< "${algorithmRaw}"
 
-	echo "Running benchmark for ${algorithm} with ${framework} on ${dataset}..." >&2
+	testFile="${buildDir}/${algorithm}-${dataset}-${datatype}.data"
 
-	if output_time=$(bash ./run.sh "${file}" | tail -n1); then
-		echo "${algorithm},${framework},${dataset},${datatype},${c_tile},${a_tile},${b_tile},${output_time}"
+	if output_time=$(bash ./run.sh "${file}" "${I_TILES}" "${testFile}" | tail -n1); then
+		echo "${algorithm},${framework},${dataset},${datatype},${c_tile},${a_tile},${b_tile},${I_TILES},${output_time},1"
 	else
-		echo "${algorithm},${framework},${dataset},${datatype},${c_tile},${a_tile},${b_tile},ERROR"
+		echo "${algorithm},${framework},${dataset},${datatype},${c_tile},${a_tile},${b_tile},${I_TILES},${output_time},0"
 	fi
 done
