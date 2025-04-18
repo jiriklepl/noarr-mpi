@@ -31,26 +31,26 @@ struct matrix_factory {
 };
 
 const struct tuning {
-	DEFINE_PROTO_STRUCT(c_layout, matrix_factory<num_t, Kokkos::LayoutRight>{});
-	DEFINE_PROTO_STRUCT(a_layout, matrix_factory<num_t, Kokkos::LayoutRight>{});
-	DEFINE_PROTO_STRUCT(b_layout, matrix_factory<num_t, Kokkos::LayoutRight>{});
+	DEFINE_LAYOUT(c_layout, matrix_factory<num_t, Kokkos::LayoutRight>{});
+	DEFINE_LAYOUT(a_layout, matrix_factory<num_t, Kokkos::LayoutRight>{});
+	DEFINE_LAYOUT(b_layout, matrix_factory<num_t, Kokkos::LayoutRight>{});
 
 #ifdef C_TILE_J_MAJOR
-	DEFINE_PROTO_STRUCT(c_tile_layout, matrix_factory<num_t, Kokkos::LayoutLeft>{});
+	DEFINE_LAYOUT(c_tile_layout, matrix_factory<num_t, Kokkos::LayoutLeft>{});
 #else
-	DEFINE_PROTO_STRUCT(c_tile_layout, matrix_factory<num_t, Kokkos::LayoutRight>{});
+	DEFINE_LAYOUT(c_tile_layout, matrix_factory<num_t, Kokkos::LayoutRight>{});
 #endif
 
 #ifdef A_TILE_K_MAJOR
-	DEFINE_PROTO_STRUCT(a_tile_layout, matrix_factory<num_t, Kokkos::LayoutLeft>{});
+	DEFINE_LAYOUT(a_tile_layout, matrix_factory<num_t, Kokkos::LayoutLeft>{});
 #else
-	DEFINE_PROTO_STRUCT(a_tile_layout, matrix_factory<num_t, Kokkos::LayoutRight>{});
+	DEFINE_LAYOUT(a_tile_layout, matrix_factory<num_t, Kokkos::LayoutRight>{});
 #endif
 
 #ifdef B_TILE_J_MAJOR
-	DEFINE_PROTO_STRUCT(b_tile_layout, matrix_factory<num_t, Kokkos::LayoutLeft>{});
+	DEFINE_LAYOUT(b_tile_layout, matrix_factory<num_t, Kokkos::LayoutLeft>{});
 #else
-	DEFINE_PROTO_STRUCT(b_tile_layout, matrix_factory<num_t, Kokkos::LayoutRight>{});
+	DEFINE_LAYOUT(b_tile_layout, matrix_factory<num_t, Kokkos::LayoutRight>{});
 #endif
 } tuning;
 

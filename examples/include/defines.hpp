@@ -6,7 +6,7 @@
 
 #define AUTO_FIELD(name, ...) decltype(__VA_ARGS__) name = __VA_ARGS__
 
-#define DEFINE_PROTO_STRUCT(name, ...) AUTO_FIELD(name, __VA_ARGS__)
+#define DEFINE_LAYOUT(name, ...) AUTO_FIELD(name, __VA_ARGS__)
 
 #if !defined(MINI_DATASET) && !defined(SMALL_DATASET) && !defined(MEDIUM_DATASET) && !defined(LARGE_DATASET) &&        \
 	!defined(EXTRALARGE_DATASET)
@@ -45,6 +45,21 @@
 #elif defined(DATA_TYPE_IS_DOUBLE)
 #	define DATA_TYPE double
 #	define DATA_TYPE_CHOICE "DATA_TYPE_IS_DOUBLE"
+#endif
+
+#if !defined(C_TILE_J_MAJOR) && !defined(C_TILE_I_MAJOR)
+#	error "Please define one of C_TILE_J_MAJOR or C_TILE_I_MAJOR"
+#	define C_TILE_I_MAJOR
+#endif
+
+#if !defined(A_TILE_K_MAJOR) && !defined(A_TILE_I_MAJOR)
+#	error "Please define one of A_TILE_K_MAJOR or A_TILE_I_MAJOR"
+#	define A_TILE_I_MAJOR
+#endif
+
+#if !defined(B_TILE_J_MAJOR) && !defined(B_TILE_K_MAJOR)
+#	error "Please define one of B_TILE_J_MAJOR or B_TILE_K_MAJOR"
+#	define B_TILE_K_MAJOR
 #endif
 
 #endif // NOARR_POLYBENCH_DEFINES_HPP

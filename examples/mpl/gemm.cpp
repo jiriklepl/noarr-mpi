@@ -94,26 +94,26 @@ public:
 };
 
 const struct tuning {
-	DEFINE_PROTO_STRUCT(c_layout, matrix_factory<num_t, RowMajor>{});
-	DEFINE_PROTO_STRUCT(a_layout, matrix_factory<num_t, RowMajor>{});
-	DEFINE_PROTO_STRUCT(b_layout, matrix_factory<num_t, RowMajor>{});
+	DEFINE_LAYOUT(c_layout, matrix_factory<num_t, RowMajor>{});
+	DEFINE_LAYOUT(a_layout, matrix_factory<num_t, RowMajor>{});
+	DEFINE_LAYOUT(b_layout, matrix_factory<num_t, RowMajor>{});
 
 #ifdef C_TILE_J_MAJOR
-	DEFINE_PROTO_STRUCT(c_tile_layout, matrix_factory<num_t, ColMajor>{});
+	DEFINE_LAYOUT(c_tile_layout, matrix_factory<num_t, ColMajor>{});
 #else
-	DEFINE_PROTO_STRUCT(c_tile_layout, matrix_factory<num_t, RowMajor>{});
+	DEFINE_LAYOUT(c_tile_layout, matrix_factory<num_t, RowMajor>{});
 #endif
 
 #ifdef A_TILE_K_MAJOR
-	DEFINE_PROTO_STRUCT(a_tile_layout, matrix_factory<num_t, ColMajor>{});
+	DEFINE_LAYOUT(a_tile_layout, matrix_factory<num_t, ColMajor>{});
 #else
-	DEFINE_PROTO_STRUCT(a_tile_layout, matrix_factory<num_t, RowMajor>{});
+	DEFINE_LAYOUT(a_tile_layout, matrix_factory<num_t, RowMajor>{});
 #endif
 
 #ifdef B_TILE_J_MAJOR
-	DEFINE_PROTO_STRUCT(b_tile_layout, matrix_factory<num_t, ColMajor>{});
+	DEFINE_LAYOUT(b_tile_layout, matrix_factory<num_t, ColMajor>{});
 #else
-	DEFINE_PROTO_STRUCT(b_tile_layout, matrix_factory<num_t, RowMajor>{});
+	DEFINE_LAYOUT(b_tile_layout, matrix_factory<num_t, RowMajor>{});
 #endif
 } tuning;
 

@@ -46,7 +46,12 @@ function(define_executable name framework)
           foreach(b_tile ${B_TILE_OPTIONS})
             set(executable_name ${name}-${framework}-${dataset}-${datatype}-${c_tile}-${a_tile}-${b_tile})
             add_executable(${executable_name} ${name}.cpp)
-            target_compile_definitions(${executable_name} PRIVATE ${dataset}_DATASET DATA_TYPE_IS_${datatype})
+            target_compile_definitions(${executable_name} PRIVATE
+              ${dataset}_DATASET
+              DATA_TYPE_IS_${datatype}
+              ${c_tile}
+              ${a_tile}
+              ${b_tile})
             target_include_directories(${executable_name} PRIVATE ${CMAKE_SOURCE_DIR}/include)
             target_include_directories(${executable_name} PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/../include)
             target_link_libraries(${executable_name} PRIVATE MPI::MPI_CXX)
