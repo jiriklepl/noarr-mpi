@@ -5,38 +5,6 @@ set -euo pipefail
 BUILD_DIR=${BUILD_DIR:-build}
 NUM_JOBS=${NUM_JOBS:-$(nproc)}
 
-DATASET=${DATASET:-"EXTRALARGE"}
-case "${DATASET}" in
-    ("EXTRALARGE")
-        ;;
-    ("LARGE")
-        ;;
-    ("MEDIUM")
-		;;
-	("SMALL")
-		;;
-	("MINI")
-		;;
-	(*)
-		echo "Unknown dataset: ${DATASET}" >&2
-		echo "Valid options are: EXTRALARGE, LARGE, MEDIUM, SMALL, MINI" >&2
-		exit 1
-esac
-
-DATATYPE=${DATATYPE:-"FLOAT"}
-case "${DATATYPE}" in
-	("FLOAT")
-		;;
-	("DOUBLE")
-		;;
-	("INT")
-		;;
-	(*)
-		echo "Unknown datatype: ${DATATYPE}" >&2
-		echo "Valid options are: FLOAT, DOUBLE, INT" >&2
-		exit 1
-esac
-
 BUILD_DIR=$(realpath "${BUILD_DIR}")
 
 CONFIG=${1:-Release}
@@ -73,7 +41,5 @@ CMAKE_PREFIX_PATH="${BUILD_DIR}/kokkos-comm-install${CMAKE_PREFIX_PATH:+;$CMAKE_
 cmake -B "${BUILD_DIR}" -S . \
 	-G "Unix Makefiles" \
 	-D CMAKE_BUILD_TYPE="${CONFIG}" \
-	-D DATASET="${DATASET}" \
-	-D DATATYPE="${DATATYPE}" \
 	-D CMAKE_PREFIX_PATH="${CMAKE_PREFIX_PATH}" \
 	-D CMAKE_EXPORT_COMPILE_COMMANDS=ON
