@@ -21,13 +21,14 @@ SLURM_ACCOUNT=${SLURM_ACCOUNT:-kdss}
 
 echo "algorithm,framework,dataset,datatype,c_tile,a_tile,b_tile,i_tiles,time,valid"
 files=$(find "$BUILD_DIR/examples/" -mindepth 2 -maxdepth 2 -type f -executable -name "gemm-*-*-*-*-*-*")
+printf "Running the following algorithm implementations\n%s\n" "${files}" >&2
 for file in ${files}; do
 	IFS="-" read -r algorithmRaw framework dataset datatype c_tile a_tile b_tile <<< "${file}"
 	IFS="/" read -r buildDir examplesDir frameworkDir algorithm <<< "${algorithmRaw}"
 
 	testFile="${buildDir}/${algorithm}-${dataset}-${datatype}.data"
 
-	if output_time=$(bash ./run.sh "${file}" "${I_TILES}" "${testFile}" | tail -n1); then
+	if output_time=$(./run.sh "${file}" "${I_TILES}" "${testFile}"); then
 		echo "${algorithm},${framework},${dataset},${datatype},${c_tile},${a_tile},${b_tile},${I_TILES},${output_time},1"
 	else
 		echo "${algorithm},${framework},${dataset},${datatype},${c_tile},${a_tile},${b_tile},${I_TILES},${output_time},0"

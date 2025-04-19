@@ -1,8 +1,10 @@
 #!/bin/bash
 
-set -e
+set -euo pipefail
 
 EXECUTABLE=${1:-gemm-mpi}
+
+shift || true
 
 USE_SLURM=${USE_SLURM:-0}
 NUM_TASKS=${NUM_TASKS:-4}
@@ -31,19 +33,19 @@ case "${EXECUTABLE}" in
 		if [ "${USE_SLURM}" -eq 1 ]; then
 			srun -n 1 -N 1 --ntasks-per-node="${TASKS_PER_NODE}" -c "${CPUS_PER_TASK}" \
 				-p "${SLURM_PARTITION}" -A "${SLURM_ACCOUNT}" \
-				-- "${EXECUTABLE}"
+				-- "${EXECUTABLE}" "$@"
 		else
-			"${EXECUTABLE}"
+			"${EXECUTABLE}" "$@"
 		fi
 	;;
 	(*)
 		if [ "${USE_SLURM}" -eq 1 ]; then
 			srun -n "${NUM_TASKS}" -N "${NUM_NODES}" --ntasks-per-node="${TASKS_PER_NODE}" -c "${CPUS_PER_TASK}" \
 				-p "${SLURM_PARTITION}" -A "${SLURM_ACCOUNT}" \
-				-- "${EXECUTABLE}"
+				-- "${EXECUTABLE}" "$@"
 		else
 			mpirun -np "${NUM_TASKS}" --map-by "ppr:${TASKS_PER_NODE}:node:PE=${CPUS_PER_TASK}" \
-				"${EXECUTABLE}"
+				"${EXECUTABLE}" "$@"
 		fi
 	;;
 esac
