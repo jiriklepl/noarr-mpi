@@ -109,6 +109,22 @@ The paper describes type transformation from Noarr structures to MPI data types 
 
 The MPI bindings for collective operations (broadcast, scatter, gather) are implemented in [include/noarr/structures/interop/mpi_algorithms.hpp](include/noarr/structures/interop/mpi_algorithms.hpp).
 
+## Visualization
+
+Generate virtual Python environment and enter it:
+
+```bash
+python3 -m venv .venv
+. .venv/bin/activate
+```
+
+Upgrade pip and install the requirements:
+
+```bash
+pip install --upgrade pip
+pip install -r requirements.txt
+```
+
 ## License
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
