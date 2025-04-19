@@ -35,7 +35,7 @@ labels = [
 
 datasets = sorted(df["dataset"].unique())
 frameworks = sorted(df["framework"].unique())
-width = 0.2
+WIDTH = 0.2
 x = np.arange(len(labels))
 
 # Color-blind friendly palette
@@ -59,19 +59,19 @@ for ds in datasets:
         aggfunc="max",
     ).reindex(index=combos)
 
-    fig, ax = plt.subplots(figsize=(10, 6))
+    fig, ax = plt.subplots(figsize=(4, 3))
     # Plot bars with uniform border color
     for i, fw in enumerate(frameworks):
         times = pivot_time[fw].values
         valids = pivot_valid[fw].values
 
         bars = ax.bar(
-            x + i * width,
+            x + i * WIDTH,
             times,
-            width,
+            WIDTH,
             facecolor=PALETTE[i],
             edgecolor=BORDER_COLOR,
-            linewidth=1.2,
+            linewidth=1,
             label=fw,
         )
 
@@ -86,7 +86,7 @@ for ds in datasets:
         for i, fw in enumerate(frameworks)
     ]
 
-    legend1 = ax.legend(handles=framework_patches, title="Framework", loc="upper left")
+    legend1 = ax.legend(handles=framework_patches, title="Framework", loc="upper left", fontsize="small", framealpha=0.5, title_fontsize="small")
     ax.add_artist(legend1)
 
     # Validation legend
@@ -96,19 +96,22 @@ for ds in datasets:
     invalid_patch = mpatches.Patch(
         facecolor="none", edgecolor=BORDER_COLOR, hatch="///", label="Invalid", alpha=0.4
     )
-    ax.legend(
-        handles=[valid_patch, invalid_patch], title="Validation", loc="upper right"
+    legend2 = ax.legend(
+        handles=[valid_patch, invalid_patch], title="Validation", loc="upper right", fontsize="small", framealpha=0.5, title_fontsize="small"
     )
+    ax.add_artist(legend2)
 
     # Formatting
-    ax.set_xticks(x + (len(frameworks) - 1) * width / 2)
-    ax.set_xticklabels(labels, rotation=45, ha="right")
-    ax.set_xlabel("Major dimensions of C/A/B tiles")
-    ax.set_ylabel("Runtime [s]")
+    ax.set_xticks(x + (len(frameworks) - 1) * WIDTH / 2)
+    ax.set_xticklabels(labels, ha="center", fontsize="small")
+    ax.set_xlabel("Major dimensions of C/A/B tiles", loc="center", fontsize="medium")
+    ax.set_ylabel("Runtime [s]", fontsize="medium")
     ax.yaxis.set_major_formatter(ScalarFormatter(useMathText=True))
     ax.ticklabel_format(style="scientific", axis="y", scilimits=(0, 0))
 
     os.makedirs(plots_dir, exist_ok=True)
 
-    plt.tight_layout()
+    plt.tight_layout(pad=0.5)
     plt.savefig(f"{plots_dir}/runtime_by_framework_{ds}.pdf")
+
+    plt.close(fig)
