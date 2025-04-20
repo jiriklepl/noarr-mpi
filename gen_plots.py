@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
 
-
 import sys
 import os
 
@@ -19,7 +18,7 @@ if len(sys.argv) != 2:
 
 csv_file = sys.argv[1]
 
-plots_dir = "plots"
+PLOTS_DIR = "plots"
 
 # Load data
 df = pd.read_csv(csv_file)
@@ -109,9 +108,9 @@ for ds in datasets:
     ax.yaxis.set_major_formatter(ScalarFormatter(useMathText=True))
     ax.ticklabel_format(style="scientific", axis="y", scilimits=(0, 0))
 
-    os.makedirs(plots_dir, exist_ok=True)
+    os.makedirs(PLOTS_DIR, exist_ok=True)
 
     plt.tight_layout(pad=0.5)
-    plt.savefig(f"{plots_dir}/runtime_by_framework_{ds}.pdf")
+    plt.savefig(f"{PLOTS_DIR}/runtime_by_framework_{ds}.pdf")
 
     plt.close(fig)
