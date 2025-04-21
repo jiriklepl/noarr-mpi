@@ -15,6 +15,8 @@ CPUS_PER_TASK=${CPUS_PER_TASK:-1}
 SLURM_PARTITION=${SLURM_PARTITION:-mpi-homo-short}
 SLURM_ACCOUNT=${SLURM_ACCOUNT:-kdss}
 
+SLURM_OPTIONS=("--partition=${SLURM_PARTITION}" "--account=${SLURM_ACCOUNT}" "--distribution=cyclic" "--exclusive")
+
 if [ ! -f "${EXECUTABLE}" ]; then
 	echo "Error: Executable ${EXECUTABLE} not found. Run build.sh first." >&2
 	exit 1
@@ -32,8 +34,7 @@ case "${EXECUTABLE}" in
 	(*-nompi*)
 		if [ "${USE_SLURM}" -eq 1 ]; then
 			srun -n 1 -N 1 --ntasks-per-node="${TASKS_PER_NODE}" -c "${CPUS_PER_TASK}" \
-				-p "${SLURM_PARTITION}" -A "${SLURM_ACCOUNT}" \
-				-- "${EXECUTABLE}" "$@"
+				"${SLURM_OPTIONS[@]}" -- "${EXECUTABLE}" "$@"
 		else
 			"${EXECUTABLE}" "$@"
 		fi
@@ -41,8 +42,7 @@ case "${EXECUTABLE}" in
 	(*)
 		if [ "${USE_SLURM}" -eq 1 ]; then
 			srun -n "${NUM_TASKS}" -N "${NUM_NODES}" --ntasks-per-node="${TASKS_PER_NODE}" -c "${CPUS_PER_TASK}" \
-				-p "${SLURM_PARTITION}" -A "${SLURM_ACCOUNT}" \
-				-- "${EXECUTABLE}" "$@"
+				"${SLURM_OPTIONS[@]}" -- "${EXECUTABLE}" "$@"
 		else
 			mpirun -np "${NUM_TASKS}" --map-by "ppr:${TASKS_PER_NODE}:node:PE=${CPUS_PER_TASK}" \
 				"${EXECUTABLE}" "$@"

@@ -31,7 +31,7 @@ for file in ${files}; do
 
 	testFile="${buildDir}/${algorithm}-${dataset}-${datatype}.data"
 
-	if output_time=$(./run.sh "${file}" "${I_TILES}" "${testFile}"); then
+	if output_time=$(bash ./run.sh "${file}" "${I_TILES}" "${testFile}"); then
 		echo "${algorithm},${framework},${dataset},${datatype},${c_tile},${a_tile},${b_tile},${I_TILES},${output_time},1"
 	else
 		echo "${algorithm},${framework},${dataset},${datatype},${c_tile},${a_tile},${b_tile},${I_TILES},${output_time},0"

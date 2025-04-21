@@ -181,17 +181,38 @@ std::chrono::duration<double> run_experiment(num_t alpha, num_t beta, num_t *C_d
 		const int i = r / j_tiles;
 		const int j = r % j_tiles;
 
+#ifdef C_TILE_J_MAJOR
+		auto c_tile_layout_parameter = mpl::subarray_layout<num_t>::parameter{
+			/* second dimension */ {NJ, (int)SJ, /* index of the first element */ (int)(SJ * j)},
+			/* first dimension */ {NI, (int)SI, /* index of the first element */ (int)(SI * i)}};
+		c_tile_layout_parameter.order(mpl::array_orders::Fortran_order);
+#else
 		const auto c_tile_layout_parameter = mpl::subarray_layout<num_t>::parameter{
 			/* first dimension */ {NI, (int)SI, /* index of the first element */ (int)(SI * i)},
 			/* second dimension */ {NJ, (int)SJ, /* index of the first element */ (int)(SJ * j)}};
+#endif
 
+#ifdef A_TILE_K_MAJOR
+		auto a_tile_layout_parameter = mpl::subarray_layout<num_t>::parameter{
+			/* second dimension */ {NK, NK, /* index of the first element */ 0},
+			/* first dimension */ {NI, (int)SI, /* index of the first element */ (int)(SI * i)}};
+		a_tile_layout_parameter.order(mpl::array_orders::Fortran_order);
+#else
 		const auto a_tile_layout_parameter = mpl::subarray_layout<num_t>::parameter{
 			/* first dimension */ {NI, (int)SI, /* index of the first element */ (int)(SI * i)},
 			/* second dimension */ {NK, NK, /* index of the first element */ 0}};
+#endif
 
+#ifdef B_TILE_J_MAJOR
+		auto b_tile_layout_parameter = mpl::subarray_layout<num_t>::parameter{
+			/* second dimension */ {NJ, (int)SJ, /* index of the first element */ (int)(SJ * j)},
+			/* first dimension */ {NK, NK, /* index of the first element */ 0}};
+		b_tile_layout_parameter.order(mpl::array_orders::Fortran_order);
+#else
 		const auto b_tile_layout_parameter = mpl::subarray_layout<num_t>::parameter{
-			/* second dimension */ {NK, NK, /* index of the first element */ 0},
-			/* first dimension */ {NJ, (int)SJ, /* index of the first element */ (int)(SJ * j)}};
+			/* first dimension */ {NK, NK, /* index of the first element */ 0},
+			/* second dimension */ {NJ, (int)SJ, /* index of the first element */ (int)(SJ * j)}};
+#endif
 
 		const auto c_tile_layout = mpl::subarray_layout<num_t>{c_tile_layout_parameter};
 		const auto a_tile_layout = mpl::subarray_layout<num_t>{a_tile_layout_parameter};
