@@ -20,12 +20,12 @@ using num_t = DATA_TYPE;
 
 namespace {
 
-enum MatrixOrder : std::uint8_t { COrder, FOrder };
+enum MatrixOrder { COrder, FOrder };
 
 constexpr MatrixOrder RowMajor = COrder;
 constexpr MatrixOrder ColMajor = FOrder;
 
-template<typename T, MatrixOrder Order = RowMajor>
+template<typename T, MatrixOrder Order>
 class matrix {
 public:
 	using size_type = std::size_t;
@@ -83,7 +83,7 @@ public:
 	constexpr size_type cols() const { return _cols; }
 };
 
-template<typename T, MatrixOrder Order = RowMajor>
+template<typename T, MatrixOrder Order>
 class matrix_factory {
 public:
 	constexpr static MatrixOrder order = Order;
@@ -167,16 +167,15 @@ void kernel_gemm(num_t alpha, auto C, num_t beta, auto A, auto B, std::size_t SI
 
 std::chrono::duration<double> run_experiment(num_t alpha, num_t beta,
                                              num_t *C_data, num_t *A_data, num_t *B_data,
-                                             auto C, auto A, auto B, std::size_t /*i_tiles*/,
+                                             auto& C, auto& A, auto& B, std::size_t /*i_tiles*/,
                                              std::size_t j_tiles,
 											 num_t *tileC_data, num_t *tileA_data, num_t *tileB_data,
-											 auto tileC, auto tileA, auto tileB, std::size_t SI,
+											 auto& tileC, auto& tileA, auto& tileB, std::size_t SI,
                                              std::size_t SJ, const mpl::communicator & comm_world, int rank, int size,
                                              int root) {
 	const auto start = std::chrono::high_resolution_clock::now();
 
 	mpl::layouts<num_t> c_layouts;
-
 	mpl::layouts<num_t> a_layouts;
 	mpl::layouts<num_t> b_layouts;
 
@@ -184,15 +183,15 @@ std::chrono::duration<double> run_experiment(num_t alpha, num_t beta,
 		const int i = r / j_tiles;
 		const int j = r % j_tiles;
 
-		auto c_tile_layout_parameter = mpl::subarray_layout<num_t>::parameter{
+		const auto c_tile_layout_parameter = mpl::subarray_layout<num_t>::parameter{
 			/* first dimension */ {NI, (int)SI, /* index of the first element */ (int)(SI * i)},
 			/* second dimension */ {NJ, (int)SJ, /* index of the first element */ (int)(SJ * j)}};
 
-		auto a_tile_layout_parameter = mpl::subarray_layout<num_t>::parameter{
+		const auto a_tile_layout_parameter = mpl::subarray_layout<num_t>::parameter{
 			/* first dimension */ {NI, (int)SI, /* index of the first element */ (int)(SI * i)},
 			/* second dimension */ {NK, NK, /* index of the first element */ 0}};
 
-		auto b_tile_layout_parameter = mpl::subarray_layout<num_t>::parameter{
+		const auto b_tile_layout_parameter = mpl::subarray_layout<num_t>::parameter{
 			/* second dimension */ {NK, NK, /* index of the first element */ 0},
 			/* first dimension */ {NJ, (int)SJ, /* index of the first element */ (int)(SJ * j)}};
 
@@ -233,10 +232,13 @@ int main(int argc, char *argv[]) {
 
 	const mpl::communicator &comm_world{mpl::environment::comm_world()};
 
-	// const noarr::MPI_session mpi_session(argc, argv);
 	const int rank = comm_world.rank();
 	const int size = comm_world.size();
 	constexpr int root = 0;
+
+	if (rank == root) {
+		std::cerr<< "Running with " << size << " processes" << std::endl;
+	}
 
 	const auto C_data = (rank == root) ? std::make_unique<num_t[]>(NI * NJ) : nullptr;
 	const auto A_data = (rank == root) ? std::make_unique<num_t[]>(NI * NK) : nullptr;
@@ -282,10 +284,10 @@ int main(int argc, char *argv[]) {
 		if (argc > 0 && argv[0] != ""s) {
 			if (argc > 2) {
 				std::ifstream file(argv[2]);
-				stream_check check(file);
+				matrix_stream_check check(file, NI, NJ);
 
-				for (auto i = 0; i < NI; ++i) {
-					for (auto j = 0; j < NJ; ++j) {
+				for (std::size_t i = 0; i < NI; ++i) {
+					for (std::size_t j = 0; j < NJ; ++j) {
 						check << C(i, j) << '\n';
 					}
 				}
@@ -296,8 +298,8 @@ int main(int argc, char *argv[]) {
 				}
 			} else {
 				std::cout << std::fixed << std::setprecision(2);
-				for (auto i = 0; i < NI; ++i) {
-					for (auto j = 0; j < NJ; ++j) {
+				for (std::size_t i = 0; i < NI; ++i) {
+					for (std::size_t j = 0; j < NJ; ++j) {
 						std::cout << C(i, j) << '\n';
 					}
 				}

@@ -11,6 +11,20 @@ CONFIG=${1:-Release}
 
 git submodule update --init --recursive
 
+(
+	cd vendor/boost
+	./bootstrap.sh
+	echo "using mpi ;" > project-config.jam
+	./b2 --prefix="${BUILD_DIR}/boost-install" \
+		--with-mpi \
+		--with-system \
+		--with-serialization \
+		--with-test \
+		install
+)
+
+CMAKE_PREFIX_PATH="${BUILD_DIR}/boost-install${CMAKE_PREFIX_PATH:+;$CMAKE_PREFIX_PATH}"
+
 # Configure Kokkos
 cmake -B "${BUILD_DIR}/kokkos-build" -S vendor/kokkos \
 	-G "Unix Makefiles" \
@@ -24,6 +38,7 @@ cmake -B "${BUILD_DIR}/kokkos-build" -S vendor/kokkos \
 cmake --build "${BUILD_DIR}/kokkos-build" --target install --config "${CONFIG}" --parallel "${NUM_JOBS}"
 
 CMAKE_PREFIX_PATH="${BUILD_DIR}/kokkos-install${CMAKE_PREFIX_PATH:+;$CMAKE_PREFIX_PATH}"
+export CMAKE_PREFIX_PATH
 
 # Configure Kokkos-comm
 cmake -B "${BUILD_DIR}/kokkos-comm-build" -S vendor/kokkos-comm \
@@ -37,6 +52,7 @@ cmake -B "${BUILD_DIR}/kokkos-comm-build" -S vendor/kokkos-comm \
 cmake --build "${BUILD_DIR}/kokkos-comm-build" --target install --config "${CONFIG}" --parallel "${NUM_JOBS}"
 
 CMAKE_PREFIX_PATH="${BUILD_DIR}/kokkos-comm-install${CMAKE_PREFIX_PATH:+;$CMAKE_PREFIX_PATH}"
+export CMAKE_PREFIX_PATH
 
 cmake -B "${BUILD_DIR}" -S . \
 	-G "Unix Makefiles" \

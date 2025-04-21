@@ -114,8 +114,14 @@ int main(int argc, char *argv[]) {
 	using namespace std::string_literals;
 
 	const noarr::MPI_session mpi_session(argc, argv);
+
 	const int rank = mpi_get_comm_rank(mpi_session);
+	const int size = mpi_get_comm_size(mpi_session);
 	constexpr int root = 0;
+
+	if (rank == root) {
+		std::cerr<< "Running with " << size << " processes" << std::endl;
+	}
 
 	const auto set_lengths = noarr::set_length<'i'>(NI) ^ noarr::set_length<'j'>(NJ) ^ noarr::set_length<'k'>(NK);
 
@@ -170,7 +176,7 @@ int main(int argc, char *argv[]) {
 		if (argc > 0 && argv[0] != ""s) {
 			if (argc > 2) {
 				std::ifstream file(argv[2]);
-				stream_check check(file);
+				matrix_stream_check check(file, NI, NJ);
 
 				noarr::serialize_data(check, C.get_ref() ^ set_length(mpi_trav) ^ noarr::hoist<'I', 'i', 'J', 'j'>());
 

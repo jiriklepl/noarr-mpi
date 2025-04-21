@@ -19,6 +19,9 @@ I_TILES=${I_TILES:-2}
 SLURM_PARTITION=${SLURM_PARTITION:-mpi-homo-short}
 SLURM_ACCOUNT=${SLURM_ACCOUNT:-kdss}
 
+
+LD_LIBRARY_PATH="${BUILD_DIR}/boost-install/lib${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"
+
 echo "algorithm,framework,dataset,datatype,c_tile,a_tile,b_tile,i_tiles,time,valid"
 files=$(find "$BUILD_DIR/examples/" -mindepth 2 -maxdepth 2 -type f -executable -name "gemm-*-*-*-*-*-*")
 printf "Running the following algorithm implementations\n%s\n" "${files}" >&2

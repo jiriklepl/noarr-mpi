@@ -177,7 +177,6 @@ std::chrono::duration<double> run_experiment(num_t alpha, num_t beta, auto C, au
 
 	kernel_gemm(alpha, tileC.mdspan(), beta, tileA.mdspan(), tileB.mdspan(), SI, SJ, NK);
 
-	// world.gatherv(root, tileC_data.get(), c_tile_layout, C_data.get(), c_layouts);
 	mpi::gather(world, tileC, c_layouts, root);
 
 	const auto end = std::chrono::high_resolution_clock::now();
@@ -193,10 +192,13 @@ int main(int argc, char *argv[]) {
 	mpi::environment env(argc, argv);
 	mpi::communicator world;
 
-	// const noarr::MPI_session mpi_session(argc, argv);
 	const int rank = world.rank();
 	const int size = world.size();
 	constexpr int root = 0;
+
+	if (rank == root) {
+		std::cerr<< "Running with " << size << " processes" << std::endl;
+	}
 
 	const auto C_data = (rank == root) ? std::make_unique<num_t[]>(NI * NJ) : nullptr;
 	const auto A_data = (rank == root) ? std::make_unique<num_t[]>(NI * NK) : nullptr;
@@ -239,7 +241,7 @@ int main(int argc, char *argv[]) {
 		if (argc > 0 && argv[0] != ""s) {
 			if (argc > 2) {
 				std::ifstream file(argv[2]);
-				stream_check check(file);
+				matrix_stream_check check(file, NI, NJ);
 
 				for (auto i = 0; i < NI; ++i) {
 					for (auto j = 0; j < NJ; ++j) {

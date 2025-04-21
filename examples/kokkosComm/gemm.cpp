@@ -166,6 +166,10 @@ int run_environment(int argc, char *argv[]) {
 	const int size = handle.size();
 	constexpr int root = 0;
 
+	if (rank == root) {
+		std::cerr<< "Running with " << size << " processes" << std::endl;
+	}
+
 	const auto C_data = (rank == root) ? std::make_unique<num_t[]>(NI * NJ) : nullptr;
 	const auto A_data = (rank == root) ? std::make_unique<num_t[]>(NI * NK) : nullptr;
 	const auto B_data = (rank == root) ? std::make_unique<num_t[]>(NK * NJ) : nullptr;
@@ -207,10 +211,10 @@ int run_environment(int argc, char *argv[]) {
 		if (argc > 0 && argv[0] != ""s) {
 			if (argc > 2) {
 				std::ifstream file(argv[2]);
-				stream_check check(file);
+				matrix_stream_check check(file, NI, NJ);
 
-				for (auto i = 0; i < NI; ++i) {
-					for (auto j = 0; j < NJ; ++j) {
+				for (std::size_t i = 0; i < NI; ++i) {
+					for (std::size_t j = 0; j < NJ; ++j) {
 						check << C(i, j) << '\n';
 					}
 				}
@@ -221,8 +225,8 @@ int run_environment(int argc, char *argv[]) {
 				}
 			} else {
 				std::cout << std::fixed << std::setprecision(2);
-				for (auto i = 0; i < NI; ++i) {
-					for (auto j = 0; j < NJ; ++j) {
+				for (std::size_t i = 0; i < NI; ++i) {
+					for (std::size_t j = 0; j < NJ; ++j) {
 						std::cout << C(i, j) << '\n';
 					}
 				}
