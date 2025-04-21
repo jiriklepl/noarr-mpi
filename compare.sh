@@ -16,13 +16,14 @@ NUM_RUNS=${NUM_RUNS:-5}
 I_TILES=${I_TILES:-2}
 
 # Slurm settings (defaults specific to <https://gitlab.mff.cuni.cz/mff/hpc/clusters>)
-SLURM_PARTITION=${SLURM_PARTITION:-mpi-homo-short}
-SLURM_ACCOUNT=${SLURM_ACCOUNT:-kdss}
+SLURM_PARTITION=${SLURM_PARTITION:-"mpi-homo-short"}
+SLURM_ACCOUNT=${SLURM_ACCOUNT:-"kdss"}
+SLURM_TIMEOUT=${SLURM_TIMEOUT:-"2:00:00"}
 
 
 LD_LIBRARY_PATH="${BUILD_DIR}/boost-install/lib${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"
 
-echo "algorithm,framework,dataset,datatype,c_tile,a_tile,b_tile,i_tiles,time,mean_time,sd_time,valid"
+echo "algorithm,framework,dataset,datatype,c_tile,a_tile,b_tile,i_tiles,mean_time,sd_time,valid"
 files=$(find "$BUILD_DIR/examples/" -mindepth 2 -maxdepth 2 -type f -executable -name "gemm-*-*-*-*-*-*")
 printf "Running the following algorithm implementations\n%s\n" "${files}" >&2
 for file in ${files}; do

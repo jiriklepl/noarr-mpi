@@ -1,137 +1,159 @@
 #!/usr/bin/env python3
+"""
+Usage:
+    gen_plots.py <csv_file>
 
-import sys
+Plot runtime comparisons for different frameworks and tile configurations
+based on a CSV input. The CSV should contain columns:
+  - framework
+  - dataset
+  - c_tile, a_tile, b_tile
+  - time
+  - valid
+
+Example:
+    python gen_plots.py compare.csv
+"""
+
 import os
 
+import argparse
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
-from matplotlib.ticker import ScalarFormatter
-import matplotlib.patches as mpatches
+import matplotlib.ticker as mticker
+import seaborn as sns
+from matplotlib.patches import Patch
 
-# color-blind friendly palette
-from seaborn.palettes import color_palette
+# ─── Argument parsing ─────────────────────────────────────────────────────────
+parser = argparse.ArgumentParser(
+    description="Plot runtime comparisons from a CSV of framework benchmarks"
+)
+parser.add_argument(
+    'csv_file',
+    help='Path to the input CSV file containing the benchmark data'
+)
+args = parser.parse_args()
 
-if len(sys.argv) != 2:
-    print("Usage: python gen-plots.py <csv_file>")
-    sys.exit(1)
+# ─── Load & prepare data ────────────────────────────────────────────────────────
+df = pd.read_csv(args.csv_file)
 
-csv_file = sys.argv[1]
+# Ultra-concise labels: strip prefixes/suffixes to just letter codes
+df['c_code'] = (
+    df['c_tile']
+      .str.replace('_MAJOR', '', regex=False)
+      .str.replace('C_TILE_', '', regex=False)
+)
+df['a_code'] = (
+    df['a_tile']
+      .str.replace('_MAJOR', '', regex=False)
+      .str.replace('A_TILE_', '', regex=False)
+)
+df['b_code'] = (
+    df['b_tile']
+      .str.replace('_MAJOR', '', regex=False)
+      .str.replace('B_TILE_', '', regex=False)
+)
+df['tile_label'] = df['c_code'] + '/' + df['a_code'] + '/' + df['b_code']
 
-PLOTS_DIR = "plots"
-WIDTH = 0.2
+# Automatically discover unique frameworks & datasets
+frameworks = df['framework'].unique()
+if 'noarr' in frameworks:
+    frameworks = ['noarr'] + [fw for fw in frameworks if fw != 'noarr']
 
-# Load data
-df = pd.read_csv(csv_file)
+datasets   = df['dataset'].unique()
 
-# Prepare tile combination labels
-combos = sorted(
-    df[["c_tile", "a_tile", "b_tile"]].drop_duplicates().apply(tuple, axis=1)
+if 'MINI' in datasets and 'MEDIUM' in datasets and 'EXTRALARGE' in datasets:
+    datasets = ['MINI', 'MEDIUM', 'EXTRALARGE'] + [ds for ds in datasets if ds not in ['MINI', 'MEDIUM', 'EXTRALARGE']]
+
+# ─── Build color map ────────────────────────────────────────────────────────────
+palette = sns.color_palette("colorblind", len(frameworks))
+colors  = {fw: palette[i] for i, fw in enumerate(frameworks)}
+
+# ─── Plot ───────────────────────────────────────────────────────────────────────
+fig, axes = plt.subplots(
+    1, len(datasets),
+    figsize=(4 * len(datasets), 4),
+    sharey=False
+)
+bar_width = 0.2
+
+for ax, ds in zip(axes, datasets):
+    sub = df[df['dataset'] == ds]
+    table = sub.pivot_table(
+        index='tile_label',
+        columns=['framework', 'valid'],
+        values='mean_time'
+    )
+
+    labels = table.index.tolist()
+    x      = np.arange(len(labels))
+
+    for i, fw in enumerate(frameworks):
+        offset = (i - (len(frameworks)-1)/2) * bar_width
+        for valid in (1, 0):
+            col = (fw, valid)
+            if col in table.columns:
+                vals = table[col].reindex(labels).values
+            else:
+                vals = np.full(len(labels), np.nan)
+            if valid == 0:
+                ax.bar(
+                    x + offset, vals, bar_width,
+                    color='white',
+                    hatch=None,
+                    alpha=1.0,
+                    edgecolor='white',
+                    label=None,
+                    zorder=4
+                )
+            ax.bar(
+                x + offset, vals, bar_width,
+                color=colors[fw],
+                hatch=None if valid == 1 else '//',
+                alpha=1.0 if valid == 1 else 0.5,
+                edgecolor='black',
+                label=fw if valid == 1 else None,
+                zorder=5
+            )
+    ax.set_xticks(x)
+    ax.set_xticklabels(labels, rotation=0)
+    ax.set_title(ds)
+    ax.set_xlabel("Major dimension of C/A/B")
+    ax.grid(axis='y', linestyle=':', linewidth=0.5)
+
+    # Scientific notation formatter with "×10ⁿ"
+    fmt = mticker.ScalarFormatter(useMathText=True)
+    fmt.set_scientific(True)
+    fmt.set_powerlimits((0,0))
+    ax.yaxis.set_major_formatter(fmt)
+
+# Common y‑label
+aq = axes[0]
+aq.set_ylabel("Runtime [s]")
+
+# Framework legend (first subplot)
+fw_handles = [plt.Rectangle((0,0),1,1, color=colors[fw]) for fw in frameworks]
+aq.legend(
+    fw_handles, frameworks,
+    title="Framework",
+    loc='upper left'
 )
 
-labels = [
-    f"{c.split('_')[2]}/{a.split('_')[2]}/{b.split('_')[2]}" for c, a, b in combos
-]
+# Valid/Invalid legend (on the rightmost subplot)
+valid_patch   = Patch(facecolor='white', edgecolor='black', label='Valid')
+invalid_patch = Patch(facecolor='white', edgecolor='black', hatch='//', alpha=0.5, label='Invalid')
+axes[-1].legend(
+    [valid_patch, invalid_patch],
+    ['Valid', 'Invalid'],
+    title="Validation",
+    loc='upper right'
+)
 
-datasets = sorted(df["dataset"].unique())
-frameworks = sorted(df["framework"].unique())
+os.makedirs('plots', exist_ok=True)
 
-x = np.arange(len(labels))
+file_name = os.path.splitext(os.path.basename(args.csv_file))[0]
+file_path = f'plots/{file_name}.pdf'
 
-# Color-blind friendly palette
-PALETTE = color_palette("colorblind", len(frameworks))
-BORDER_COLOR = "black"  # same for valid and invalid
-
-for ds in datasets:
-    subset = df[df["dataset"] == ds]
-
-    pivot_time = subset.pivot_table(
-        index=["c_tile", "a_tile", "b_tile"],
-        columns="framework",
-        values="time",
-        aggfunc="mean",
-    ).reindex(index=combos)
-
-    pivot_valid = subset.pivot_table(
-        index=["c_tile", "a_tile", "b_tile"],
-        columns="framework",
-        values="valid",
-        aggfunc="max",
-    ).reindex(index=combos)
-
-    fig, ax = plt.subplots(figsize=(4, 3))
-    # Plot bars with uniform border color
-    for i, fw in enumerate(frameworks):
-        times = pivot_time[fw].values
-        valids = pivot_valid[fw].values
-
-        bars = ax.bar(
-            x + i * WIDTH,
-            times,
-            WIDTH,
-            facecolor=PALETTE[i],
-            edgecolor=BORDER_COLOR,
-            linewidth=1,
-            label=fw,
-        )
-
-        for bar, valid in zip(bars, valids):
-            if valid == 0:
-                bar.set_alpha(0.4)
-                bar.set_hatch("///")
-
-    # Framework legend
-    framework_patches = [
-        mpatches.Patch(facecolor=PALETTE[i], edgecolor=BORDER_COLOR, label=fw)
-        for i, fw in enumerate(frameworks)
-    ]
-
-    legend1 = ax.legend(
-        handles=framework_patches,
-        title="Framework",
-        loc="upper left",
-        fontsize="small",
-        framealpha=0.5,
-        title_fontsize="small",
-    )
-
-    ax.add_artist(legend1)
-
-    # Validation legend
-    valid_patch = mpatches.Patch(
-        facecolor="none", edgecolor=BORDER_COLOR, label="Valid"
-    )
-
-    invalid_patch = mpatches.Patch(
-        facecolor="none",
-        edgecolor=BORDER_COLOR,
-        hatch="///",
-        label="Invalid",
-        alpha=0.4,
-    )
-
-    legend2 = ax.legend(
-        handles=[valid_patch, invalid_patch],
-        title="Validation",
-        loc="upper right",
-        fontsize="small",
-        framealpha=0.5,
-        title_fontsize="small",
-    )
-
-    ax.add_artist(legend2)
-
-    # Formatting
-    ax.set_xticks(x + (len(frameworks) - 1) * WIDTH / 2)
-    ax.set_xticklabels(labels, ha="center", fontsize="small")
-    ax.set_xlabel("Major dimensions of C/A/B tiles", loc="center", fontsize="medium")
-    ax.set_ylabel("Runtime [s]", fontsize="medium")
-    ax.yaxis.set_major_formatter(ScalarFormatter(useMathText=True))
-    ax.ticklabel_format(style="scientific", axis="y", scilimits=(0, 0))
-
-    os.makedirs(PLOTS_DIR, exist_ok=True)
-
-    plt.tight_layout(pad=0.5)
-    plt.savefig(f"{PLOTS_DIR}/runtime_by_framework_{ds}.pdf")
-
-    plt.close(fig)
+plt.tight_layout()
+plt.savefig(file_path, bbox_inches='tight')
