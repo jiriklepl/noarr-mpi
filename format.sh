@@ -4,6 +4,6 @@
 
 set -euo pipefail
 
-mkdir -p include src test
-find include/ src/ test/ examples/ \( -name '*.c' -o -name '*.h' -o -name '*.cpp' -o -name '*.hpp' \) \
+mkdir -p include tests examples
+find include/ tests/ examples/ \( -name '*.c' -o -name '*.h' -o -name '*.cpp' -o -name '*.hpp' \) \
 	-exec clang-format -i -style=file {} +

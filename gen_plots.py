@@ -19,6 +19,7 @@ if len(sys.argv) != 2:
 csv_file = sys.argv[1]
 
 PLOTS_DIR = "plots"
+WIDTH = 0.2
 
 # Load data
 df = pd.read_csv(csv_file)
@@ -34,7 +35,7 @@ labels = [
 
 datasets = sorted(df["dataset"].unique())
 frameworks = sorted(df["framework"].unique())
-WIDTH = 0.2
+
 x = np.arange(len(labels))
 
 # Color-blind friendly palette
@@ -85,19 +86,39 @@ for ds in datasets:
         for i, fw in enumerate(frameworks)
     ]
 
-    legend1 = ax.legend(handles=framework_patches, title="Framework", loc="upper left", fontsize="small", framealpha=0.5, title_fontsize="small")
+    legend1 = ax.legend(
+        handles=framework_patches,
+        title="Framework",
+        loc="upper left",
+        fontsize="small",
+        framealpha=0.5,
+        title_fontsize="small",
+    )
+
     ax.add_artist(legend1)
 
     # Validation legend
     valid_patch = mpatches.Patch(
         facecolor="none", edgecolor=BORDER_COLOR, label="Valid"
     )
+
     invalid_patch = mpatches.Patch(
-        facecolor="none", edgecolor=BORDER_COLOR, hatch="///", label="Invalid", alpha=0.4
+        facecolor="none",
+        edgecolor=BORDER_COLOR,
+        hatch="///",
+        label="Invalid",
+        alpha=0.4,
     )
+
     legend2 = ax.legend(
-        handles=[valid_patch, invalid_patch], title="Validation", loc="upper right", fontsize="small", framealpha=0.5, title_fontsize="small"
+        handles=[valid_patch, invalid_patch],
+        title="Validation",
+        loc="upper right",
+        fontsize="small",
+        framealpha=0.5,
+        title_fontsize="small",
     )
+
     ax.add_artist(legend2)
 
     # Formatting

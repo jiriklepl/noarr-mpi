@@ -6,6 +6,11 @@
 
 #include <noarr/traversers.hpp>
 
+// placeholder definitions to avoid errors from "defines.hpp"
+#define C_TILE_I_MAJOR
+#define A_TILE_I_MAJOR
+#define B_TILE_K_MAJOR
+
 #include "defines.hpp"
 #include "gemm.hpp"
 
