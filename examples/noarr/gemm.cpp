@@ -91,11 +91,27 @@ void kernel_gemm(auto trav, num_t alpha, auto C, num_t beta, auto A, auto B) {
 	});
 }
 
+std::chrono::duration<double> run_experiment(num_t alpha, num_t beta, auto C, auto A, auto B, auto tileC, auto tileA, auto tileB, auto &mpi_trav, int root) {
+	const auto start = std::chrono::high_resolution_clock::now();
+
+	mpi_scatter(C, tileC, mpi_trav, root);
+	mpi_scatter(A, tileA, mpi_trav, root);
+	mpi_scatter(B, tileB, mpi_trav, root);
+
+	// run kernel
+	kernel_gemm(mpi_trav, alpha, tileC, beta, tileA, tileB);
+
+	mpi_gather(tileC, C, mpi_trav, root);
+
+	const auto end = std::chrono::high_resolution_clock::now();
+
+	return end - start;
+}
+
 } // namespace
 
 int main(int argc, char *argv[]) {
 	using namespace std::string_literals;
-	namespace chrono = std::chrono;
 
 	const noarr::MPI_session mpi_session(argc, argv);
 	const int rank = mpi_get_comm_rank(mpi_session);
@@ -146,20 +162,7 @@ int main(int argc, char *argv[]) {
 	mpi_bcast(alpha, mpi_trav, root);
 	mpi_bcast(beta, mpi_trav, root);
 
-	const auto start = chrono::high_resolution_clock::now();
-	{
-		mpi_scatter(C, tileC, mpi_trav, root);
-		mpi_scatter(A, tileA, mpi_trav, root);
-		mpi_scatter(B, tileB, mpi_trav, root);
-
-		// run kernel
-		kernel_gemm(mpi_trav, alpha, tileC.get_ref(), beta, tileA.get_ref(), tileB.get_ref());
-
-		mpi_gather(tileC, C, mpi_trav, root);
-	}
-	const auto end = chrono::high_resolution_clock::now();
-
-	const auto duration = chrono::duration<double>(end - start);
+	const auto duration = run_experiment(alpha, beta, C, A, B, tileC.get_ref(), tileA.get_ref(), tileB.get_ref(), mpi_trav, root);
 
 	int return_code = EXIT_SUCCESS;
 	// print results

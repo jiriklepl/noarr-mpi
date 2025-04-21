@@ -165,11 +165,71 @@ void kernel_gemm(num_t alpha, auto C, num_t beta, auto A, auto B, std::size_t SI
 	}
 }
 
+std::chrono::duration<double> run_experiment(num_t alpha, num_t beta,
+                                             num_t *C_data, num_t *A_data, num_t *B_data,
+                                             auto C, auto A, auto B, std::size_t /*i_tiles*/,
+                                             std::size_t j_tiles,
+											 num_t *tileC_data, num_t *tileA_data, num_t *tileB_data,
+											 auto tileC, auto tileA, auto tileB, std::size_t SI,
+                                             std::size_t SJ, const mpl::communicator & comm_world, int rank, int size,
+                                             int root) {
+	const auto start = std::chrono::high_resolution_clock::now();
+
+	mpl::layouts<num_t> c_layouts;
+
+	mpl::layouts<num_t> a_layouts;
+	mpl::layouts<num_t> b_layouts;
+
+	for (int r = 0; r < size; ++r) {
+		const int i = r / j_tiles;
+		const int j = r % j_tiles;
+
+		auto c_tile_layout_parameter = mpl::subarray_layout<num_t>::parameter{
+			/* first dimension */ {NI, (int)SI, /* index of the first element */ (int)(SI * i)},
+			/* second dimension */ {NJ, (int)SJ, /* index of the first element */ (int)(SJ * j)}};
+
+		auto a_tile_layout_parameter = mpl::subarray_layout<num_t>::parameter{
+			/* first dimension */ {NI, (int)SI, /* index of the first element */ (int)(SI * i)},
+			/* second dimension */ {NK, NK, /* index of the first element */ 0}};
+
+		auto b_tile_layout_parameter = mpl::subarray_layout<num_t>::parameter{
+			/* second dimension */ {NK, NK, /* index of the first element */ 0},
+			/* first dimension */ {NJ, (int)SJ, /* index of the first element */ (int)(SJ * j)}};
+
+		const auto c_tile_layout = mpl::subarray_layout<num_t>{c_tile_layout_parameter};
+		const auto a_tile_layout = mpl::subarray_layout<num_t>{a_tile_layout_parameter};
+		const auto b_tile_layout = mpl::subarray_layout<num_t>{b_tile_layout_parameter};
+
+		c_layouts.push_back(c_tile_layout);
+		a_layouts.push_back(a_tile_layout);
+		b_layouts.push_back(b_tile_layout);
+	}
+
+	const auto c_layout = mpl::contiguous_layout<num_t>{NI * NJ};
+	const auto a_layout = mpl::contiguous_layout<num_t>{NI * NK};
+	const auto b_layout = mpl::contiguous_layout<num_t>{NK * NJ};
+
+	const auto c_tile_layout = mpl::contiguous_layout<num_t>{(std::size_t)(SI * SJ)};
+	const auto a_tile_layout = mpl::contiguous_layout<num_t>{(std::size_t)(SI * NK)};
+	const auto b_tile_layout = mpl::contiguous_layout<num_t>{(std::size_t)(SJ * NK)};
+
+	comm_world.scatterv(root, C_data, c_layouts, tileC_data, c_tile_layout);
+	comm_world.scatterv(root, A_data, a_layouts, tileA_data, a_tile_layout);
+	comm_world.scatterv(root, B_data, b_layouts, tileB_data, b_tile_layout);
+
+	kernel_gemm(alpha, tileC, beta, tileA, tileB, SI, SJ, NK);
+
+	comm_world.gatherv(root, tileC_data, c_tile_layout, C_data, c_layouts);
+
+	const auto end = std::chrono::high_resolution_clock::now();
+
+	return end - start;
+}
+
 } // namespace
 
 int main(int argc, char *argv[]) {
 	using namespace std::string_literals;
-	namespace chrono = std::chrono;
 
 	const mpl::communicator &comm_world{mpl::environment::comm_world()};
 
@@ -210,56 +270,11 @@ int main(int argc, char *argv[]) {
 	comm_world.bcast(root, alpha);
 	comm_world.bcast(root, beta);
 
-	mpl::layouts<num_t> c_layouts;
-	mpl::layouts<num_t> a_layouts;
-	mpl::layouts<num_t> b_layouts;
-
-	for (int r = 0; r < size; ++r) {
-		const int i = r / j_tiles;
-		const int j = r % j_tiles;
-
-		auto c_tile_layout_parameter = mpl::subarray_layout<num_t>::parameter{
-			/* first dimension */ {NI, (int)SI, /* index of the first element */ (int)(SI * i)},
-			/* second dimension */ {NJ, (int)SJ, /* index of the first element */ (int)(SJ * j)}};
-
-		auto a_tile_layout_parameter = mpl::subarray_layout<num_t>::parameter{
-			/* first dimension */ {NI, (int)SI, /* index of the first element */ (int)(SI * i)},
-			/* second dimension */ {NK, NK, /* index of the first element */ 0}};
-
-		auto b_tile_layout_parameter = mpl::subarray_layout<num_t>::parameter{
-			/* second dimension */ {NK, NK, /* index of the first element */ 0},
-			/* first dimension */ {NJ, (int)SJ, /* index of the first element */ (int)(SJ * j)}};
-
-		const auto c_tile_layout = mpl::subarray_layout<num_t>{c_tile_layout_parameter};
-		const auto a_tile_layout = mpl::subarray_layout<num_t>{a_tile_layout_parameter};
-		const auto b_tile_layout = mpl::subarray_layout<num_t>{b_tile_layout_parameter};
-
-		c_layouts.push_back(c_tile_layout);
-		a_layouts.push_back(a_tile_layout);
-		b_layouts.push_back(b_tile_layout);
-	}
-
-	const auto start = chrono::high_resolution_clock::now();
-
-	const auto c_layout = mpl::contiguous_layout<num_t>{NI * NJ};
-	const auto a_layout = mpl::contiguous_layout<num_t>{NI * NK};
-	const auto b_layout = mpl::contiguous_layout<num_t>{NK * NJ};
-
-	const auto c_tile_layout = mpl::contiguous_layout<num_t>{(std::size_t)(SI * SJ)};
-	const auto a_tile_layout = mpl::contiguous_layout<num_t>{(std::size_t)(SI * NK)};
-	const auto b_tile_layout = mpl::contiguous_layout<num_t>{(std::size_t)(SJ * NK)};
-
-	comm_world.scatterv(root, C_data.get(), c_layouts, tileC_data.get(), c_tile_layout);
-	comm_world.scatterv(root, A_data.get(), a_layouts, tileA_data.get(), a_tile_layout);
-	comm_world.scatterv(root, B_data.get(), b_layouts, tileB_data.get(), b_tile_layout);
-
-	kernel_gemm(alpha, tileC, beta, tileA, tileB, SI, SJ, NK);
-
-	comm_world.gatherv(root, tileC_data.get(), c_tile_layout, C_data.get(), c_layouts);
-
-	const auto end = chrono::high_resolution_clock::now();
-
-	const auto duration = chrono::duration<double>(end - start);
+	const auto duration =
+		run_experiment(alpha, beta, C_data.get(), A_data.get(), B_data.get(),
+		               C, A, B, i_tiles, j_tiles,
+		               tileC_data.get(), tileA_data.get(), tileB_data.get(),
+		               tileC, tileA, tileB, SI, SJ, comm_world, rank, size, root);
 
 	int return_code = EXIT_SUCCESS;
 	// print results

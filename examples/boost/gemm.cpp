@@ -141,11 +141,54 @@ void kernel_gemm(num_t alpha, auto C, num_t beta, auto A, auto B, std::size_t SI
 	}
 }
 
+std::chrono::duration<double> run_experiment(num_t alpha, num_t beta, auto C, auto A, auto B, std::size_t /*i_tiles*/,
+                                             std::size_t j_tiles, auto tileC, auto tileA, auto tileB, std::size_t SI,
+                                             std::size_t SJ, mpi::communicator &world, int /*rank*/, int size,
+                                             int root) {
+	const auto start = std::chrono::high_resolution_clock::now();
+
+	std::vector<matrix<std::decay_t<decltype(C.mdspan())>>> c_layouts;
+	std::vector<matrix<std::decay_t<decltype(A.mdspan())>>> a_layouts;
+	std::vector<matrix<std::decay_t<decltype(B.mdspan())>>> b_layouts;
+
+	for (int r = 0; r < size; ++r) {
+		const int i = r / j_tiles;
+		const int j = r % j_tiles;
+
+		c_layouts.emplace_back(
+			stdex::submdspan(C.mdspan(),
+		                     /* first dimension */ std::tuple<std::size_t, std::size_t>{SI * i, SI * (i + 1)},
+		                     /* second dimension */ std::tuple<std::size_t, std::size_t>{SJ * j, SJ * (j + 1)}));
+
+		a_layouts.emplace_back(
+			stdex::submdspan(A.mdspan(),
+		                     /* first dimension */ std::tuple<std::size_t, std::size_t>{SI * i, SI * (i + 1)},
+		                     /* second dimension */ stdex::full_extent));
+
+		b_layouts.emplace_back(
+			stdex::submdspan(B.mdspan(),
+		                     /* first dimension */ stdex::full_extent,
+		                     /* second dimension */ std::tuple<std::size_t, std::size_t>{SJ * j, SJ * (j + 1)}));
+	}
+
+	mpi::scatter(world, c_layouts, tileC, root);
+	mpi::scatter(world, a_layouts, tileA, root);
+	mpi::scatter(world, b_layouts, tileB, root);
+
+	kernel_gemm(alpha, tileC.mdspan(), beta, tileA.mdspan(), tileB.mdspan(), SI, SJ, NK);
+
+	// world.gatherv(root, tileC_data.get(), c_tile_layout, C_data.get(), c_layouts);
+	mpi::gather(world, tileC, c_layouts, root);
+
+	const auto end = std::chrono::high_resolution_clock::now();
+
+	return end - start;
+}
+
 } // namespace
 
 int main(int argc, char *argv[]) {
 	using namespace std::string_literals;
-	namespace chrono = std::chrono;
 
 	mpi::environment env(argc, argv);
 	mpi::communicator world;
@@ -187,44 +230,8 @@ int main(int argc, char *argv[]) {
 	mpi::broadcast(world, alpha, root);
 	mpi::broadcast(world, beta, root);
 
-	std::vector<matrix<std::decay_t<decltype(C.mdspan())>>> c_layouts;
-	std::vector<matrix<std::decay_t<decltype(A.mdspan())>>> a_layouts;
-	std::vector<matrix<std::decay_t<decltype(B.mdspan())>>> b_layouts;
-
-	for (int r = 0; r < size; ++r) {
-		const int i = r / j_tiles;
-		const int j = r % j_tiles;
-
-		c_layouts.emplace_back(
-			stdex::submdspan(C.mdspan(),
-		                     /* first dimension */ std::tuple<std::size_t, std::size_t>{SI * i, SI * (i + 1)},
-		                     /* second dimension */ std::tuple<std::size_t, std::size_t>{SJ * j, SJ * (j + 1)}));
-
-		a_layouts.emplace_back(
-			stdex::submdspan(A.mdspan(),
-		                     /* first dimension */ std::tuple<std::size_t, std::size_t>{SI * i, SI * (i + 1)},
-		                     /* second dimension */ stdex::full_extent));
-
-		b_layouts.emplace_back(
-			stdex::submdspan(B.mdspan(),
-		                     /* first dimension */ stdex::full_extent,
-		                     /* second dimension */ std::tuple<std::size_t, std::size_t>{SJ * j, SJ * (j + 1)}));
-	}
-
-	const auto start = chrono::high_resolution_clock::now();
-
-	mpi::scatter(world, c_layouts, tileC, root);
-	mpi::scatter(world, a_layouts, tileA, root);
-	mpi::scatter(world, b_layouts, tileB, root);
-
-	kernel_gemm(alpha, tileC.mdspan(), beta, tileA.mdspan(), tileB.mdspan(), SI, SJ, NK);
-
-	// world.gatherv(root, tileC_data.get(), c_tile_layout, C_data.get(), c_layouts);
-	mpi::gather(world, tileC, c_layouts, root);
-
-	const auto end = chrono::high_resolution_clock::now();
-
-	const auto duration = chrono::duration<double>(end - start);
+	const auto duration =
+		run_experiment(alpha, beta, C, A, B, i_tiles, j_tiles, tileC, tileA, tileB, SI, SJ, world, rank, size, root);
 
 	int return_code = EXIT_SUCCESS;
 	// print results

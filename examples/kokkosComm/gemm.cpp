@@ -102,51 +102,11 @@ void kernel_gemm(num_t alpha, auto C, num_t beta, auto A, auto B, std::size_t SI
 	}
 }
 
-} // namespace
-
-int run(int argc, char *argv[]) {
-	using namespace std::string_literals;
-	namespace chrono = std::chrono;
-
-	KokkosComm::Handle<> handle;
-
-	const int rank = handle.rank();
-	const int size = handle.size();
-	constexpr int root = 0;
-
-	const auto C_data = (rank == root) ? std::make_unique<num_t[]>(NI * NJ) : nullptr;
-	const auto A_data = (rank == root) ? std::make_unique<num_t[]>(NI * NK) : nullptr;
-	const auto B_data = (rank == root) ? std::make_unique<num_t[]>(NK * NJ) : nullptr;
-
-	const auto C = tuning.c_layout(C_data.get(), NI, NJ);
-	const auto A = tuning.a_layout(A_data.get(), NI, NK);
-	const auto B = tuning.b_layout(B_data.get(), NK, NJ);
-
-	const int i_tiles = (argc > 1) ? std::atoi(argv[1]) : 1;
-	const int j_tiles = size / i_tiles;
-
-	const std::size_t SI = NI / i_tiles;
-	const std::size_t SJ = NJ / j_tiles;
-
-	const auto tileC_data = std::make_unique<num_t[]>(SI * SJ);
-	const auto tileA_data = std::make_unique<num_t[]>(SI * NK);
-	const auto tileB_data = std::make_unique<num_t[]>(SJ * NK);
-
-	const auto tileC = tuning.c_tile_layout(tileC_data.get(), SI, SJ);
-	const auto tileA = tuning.a_tile_layout(tileA_data.get(), SI, NK);
-	const auto tileB = tuning.b_tile_layout(tileB_data.get(), NK, SJ);
-
-	num_t alpha{};
-	num_t beta{};
-
-	if (rank == root) {
-		init_array(alpha, C, beta, A, B);
-	}
-
-	MPI_Bcast(&alpha, 1, KokkosComm::Impl::mpi_type_v<num_t>, root, handle.mpi_comm());
-	MPI_Bcast(&beta, 1, KokkosComm::Impl::mpi_type_v<num_t>, root, handle.mpi_comm());
-
-	const auto start = chrono::high_resolution_clock::now();
+std::chrono::duration<double> run_experiment(num_t alpha, num_t beta, auto C, auto A, auto B, std::size_t /*i_tiles*/,
+                                             std::size_t j_tiles, auto tileC, auto tileA, auto tileB, std::size_t SI,
+                                             std::size_t SJ, KokkosComm::Handle<> &handle, int rank, int size,
+                                             int root) {
+	const auto start = std::chrono::high_resolution_clock::now();
 
 	std::vector<KokkosComm::Req<>> reqs;
 
@@ -192,9 +152,54 @@ int run(int argc, char *argv[]) {
 	KokkosComm::wait_all(reqs);
 	reqs.clear();
 
-	const auto end = chrono::high_resolution_clock::now();
+	const auto end = std::chrono::high_resolution_clock::now();
 
-	const auto duration = chrono::duration<double>(end - start);
+	return end - start;
+}
+
+int run_environment(int argc, char *argv[]) {
+	using namespace std::string_literals;
+
+	KokkosComm::Handle<> handle;
+
+	const int rank = handle.rank();
+	const int size = handle.size();
+	constexpr int root = 0;
+
+	const auto C_data = (rank == root) ? std::make_unique<num_t[]>(NI * NJ) : nullptr;
+	const auto A_data = (rank == root) ? std::make_unique<num_t[]>(NI * NK) : nullptr;
+	const auto B_data = (rank == root) ? std::make_unique<num_t[]>(NK * NJ) : nullptr;
+
+	const auto C = tuning.c_layout(C_data.get(), NI, NJ);
+	const auto A = tuning.a_layout(A_data.get(), NI, NK);
+	const auto B = tuning.b_layout(B_data.get(), NK, NJ);
+
+	const int i_tiles = (argc > 1) ? std::atoi(argv[1]) : 1;
+	const int j_tiles = size / i_tiles;
+
+	const std::size_t SI = NI / i_tiles;
+	const std::size_t SJ = NJ / j_tiles;
+
+	const auto tileC_data = std::make_unique<num_t[]>(SI * SJ);
+	const auto tileA_data = std::make_unique<num_t[]>(SI * NK);
+	const auto tileB_data = std::make_unique<num_t[]>(SJ * NK);
+
+	const auto tileC = tuning.c_tile_layout(tileC_data.get(), SI, SJ);
+	const auto tileA = tuning.a_tile_layout(tileA_data.get(), SI, NK);
+	const auto tileB = tuning.b_tile_layout(tileB_data.get(), NK, SJ);
+
+	num_t alpha{};
+	num_t beta{};
+
+	if (rank == root) {
+		init_array(alpha, C, beta, A, B);
+	}
+
+	MPI_Bcast(&alpha, 1, KokkosComm::Impl::mpi_type_v<num_t>, root, handle.mpi_comm());
+	MPI_Bcast(&beta, 1, KokkosComm::Impl::mpi_type_v<num_t>, root, handle.mpi_comm());
+
+	const auto duration =
+		run_experiment(alpha, beta, C, A, B, i_tiles, j_tiles, tileC, tileA, tileB, SI, SJ, handle, rank, size, root);
 
 	int return_code = EXIT_SUCCESS;
 	// print results
@@ -233,6 +238,8 @@ int run(int argc, char *argv[]) {
 	return return_code;
 }
 
+} // namespace
+
 int main(int argc, char *argv[]) {
 	int provided = 0;
 	MPI_Init_thread(&argc, &argv, MPI_THREAD_MULTIPLE, &provided);
@@ -244,7 +251,7 @@ int main(int argc, char *argv[]) {
 	int return_code = EXIT_FAILURE;
 	try {
 		Kokkos::initialize(argc, argv);
-		return_code = run(argc, argv);
+		return_code = run_environment(argc, argv);
 	} catch (const std::exception &e) {
 		std::cerr << "Exception: " << e.what() << std::endl;
 		MPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
