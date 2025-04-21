@@ -165,13 +165,11 @@ void kernel_gemm(num_t alpha, auto C, num_t beta, auto A, auto B, std::size_t SI
 	}
 }
 
-std::chrono::duration<double> run_experiment(num_t alpha, num_t beta,
-                                             num_t *C_data, num_t *A_data, num_t *B_data,
-                                             auto& C, auto& A, auto& B, std::size_t /*i_tiles*/,
-                                             std::size_t j_tiles,
-											 num_t *tileC_data, num_t *tileA_data, num_t *tileB_data,
-											 auto& tileC, auto& tileA, auto& tileB, std::size_t SI,
-                                             std::size_t SJ, const mpl::communicator & comm_world, int rank, int size,
+std::chrono::duration<double> run_experiment(num_t alpha, num_t beta, num_t *C_data, num_t *A_data, num_t *B_data,
+                                             auto & /*C*/, auto & /*A*/, auto & /*B*/, std::size_t /*i_tiles*/,
+                                             std::size_t j_tiles, num_t *tileC_data, num_t *tileA_data,
+                                             num_t *tileB_data, auto &tileC, auto &tileA, auto &tileB, std::size_t SI,
+                                             std::size_t SJ, const mpl::communicator &comm_world, int rank, int size,
                                              int root) {
 	const auto start = std::chrono::high_resolution_clock::now();
 
@@ -237,7 +235,7 @@ int main(int argc, char *argv[]) {
 	constexpr int root = 0;
 
 	if (rank == root) {
-		std::cerr<< "Running with " << size << " processes" << std::endl;
+		std::cerr << "Running with " << size << " processes" << std::endl;
 	}
 
 	const auto C_data = (rank == root) ? std::make_unique<num_t[]>(NI * NJ) : nullptr;
@@ -272,11 +270,9 @@ int main(int argc, char *argv[]) {
 	comm_world.bcast(root, alpha);
 	comm_world.bcast(root, beta);
 
-	const auto duration =
-		run_experiment(alpha, beta, C_data.get(), A_data.get(), B_data.get(),
-		               C, A, B, i_tiles, j_tiles,
-		               tileC_data.get(), tileA_data.get(), tileB_data.get(),
-		               tileC, tileA, tileB, SI, SJ, comm_world, rank, size, root);
+	const auto duration = run_experiment(alpha, beta, C_data.get(), A_data.get(), B_data.get(), C, A, B, i_tiles,
+	                                     j_tiles, tileC_data.get(), tileA_data.get(), tileB_data.get(), tileC, tileA,
+	                                     tileB, SI, SJ, comm_world, rank, size, root);
 
 	int return_code = EXIT_SUCCESS;
 	// print results

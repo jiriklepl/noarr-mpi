@@ -102,10 +102,10 @@ void kernel_gemm(num_t alpha, auto C, num_t beta, auto A, auto B, std::size_t SI
 	}
 }
 
-std::chrono::duration<double> run_experiment(num_t alpha, num_t beta, auto C, auto A, auto B, std::size_t /*i_tiles*/,
-                                             std::size_t j_tiles, auto tileC, auto tileA, auto tileB, std::size_t SI,
-                                             std::size_t SJ, KokkosComm::Handle<> &handle, int rank, int size,
-                                             int root) {
+std::chrono::duration<double> run_experiment(num_t alpha, num_t beta, auto &C, auto &A, auto &B,
+                                             std::size_t /*i_tiles*/, std::size_t j_tiles, auto &tileC, auto &tileA,
+                                             auto &tileB, std::size_t SI, std::size_t SJ, KokkosComm::Handle<> &handle,
+                                             int rank, int size, int root) {
 	const auto start = std::chrono::high_resolution_clock::now();
 
 	std::vector<KokkosComm::Req<>> reqs;
@@ -167,7 +167,7 @@ int run_environment(int argc, char *argv[]) {
 	constexpr int root = 0;
 
 	if (rank == root) {
-		std::cerr<< "Running with " << size << " processes" << std::endl;
+		std::cerr << "Running with " << size << " processes" << std::endl;
 	}
 
 	const auto C_data = (rank == root) ? std::make_unique<num_t[]>(NI * NJ) : nullptr;

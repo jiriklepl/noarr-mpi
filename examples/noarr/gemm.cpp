@@ -91,7 +91,8 @@ void kernel_gemm(auto trav, num_t alpha, auto C, num_t beta, auto A, auto B) {
 	});
 }
 
-std::chrono::duration<double> run_experiment(num_t alpha, num_t beta, auto C, auto A, auto B, auto tileC, auto tileA, auto tileB, auto &mpi_trav, int root) {
+std::chrono::duration<double> run_experiment(num_t alpha, num_t beta, auto C, auto A, auto B, auto tileC, auto tileA,
+                                             auto tileB, auto &mpi_trav, int root) {
 	const auto start = std::chrono::high_resolution_clock::now();
 
 	mpi_scatter(C, tileC, mpi_trav, root);
@@ -120,7 +121,7 @@ int main(int argc, char *argv[]) {
 	constexpr int root = 0;
 
 	if (rank == root) {
-		std::cerr<< "Running with " << size << " processes" << std::endl;
+		std::cerr << "Running with " << size << " processes" << std::endl;
 	}
 
 	const auto set_lengths = noarr::set_length<'i'>(NI) ^ noarr::set_length<'j'>(NJ) ^ noarr::set_length<'k'>(NK);
@@ -168,7 +169,8 @@ int main(int argc, char *argv[]) {
 	mpi_bcast(alpha, mpi_trav, root);
 	mpi_bcast(beta, mpi_trav, root);
 
-	const auto duration = run_experiment(alpha, beta, C, A, B, tileC.get_ref(), tileA.get_ref(), tileB.get_ref(), mpi_trav, root);
+	const auto duration =
+		run_experiment(alpha, beta, C, A, B, tileC.get_ref(), tileA.get_ref(), tileB.get_ref(), mpi_trav, root);
 
 	int return_code = EXIT_SUCCESS;
 	// print results

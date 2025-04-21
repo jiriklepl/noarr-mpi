@@ -10,7 +10,7 @@ class matrix_stream_check {
 public:
 	static constexpr std::size_t max_invalid = 10;
 
-	explicit matrix_stream_check(std::istream &f, std::size_t ni, std::size_t nj) : _file(&f), _ni(ni), _nj(nj) { }
+	explicit matrix_stream_check(std::istream &f, std::size_t ni, std::size_t nj) : _file(&f), _ni(ni), _nj(nj) {}
 
 	matrix_stream_check &operator<<(char /* v */) {
 		// ignore
@@ -32,8 +32,8 @@ public:
 
 		if (expected != result) {
 			if (_invalid_count++ < max_invalid) {
-				std::cerr << "Invalid value at C[" << _i << ", " << _j << "]: expected " << expected
-						<< ", got " << result << std::endl;
+				std::cerr << "Invalid value at C[" << _i << ", " << _j << "]: expected " << expected << ", got "
+						  << result << std::endl;
 			}
 		}
 
@@ -46,9 +46,7 @@ public:
 		return *this;
 	}
 
-	bool is_valid() const {
-		return _invalid_count == 0;
-	}
+	bool is_valid() const { return _invalid_count == 0; }
 
 private:
 	std::istream *_file;

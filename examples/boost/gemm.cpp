@@ -197,7 +197,7 @@ int main(int argc, char *argv[]) {
 	constexpr int root = 0;
 
 	if (rank == root) {
-		std::cerr<< "Running with " << size << " processes" << std::endl;
+		std::cerr << "Running with " << size << " processes" << std::endl;
 	}
 
 	const auto C_data = (rank == root) ? std::make_unique<num_t[]>(NI * NJ) : nullptr;
