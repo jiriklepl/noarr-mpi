@@ -189,6 +189,8 @@ std::chrono::duration<double> run_experiment(num_t alpha, num_t beta, auto C, au
 int main(int argc, char *argv[]) {
 	using namespace std::string_literals;
 
+	constexpr int num_runs = 10;
+
 	mpi::environment env(argc, argv);
 	mpi::communicator world;
 
@@ -197,7 +199,7 @@ int main(int argc, char *argv[]) {
 	constexpr int root = 0;
 
 	if (rank == root) {
-		std::cerr << "Running with " << size << " processes" << std::endl;
+		std::cerr << "Running with " << size << " processes" << '\n';
 	}
 
 	const auto C_data = (rank == root) ? std::make_unique<num_t[]>(NI * NJ) : nullptr;
@@ -232,8 +234,25 @@ int main(int argc, char *argv[]) {
 	mpi::broadcast(world, alpha, root);
 	mpi::broadcast(world, beta, root);
 
-	const auto duration =
-		run_experiment(alpha, beta, C, A, B, i_tiles, j_tiles, tileC, tileA, tileB, SI, SJ, world, rank, size, root);
+	// Warm up
+	run_experiment(alpha, beta, C, A, B, i_tiles, j_tiles, tileC, tileA, tileB, SI, SJ, world, rank, size, root);
+
+	std::vector<double> times(num_runs);
+
+	for (int i = 0; i < num_runs; ++i) {
+		if (rank == root) {
+			init_array(alpha, C.mdspan(), beta, A.mdspan(), B.mdspan());
+		}
+
+		times[i] =
+			run_experiment(alpha, beta, C, A, B, i_tiles, j_tiles, tileC, tileA, tileB, SI, SJ, world, rank, size, root)
+				.count();
+	}
+
+	const auto [mean, stddev] = mean_stddev(times);
+	if (rank == root) {
+		std::cout << mean << " " << stddev << '\n';
+	}
 
 	int return_code = EXIT_SUCCESS;
 	// print results
@@ -250,21 +269,18 @@ int main(int argc, char *argv[]) {
 				}
 
 				if (!check.is_valid()) {
-					std::cerr << "Validation failed!" << std::endl;
+					std::cerr << "Validation failed!" << '\n';
 					return_code = EXIT_FAILURE;
 				}
 			} else {
-				std::cout << std::fixed << std::setprecision(2);
+				std::cerr << std::fixed << std::setprecision(2);
 				for (auto i = 0; i < NI; ++i) {
 					for (auto j = 0; j < NJ; ++j) {
-						std::cout << C.mdspan()[i, j] << '\n';
+						std::cerr << C.mdspan()[i, j] << '\n';
 					}
 				}
 			}
 		}
-
-		std::cout << std::fixed << std::setprecision(6);
-		std::cout << duration.count() << std::endl;
 	}
 
 	mpi::broadcast(world, return_code, root);

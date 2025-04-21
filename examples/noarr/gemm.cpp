@@ -114,6 +114,8 @@ std::chrono::duration<double> run_experiment(num_t alpha, num_t beta, auto C, au
 int main(int argc, char *argv[]) {
 	using namespace std::string_literals;
 
+	constexpr int num_runs = 10;
+
 	const noarr::MPI_session mpi_session(argc, argv);
 
 	const int rank = mpi_get_comm_rank(mpi_session);
@@ -121,7 +123,7 @@ int main(int argc, char *argv[]) {
 	constexpr int root = 0;
 
 	if (rank == root) {
-		std::cerr << "Running with " << size << " processes" << std::endl;
+		std::cerr << "Running with " << size << " processes" << '\n';
 	}
 
 	const auto set_lengths = noarr::set_length<'i'>(NI) ^ noarr::set_length<'j'>(NJ) ^ noarr::set_length<'k'>(NK);
@@ -169,8 +171,26 @@ int main(int argc, char *argv[]) {
 	mpi_bcast(alpha, mpi_trav, root);
 	mpi_bcast(beta, mpi_trav, root);
 
-	const auto duration =
-		run_experiment(alpha, beta, C, A, B, tileC.get_ref(), tileA.get_ref(), tileB.get_ref(), mpi_trav, root);
+	// Warm up
+	run_experiment(alpha, beta, C, A, B, tileC.get_ref(), tileA.get_ref(), tileB.get_ref(), mpi_trav, root);
+
+	std::vector<double> times(num_runs);
+
+	for (int i = 0; i < num_runs; ++i) {
+		if (rank == root) {
+			init_array(mpi_trav, alpha, bag(C_structure, C.data()), beta, bag(A_structure, A.data()),
+			           bag(B_structure, B.data()));
+		}
+
+		times[i] =
+			run_experiment(alpha, beta, C, A, B, tileC.get_ref(), tileA.get_ref(), tileB.get_ref(), mpi_trav, root)
+				.count();
+	}
+
+	const auto [mean, stddev] = mean_stddev(times);
+	if (rank == root) {
+		std::cout << mean << " " << stddev << '\n';
+	}
 
 	int return_code = EXIT_SUCCESS;
 	// print results
@@ -183,18 +203,15 @@ int main(int argc, char *argv[]) {
 				noarr::serialize_data(check, C.get_ref() ^ set_length(mpi_trav) ^ noarr::hoist<'I', 'i', 'J', 'j'>());
 
 				if (!check.is_valid()) {
-					std::cerr << "Result mismatch!" << std::endl;
+					std::cerr << "Result mismatch!" << '\n';
 					return_code = EXIT_FAILURE;
 				}
 			} else {
-				std::cout << std::fixed << std::setprecision(2);
-				noarr::serialize_data(std::cout,
+				std::cerr << std::fixed << std::setprecision(2);
+				noarr::serialize_data(std::cerr,
 				                      C.get_ref() ^ set_length(mpi_trav) ^ noarr::hoist<'I', 'i', 'J', 'j'>());
 			}
 		}
-
-		std::cout << std::fixed << std::setprecision(6);
-		std::cout << duration.count() << std::endl;
 	}
 
 	mpi_bcast(return_code, mpi_trav, root);

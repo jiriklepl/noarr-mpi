@@ -112,8 +112,8 @@ std::chrono::duration<double> run_experiment(num_t alpha, num_t beta, auto &C, a
 
 	if (rank == root) {
 		for (int r = 0; r < size; ++r) {
-			int i = r / j_tiles;
-			int j = r % j_tiles;
+			const int i = r / j_tiles;
+			const int j = r % j_tiles;
 
 			const auto c_subview = Kokkos::subview(C, std::make_pair<int, int>(i * SI, (i + 1) * SI),
 			                                       std::make_pair<int, int>(j * SJ, (j + 1) * SJ));
@@ -139,8 +139,8 @@ std::chrono::duration<double> run_experiment(num_t alpha, num_t beta, auto &C, a
 
 	if (rank == root) {
 		for (int r = 0; r < size; ++r) {
-			int i = r / j_tiles;
-			int j = r % j_tiles;
+			const int i = r / j_tiles;
+			const int j = r % j_tiles;
 
 			const auto c_subview = Kokkos::subview(C, std::make_pair<int, int>(i * SI, (i + 1) * SI),
 			                                       std::make_pair<int, int>(j * SJ, (j + 1) * SJ));
@@ -160,6 +160,8 @@ std::chrono::duration<double> run_experiment(num_t alpha, num_t beta, auto &C, a
 int run_environment(int argc, char *argv[]) {
 	using namespace std::string_literals;
 
+	constexpr int num_runs = 10;
+
 	KokkosComm::Handle<> handle;
 
 	const int rank = handle.rank();
@@ -167,7 +169,7 @@ int run_environment(int argc, char *argv[]) {
 	constexpr int root = 0;
 
 	if (rank == root) {
-		std::cerr << "Running with " << size << " processes" << std::endl;
+		std::cerr << "Running with " << size << " processes" << '\n';
 	}
 
 	const auto C_data = (rank == root) ? std::make_unique<num_t[]>(NI * NJ) : nullptr;
@@ -202,8 +204,25 @@ int run_environment(int argc, char *argv[]) {
 	MPI_Bcast(&alpha, 1, KokkosComm::Impl::mpi_type_v<num_t>, root, handle.mpi_comm());
 	MPI_Bcast(&beta, 1, KokkosComm::Impl::mpi_type_v<num_t>, root, handle.mpi_comm());
 
-	const auto duration =
-		run_experiment(alpha, beta, C, A, B, i_tiles, j_tiles, tileC, tileA, tileB, SI, SJ, handle, rank, size, root);
+	// Warm up
+	run_experiment(alpha, beta, C, A, B, i_tiles, j_tiles, tileC, tileA, tileB, SI, SJ, handle, rank, size, root);
+
+	std::vector<double> times(num_runs);
+
+	for (int i = 0; i < num_runs; ++i) {
+		if (rank == root) {
+			init_array(alpha, C, beta, A, B);
+		}
+
+		times[i] = run_experiment(alpha, beta, C, A, B, i_tiles, j_tiles, tileC, tileA, tileB, SI, SJ, handle, rank,
+		                          size, root)
+		               .count();
+	}
+
+	const auto [mean, stddev] = mean_stddev(times);
+	if (rank == root) {
+		std::cout << mean << " " << stddev << '\n';
+	}
 
 	int return_code = EXIT_SUCCESS;
 	// print results
@@ -224,17 +243,14 @@ int run_environment(int argc, char *argv[]) {
 					return_code = EXIT_FAILURE;
 				}
 			} else {
-				std::cout << std::fixed << std::setprecision(2);
+				std::cerr << std::fixed << std::setprecision(2);
 				for (std::size_t i = 0; i < NI; ++i) {
 					for (std::size_t j = 0; j < NJ; ++j) {
-						std::cout << C(i, j) << '\n';
+						std::cerr << C(i, j) << '\n';
 					}
 				}
 			}
 		}
-
-		std::cout << std::fixed << std::setprecision(6);
-		std::cout << duration.count() << std::endl;
 	}
 
 	MPI_Bcast(&return_code, 1, MPI_INT, root, handle.mpi_comm());
@@ -248,7 +264,7 @@ int main(int argc, char *argv[]) {
 	int provided = 0;
 	MPI_Init_thread(&argc, &argv, MPI_THREAD_MULTIPLE, &provided);
 	if (provided < MPI_THREAD_MULTIPLE) {
-		std::cerr << "MPI does not support MPI_THREAD_MULTIPLE" << std::endl;
+		std::cerr << "MPI does not support MPI_THREAD_MULTIPLE" << '\n';
 		MPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
 	}
 
@@ -257,12 +273,14 @@ int main(int argc, char *argv[]) {
 		Kokkos::initialize(argc, argv);
 		return_code = run_environment(argc, argv);
 	} catch (const std::exception &e) {
-		std::cerr << "Exception: " << e.what() << std::endl;
+		std::cerr << "Exception: " << e.what() << '\n';
 		MPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
 	} catch (...) {
-		std::cerr << "Unknown exception" << std::endl;
+		std::cerr << "Unknown exception" << '\n';
 		MPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
 	}
+
+	MPI_Bcast(&return_code, 1, MPI_INT, 0, MPI_COMM_WORLD);
 
 	MPI_Finalize();
 

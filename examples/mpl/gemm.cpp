@@ -249,6 +249,8 @@ std::chrono::duration<double> run_experiment(num_t alpha, num_t beta, num_t *C_d
 int main(int argc, char *argv[]) {
 	using namespace std::string_literals;
 
+	constexpr int num_runs = 10;
+
 	const mpl::communicator &comm_world{mpl::environment::comm_world()};
 
 	const int rank = comm_world.rank();
@@ -256,7 +258,7 @@ int main(int argc, char *argv[]) {
 	constexpr int root = 0;
 
 	if (rank == root) {
-		std::cerr << "Running with " << size << " processes" << std::endl;
+		std::cerr << "Running with " << size << " processes" << '\n';
 	}
 
 	const auto C_data = (rank == root) ? std::make_unique<num_t[]>(NI * NJ) : nullptr;
@@ -291,9 +293,27 @@ int main(int argc, char *argv[]) {
 	comm_world.bcast(root, alpha);
 	comm_world.bcast(root, beta);
 
-	const auto duration = run_experiment(alpha, beta, C_data.get(), A_data.get(), B_data.get(), C, A, B, i_tiles,
-	                                     j_tiles, tileC_data.get(), tileA_data.get(), tileB_data.get(), tileC, tileA,
-	                                     tileB, SI, SJ, comm_world, rank, size, root);
+	// Warm up
+	run_experiment(alpha, beta, C_data.get(), A_data.get(), B_data.get(), C, A, B, i_tiles, j_tiles, tileC_data.get(),
+	               tileA_data.get(), tileB_data.get(), tileC, tileA, tileB, SI, SJ, comm_world, rank, size, root);
+
+	std::vector<double> times(num_runs);
+
+	for (int i = 0; i < num_runs; ++i) {
+		if (rank == root) {
+			init_array(alpha, C, beta, A, B);
+		}
+
+		times[i] = run_experiment(alpha, beta, C_data.get(), A_data.get(), B_data.get(), C, A, B, i_tiles, j_tiles,
+		                          tileC_data.get(), tileA_data.get(), tileB_data.get(), tileC, tileA, tileB, SI, SJ,
+		                          comm_world, rank, size, root)
+		               .count();
+	}
+
+	const auto [mean, stddev] = mean_stddev(times);
+	if (rank == root) {
+		std::cout << mean << " " << stddev << '\n';
+	}
 
 	int return_code = EXIT_SUCCESS;
 	// print results
@@ -310,21 +330,18 @@ int main(int argc, char *argv[]) {
 				}
 
 				if (!check.is_valid()) {
-					std::cerr << "Validation failed!" << std::endl;
+					std::cerr << "Validation failed!" << '\n';
 					return_code = EXIT_FAILURE;
 				}
 			} else {
-				std::cout << std::fixed << std::setprecision(2);
+				std::cerr << std::fixed << std::setprecision(2);
 				for (std::size_t i = 0; i < NI; ++i) {
 					for (std::size_t j = 0; j < NJ; ++j) {
-						std::cout << C(i, j) << '\n';
+						std::cerr << C(i, j) << '\n';
 					}
 				}
 			}
 		}
-
-		std::cout << std::fixed << std::setprecision(6);
-		std::cout << duration.count() << std::endl;
 	}
 
 	comm_world.bcast(root, return_code);

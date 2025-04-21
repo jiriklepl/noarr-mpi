@@ -1,10 +1,14 @@
 #ifndef NOARR_POLYBENCH_COMMON_HPP
 #define NOARR_POLYBENCH_COMMON_HPP
 
+#include <cmath>
+
 #include <format>
-#include <iomanip>
 #include <iostream>
+#include <numeric>
 #include <type_traits>
+#include <utility>
+#include <vector>
 
 class matrix_stream_check {
 public:
@@ -33,7 +37,7 @@ public:
 		if (expected != result) {
 			if (_invalid_count++ < max_invalid) {
 				std::cerr << "Invalid value at C[" << _i << ", " << _j << "]: expected " << expected << ", got "
-						  << result << std::endl;
+						  << result << '\n';
 			}
 		}
 
@@ -59,5 +63,19 @@ private:
 	std::size_t _i = 0;
 	std::size_t _j = 0;
 };
+
+inline std::pair<double, double> mean_stddev(const std::vector<double> &v) {
+	if (v.empty()) {
+		return {0.0, 0.0};
+	}
+
+	const double mean = std::accumulate(v.cbegin(), v.cend(), 0.0) / (double)v.size();
+	const double stddev =
+		std::sqrt(std::accumulate(v.cbegin(), v.cend(), 0.0,
+	                              [mean](double acc, double val) { return acc + ((val - mean) * (val - mean)); }) /
+	              (double)v.size());
+
+	return {mean, stddev};
+}
 
 #endif // NOARR_POLYBENCH_COMMON_HPP

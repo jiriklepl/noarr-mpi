@@ -22,18 +22,20 @@ SLURM_ACCOUNT=${SLURM_ACCOUNT:-kdss}
 
 LD_LIBRARY_PATH="${BUILD_DIR}/boost-install/lib${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"
 
-echo "algorithm,framework,dataset,datatype,c_tile,a_tile,b_tile,i_tiles,time,valid"
+echo "algorithm,framework,dataset,datatype,c_tile,a_tile,b_tile,i_tiles,time,mean_time,sd_time,valid"
 files=$(find "$BUILD_DIR/examples/" -mindepth 2 -maxdepth 2 -type f -executable -name "gemm-*-*-*-*-*-*")
 printf "Running the following algorithm implementations\n%s\n" "${files}" >&2
 for file in ${files}; do
 	IFS="-" read -r algorithmRaw framework dataset datatype c_tile a_tile b_tile <<< "${file}"
-	IFS="/" read -r buildDir examplesDir frameworkDir algorithm <<< "${algorithmRaw}"
+	IFS="/" read -r buildDir _ _ algorithm <<< "${algorithmRaw}"
 
 	testFile="${buildDir}/${algorithm}-${dataset}-${datatype}.data"
 
-	if output_time=$(bash ./run.sh "${file}" "${I_TILES}" "${testFile}"); then
-		echo "${algorithm},${framework},${dataset},${datatype},${c_tile},${a_tile},${b_tile},${I_TILES},${output_time},1"
+	if outputs=$(bash ./run.sh "${file}" "${I_TILES}" "${testFile}"); then
+		read -r mean_time sd_time <<< "${outputs}"
+		echo "${algorithm},${framework},${dataset},${datatype},${c_tile},${a_tile},${b_tile},${I_TILES},${mean_time},${sd_time},1"
 	else
-		echo "${algorithm},${framework},${dataset},${datatype},${c_tile},${a_tile},${b_tile},${I_TILES},${output_time},0"
+		read -r mean_time sd_time <<< "${outputs}"
+		echo "${algorithm},${framework},${dataset},${datatype},${c_tile},${a_tile},${b_tile},${I_TILES},${mean_time},${sd_time},0"
 	fi
 done

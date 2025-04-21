@@ -21,8 +21,8 @@ namespace noarr {
 namespace helpers {
 
 template<class Structure, IsState State>
-inline auto mpi_transform_impl(const Structure &structure, const dim_sequence<> & /*unused*/,
-                               State state) -> MPI_custom_type {
+inline auto mpi_transform_impl(const Structure &structure, const dim_sequence<> & /*unused*/, State state)
+	-> MPI_custom_type {
 	using scalar_type = scalar_t<Structure, State>;
 
 	constexpr bool has_offset = has_offset_of<scalar<scalar_type>, Structure, State>();
@@ -48,8 +48,8 @@ inline auto mpi_transform_impl(const Structure &structure, const dim_sequence<> 
 }
 
 template<auto Dim, class Branches, class Structure, IsState State>
-inline auto mpi_transform_impl(const Structure &structure, const dim_tree<Dim, Branches> & /*unused*/,
-                               State state) -> MPI_custom_type
+inline auto mpi_transform_impl(const Structure &structure, const dim_tree<Dim, Branches> & /*unused*/, State state)
+	-> MPI_custom_type
 requires (Structure::signature::template any_accept<Dim>)
 {
 	constexpr bool has_lower_bound = HasLowerBoundAlong<Structure, Dim, State>;
@@ -95,8 +95,8 @@ requires (Structure::signature::template any_accept<Dim>)
 }
 
 template<auto Dim, class Branches, class Structure, IsState State>
-inline auto mpi_transform_impl(const Structure &structure, const dim_tree<Dim, Branches> & /*unused*/,
-                               State state) -> MPI_custom_type
+inline auto mpi_transform_impl(const Structure &structure, const dim_tree<Dim, Branches> & /*unused*/, State state)
+	-> MPI_custom_type
 requires (!Structure::signature::template any_accept<Dim>)
 {
 	return mpi_transform_impl(structure, Branches{}, state);
