@@ -73,7 +73,7 @@ colors  = {fw: palette[i] for i, fw in enumerate(frameworks)}
 # ─── Plot ───────────────────────────────────────────────────────────────────────
 fig, axes = plt.subplots(
     1, len(datasets),
-    figsize=(4 * len(datasets), 4),
+    figsize=(3.5 * len(datasets), 3),
     sharey=False
 )
 bar_width = 0.2
@@ -155,5 +155,5 @@ os.makedirs('plots', exist_ok=True)
 file_name = os.path.splitext(os.path.basename(args.csv_file))[0]
 file_path = f'plots/{file_name}.pdf'
 
-plt.tight_layout()
+plt.tight_layout(pad=0.2)
 plt.savefig(file_path, bbox_inches='tight')
