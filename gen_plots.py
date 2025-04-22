@@ -60,6 +60,8 @@ df['tile_label'] = df['c_code'] + '/' + df['a_code'] + '/' + df['b_code']
 frameworks = df['framework'].unique()
 if 'noarr' in frameworks:
     frameworks = ['noarr'] + [fw for fw in frameworks if fw != 'noarr']
+if 'boost' in frameworks:
+    frameworks = [fw for fw in frameworks if fw != 'boost'] + ['boost']
 
 datasets   = df['dataset'].unique()
 
