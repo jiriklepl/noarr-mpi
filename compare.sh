@@ -11,8 +11,6 @@ NUM_TASKS=${NUM_TASKS:-4}
 NUM_NODES=${NUM_NODES:-1}
 CPUS_PER_TASK=${CPUS_PER_TASK:-1}
 
-WARMUP_RUNS=${WARMUP_RUNS:-3}
-NUM_RUNS=${NUM_RUNS:-5}
 I_TILES=${I_TILES:-2}
 
 # Slurm settings (defaults specific to <https://gitlab.mff.cuni.cz/mff/hpc/clusters>)
