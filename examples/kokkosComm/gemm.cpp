@@ -58,7 +58,7 @@ const struct tuning {
 void init_array(num_t &alpha, auto C, num_t &beta, auto A, auto B) {
 	// C: i x j
 	// A: i x k
-	// B: j x k
+	// B: k x j
 
 	alpha = (num_t)1.5;
 	beta = (num_t)1.2;
@@ -87,7 +87,7 @@ void init_array(num_t &alpha, auto C, num_t &beta, auto A, auto B) {
 void kernel_gemm(num_t alpha, auto C, num_t beta, auto A, auto B, std::size_t SI, std::size_t SJ, std::size_t SK) {
 	// C: i x j
 	// A: i x k
-	// B: j x k
+	// B: k x j
 
 	for (std::size_t i = 0; i < SI; ++i) {
 		for (std::size_t j = 0; j < SJ; ++j) {
@@ -115,10 +115,10 @@ std::chrono::duration<double> run_experiment(num_t alpha, num_t beta, auto &C, a
 			const int i = r / j_tiles;
 			const int j = r % j_tiles;
 
-			const auto c_subview = Kokkos::subview(C, std::make_pair<int, int>(i * SI, (i + 1) * SI),
-			                                       std::make_pair<int, int>(j * SJ, (j + 1) * SJ));
-			const auto a_subview = Kokkos::subview(A, std::make_pair<int, int>(i * SI, (i + 1) * SI), Kokkos::ALL);
-			const auto b_subview = Kokkos::subview(B, Kokkos::ALL, std::make_pair<int, int>(j * SJ, (j + 1) * SJ));
+			const auto c_subview = Kokkos::subview(C, std::make_pair<int, int>(SI * i, SI * (i + 1)),
+			                                       std::make_pair<int, int>(SJ * j, SJ * (j + 1)));
+			const auto a_subview = Kokkos::subview(A, std::make_pair<int, int>(SI * i, SI * (i + 1)), Kokkos::ALL);
+			const auto b_subview = Kokkos::subview(B, Kokkos::ALL, std::make_pair<int, int>(SJ * j, SJ * (j + 1)));
 
 			reqs.push_back(KokkosComm::send(handle, c_subview, r));
 			reqs.push_back(KokkosComm::send(handle, a_subview, r));
@@ -142,8 +142,8 @@ std::chrono::duration<double> run_experiment(num_t alpha, num_t beta, auto &C, a
 			const int i = r / j_tiles;
 			const int j = r % j_tiles;
 
-			const auto c_subview = Kokkos::subview(C, std::make_pair<int, int>(i * SI, (i + 1) * SI),
-			                                       std::make_pair<int, int>(j * SJ, (j + 1) * SJ));
+			const auto c_subview = Kokkos::subview(C, std::make_pair<int, int>(SI * i, SI * (i + 1)),
+			                                       std::make_pair<int, int>(SJ * j, SJ * (j + 1)));
 
 			reqs.push_back(KokkosComm::recv(handle, c_subview, r));
 		}
@@ -213,6 +213,8 @@ int run_environment(int argc, char *argv[]) {
 		if (rank == root) {
 			init_array(alpha, C, beta, A, B);
 		}
+
+		KokkosComm::barrier((decltype(handle))handle);
 
 		times[i] = run_experiment(alpha, beta, C, A, B, i_tiles, j_tiles, tileC, tileA, tileB, SI, SJ, handle, rank,
 		                          size, root)

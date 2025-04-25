@@ -10,13 +10,13 @@ FetchContent_MakeAvailable(mdspan)
 find_package(Boost REQUIRED COMPONENTS mpi system serialization)
 find_package(MPI REQUIRED)
 
-define_executable(gemm boost)
+define_executable(gemm boostP2P)
 foreach(dataset ${DATASET_LIST})
   foreach(datatype ${DATATYPE_LIST})
     foreach(c_tile ${C_TILE_OPTIONS})
       foreach(a_tile ${A_TILE_OPTIONS})
         foreach(b_tile ${B_TILE_OPTIONS})
-          set(executable_name gemm-boost-${dataset}-${datatype}-${c_tile}-${a_tile}-${b_tile})
+          set(executable_name gemm-boostP2P-${dataset}-${datatype}-${c_tile}-${a_tile}-${b_tile})
           target_include_directories(${executable_name} PRIVATE
             ${mdspan_SOURCE_DIR}/include
             ${Boost_INCLUDE_DIRS})

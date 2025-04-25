@@ -182,6 +182,8 @@ int main(int argc, char *argv[]) {
 			           bag(B_structure, B.data()));
 		}
 
+		mpi_barrier(mpi_trav);
+
 		times[i] =
 			run_experiment(alpha, beta, C, A, B, tileC.get_ref(), tileA.get_ref(), tileB.get_ref(), mpi_trav, root)
 				.count();

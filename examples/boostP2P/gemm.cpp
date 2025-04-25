@@ -9,7 +9,6 @@
 #include <memory>
 #include <type_traits>
 #include <utility>
-#include <variant>
 
 #include <experimental/mdspan>
 
@@ -28,6 +27,24 @@ using num_t = DATA_TYPE;
 namespace {
 
 template<typename MDSpan>
+void serialize(mpi::packed_oarchive &ar, const MDSpan &m) {
+	for (std::size_t i = 0; i < m.extent(0); ++i) {
+		for (std::size_t j = 0; j < m.extent(1); ++j) {
+			ar << m[i, j];
+		}
+	}
+}
+
+template<typename MDSpan>
+void deserialize(mpi::packed_iarchive &ar, const MDSpan &m) {
+	for (std::size_t i = 0; i < m.extent(0); ++i) {
+		for (std::size_t j = 0; j < m.extent(1); ++j) {
+			ar >> m[i, j];
+		}
+	}
+}
+
+template<typename MDSpan>
 class matrix_factory {
 public:
 	using data_handle_type = typename MDSpan::data_handle_type;
@@ -35,79 +52,6 @@ public:
 	constexpr MDSpan operator()(data_handle_type data, std::size_t rows, std::size_t cols) const {
 		return MDSpan{data, rows, cols};
 	}
-};
-
-class matrix_holder {
-public:
-	using row_major = stdex::mdspan<num_t, stdex::dextents<std::size_t, 2>, stdex::layout_right>;
-	using col_major = stdex::mdspan<num_t, stdex::dextents<std::size_t, 2>, stdex::layout_left>;
-
-	using tile = decltype(stdex::submdspan(std::declval<row_major>(), std::tuple<std::size_t, std::size_t>{0, 0},
-	                                       std::tuple<std::size_t, std::size_t>{0, 0}));
-
-	static_assert(
-		std::is_same_v<decltype(stdex::submdspan(std::declval<col_major>(), std::tuple<std::size_t, std::size_t>{0, 0},
-	                                             std::tuple<std::size_t, std::size_t>{0, 0})),
-	                   tile>,
-		"We assume both layouts have the same tile type");
-
-	static_assert(!std::is_same_v<row_major, col_major>, "We assume both layouts are different");
-	static_assert(!std::is_same_v<tile, row_major>, "We assume tile is not the same as row_major");
-	static_assert(!std::is_same_v<tile, col_major>, "We assume tile is not the same as col_major");
-
-	matrix_holder() { std::cerr << "Default constructor called" << std::endl; }
-
-	template<typename MDSpan>
-	requires std::is_same_v<MDSpan, row_major> || std::is_same_v<MDSpan, col_major> || std::is_same_v<MDSpan, tile>
-	explicit matrix_holder(MDSpan data) : _data(data) {}
-
-	matrix_holder(const matrix_holder &other) = default;
-	matrix_holder(matrix_holder &&other) = default;
-
-	matrix_holder &operator=(const matrix_holder &other) {
-		std::visit(
-			[](auto &data, const auto &other_data) {
-				if constexpr (std::is_same_v<std::decay_t<decltype(data)>, std::monostate> ||
-			                  std::is_same_v<std::decay_t<decltype(other_data)>, std::monostate>) {
-					// do nothing
-				} else {
-					using index_type = typename std::decay_t<decltype(data)>::index_type;
-					for (index_type i_row = 0; i_row < data.extent(0); ++i_row) {
-						for (index_type i_col = 0; i_col < data.extent(1); ++i_col) {
-							data[i_row, i_col] = other_data[i_row, i_col];
-						}
-					}
-				}
-			},
-			_data, other._data);
-		return *this;
-	}
-
-	matrix_holder &operator=(matrix_holder &&other) { return *this = other; }
-
-private:
-	friend class boost::serialization::access;
-
-	template<class Archive>
-	void serialize(Archive &ar, const unsigned int /* version */) const {
-		std::visit(
-			[&ar](auto &&data) {
-				if constexpr (std::is_same_v<std::decay_t<decltype(data)>, std::monostate>) {
-					// do nothing
-				} else {
-					using index_type = typename std::decay_t<decltype(data)>::index_type;
-					for (index_type i_row = 0; i_row < data.extent(0); ++i_row) {
-						for (index_type i_col = 0; i_col < data.extent(1); ++i_col) {
-							ar &data[i_row, i_col];
-						}
-					}
-				}
-			},
-			_data);
-	}
-
-	friend class boost::serialization::access;
-	std::variant<std::monostate, row_major, col_major, tile> _data;
 };
 
 const struct tuning {
@@ -192,45 +136,101 @@ std::chrono::duration<double> run_experiment(num_t alpha, num_t beta, auto C, au
                                              int root) {
 	const auto start = std::chrono::high_resolution_clock::now();
 
-	std::vector<matrix_holder> c_layouts;
-	std::vector<matrix_holder> a_layouts;
-	std::vector<matrix_holder> b_layouts;
+	std::vector<decltype(stdex::submdspan(C, std::tuple<std::size_t, std::size_t>(0, 0),
+	                                      std::tuple<std::size_t, std::size_t>(0, 0)))>
+		c_layouts;
+	std::vector<decltype(stdex::submdspan(A, std::tuple<std::size_t, std::size_t>(0, 0),
+	                                      std::tuple<std::size_t, std::size_t>(0, 0)))>
+		a_layouts;
+	std::vector<decltype(stdex::submdspan(B, std::tuple<std::size_t, std::size_t>(0, 0),
+	                                      std::tuple<std::size_t, std::size_t>(0, 0)))>
+		b_layouts;
 
-	c_layouts.reserve(size);
-	a_layouts.reserve(size);
-	b_layouts.reserve(size);
+	{
+		std::vector<std::unique_ptr<mpi::packed_oarchive>> coarchives;
+		std::vector<std::unique_ptr<mpi::packed_oarchive>> aoarchives;
+		std::vector<std::unique_ptr<mpi::packed_oarchive>> boarchives;
 
-	for (int r = 0; r < size; ++r) {
-		const int i = r / j_tiles;
-		const int j = r % j_tiles;
+		std::vector<mpi::request> requests;
 
-		c_layouts.emplace_back(
-			stdex::submdspan(C,
-		                     /* first dimension */ std::tuple<std::size_t, std::size_t>{SI * i, SI * (i + 1)},
-		                     /* second dimension */ std::tuple<std::size_t, std::size_t>{SJ * j, SJ * (j + 1)}));
+		if (world.rank() == root) {
+			for (int r = 0; r < size; ++r) {
+				const int i = r / j_tiles;
+				const int j = r % j_tiles;
 
-		a_layouts.emplace_back(
-			stdex::submdspan(A,
-		                     /* first dimension */ std::tuple<std::size_t, std::size_t>{SI * i, SI * (i + 1)},
-		                     /* second dimension */ stdex::full_extent));
+				c_layouts.emplace_back(stdex::submdspan(
+					C,
+					/* first dimension */ std::tuple<std::size_t, std::size_t>{SI * i, SI * (i + 1)},
+					/* second dimension */ std::tuple<std::size_t, std::size_t>{SJ * j, SJ * (j + 1)}));
 
-		b_layouts.emplace_back(
-			stdex::submdspan(B,
-		                     /* first dimension */ stdex::full_extent,
-		                     /* second dimension */ std::tuple<std::size_t, std::size_t>{SJ * j, SJ * (j + 1)}));
+				a_layouts.emplace_back(
+					stdex::submdspan(A,
+				                     /* first dimension */ std::tuple<std::size_t, std::size_t>{SI * i, SI * (i + 1)},
+				                     /* second dimension */ stdex::full_extent));
+
+				b_layouts.emplace_back(stdex::submdspan(
+					B,
+					/* first dimension */ stdex::full_extent,
+					/* second dimension */ std::tuple<std::size_t, std::size_t>{SJ * j, SJ * (j + 1)}));
+			}
+
+			for (int r = 0; r < size; ++r) {
+				auto &coarchive = *coarchives.emplace_back(
+					std::make_unique<mpi::packed_oarchive>(world, c_layouts[r].size() * sizeof(num_t)));
+				serialize(coarchive, c_layouts[r]);
+				requests.push_back(world.isend(r, 0, coarchive));
+			}
+			for (int r = 0; r < size; ++r) {
+				auto &aoarchive = *aoarchives.emplace_back(
+					std::make_unique<mpi::packed_oarchive>(world, a_layouts[r].size() * sizeof(num_t)));
+				serialize(aoarchive, a_layouts[r]);
+				requests.push_back(world.isend(r, 1, aoarchive));
+			}
+			for (int r = 0; r < size; ++r) {
+				auto &boarchive = *boarchives.emplace_back(
+					std::make_unique<mpi::packed_oarchive>(world, b_layouts[r].size() * sizeof(num_t)));
+				serialize(boarchive, b_layouts[r]);
+				requests.push_back(world.isend(r, 2, boarchive));
+			}
+		}
+
+		mpi::packed_iarchive ciarchive(world, tileC.size() * sizeof(num_t));
+		mpi::packed_iarchive aiarchive(world, tileA.size() * sizeof(num_t));
+		mpi::packed_iarchive biarchive(world, tileB.size() * sizeof(num_t));
+
+		world.recv(root, 0, ciarchive);
+		world.recv(root, 1, aiarchive);
+		world.recv(root, 2, biarchive);
+
+		deserialize(ciarchive, tileC);
+		deserialize(aiarchive, tileA);
+		deserialize(biarchive, tileB);
+
+		mpi::wait_all(requests.begin(), requests.end());
 	}
-
-	matrix_holder c_holder{tileC};
-	matrix_holder a_holder{tileA};
-	matrix_holder b_holder{tileB};
-
-	mpi::scatter(world, c_layouts, c_holder, root);
-	mpi::scatter(world, a_layouts, a_holder, root);
-	mpi::scatter(world, b_layouts, b_holder, root);
 
 	kernel_gemm(alpha, tileC, beta, tileA, tileB, SI, SJ, NK);
 
-	mpi::gather(world, c_holder, c_layouts, root);
+	{
+		std::vector<mpi::request> requests;
+
+		mpi::packed_oarchive coarchive(world, tileC.size() * sizeof(num_t));
+		serialize(coarchive, tileC);
+		requests.push_back(world.isend(root, 3 + world.rank(), coarchive));
+
+		if (world.rank() == root) {
+			for (int r = 0; r < size; ++r) {
+				mpi::packed_iarchive ciarchive(world, c_layouts[r].size() * sizeof(num_t));
+				world.recv(r, 3 + r, ciarchive);
+
+				deserialize(ciarchive, c_layouts[r]);
+			}
+		}
+
+		mpi::wait_all(requests.begin(), requests.end());
+	}
+
+	world.barrier();
 
 	const auto end = std::chrono::high_resolution_clock::now();
 
@@ -273,9 +273,9 @@ int main(int argc, char *argv[]) {
 	const auto tileA_data = std::make_unique<num_t[]>((std::size_t)(SI * NK));
 	const auto tileB_data = std::make_unique<num_t[]>((std::size_t)(NK * SJ));
 
-	const auto tileC = tuning.c_tile_layout(tileC_data.get(), SI, SJ);
-	const auto tileA = tuning.a_tile_layout(tileA_data.get(), SI, NK);
-	const auto tileB = tuning.b_tile_layout(tileB_data.get(), NK, SJ);
+	auto tileC = tuning.c_tile_layout(tileC_data.get(), SI, SJ);
+	auto tileA = tuning.a_tile_layout(tileA_data.get(), SI, NK);
+	auto tileB = tuning.b_tile_layout(tileB_data.get(), NK, SJ);
 
 	num_t alpha{};
 	num_t beta{};
@@ -317,8 +317,8 @@ int main(int argc, char *argv[]) {
 				std::ifstream file(argv[2]);
 				matrix_stream_check check(file, NI, NJ);
 
-				for (std::size_t i = 0; i < NI; ++i) {
-					for (std::size_t j = 0; j < NJ; ++j) {
+				for (auto i = 0; i < NI; ++i) {
+					for (auto j = 0; j < NJ; ++j) {
 						check << C[i, j] << '\n';
 					}
 				}
@@ -329,8 +329,8 @@ int main(int argc, char *argv[]) {
 				}
 			} else {
 				std::cerr << std::fixed << std::setprecision(2);
-				for (std::size_t i = 0; i < NI; ++i) {
-					for (std::size_t j = 0; j < NJ; ++j) {
+				for (auto i = 0; i < NI; ++i) {
+					for (auto j = 0; j < NJ; ++j) {
 						std::cerr << C[i, j] << '\n';
 					}
 				}

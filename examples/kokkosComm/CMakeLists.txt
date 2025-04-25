@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.20)
 
 set(Kokkos_ENABLE_SERIAL ON CACHE BOOL "" FORCE)
-set(Kokkos_ENABLE_OPENMP ON CACHE BOOL "" FORCE)
+set(Kokkos_ENABLE_OPENMP OFF CACHE BOOL "" FORCE)
 
 find_package(KokkosComm REQUIRED)
 

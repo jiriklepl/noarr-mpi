@@ -30,7 +30,8 @@ cmake -B "${BUILD_DIR}/kokkos-build" -S vendor/kokkos \
 	-G "Unix Makefiles" \
 	-D CMAKE_BUILD_TYPE="${CONFIG}" \
 	-D CMAKE_INSTALL_PREFIX="${BUILD_DIR}/kokkos-install" \
-	-D Kokkos_ENABLE_OPENMP=ON \
+	-D Kokkos_ENABLE_OPENMP=OFF \
+	-D Kokkos_ENABLE_SERIAL=ON \
 	-D Kokkos_ARCH_NATIVE=ON \
 	-D CMAKE_EXPORT_COMPILE_COMMANDS=ON
 

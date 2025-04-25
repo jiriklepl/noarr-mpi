@@ -184,34 +184,40 @@ std::chrono::duration<double> run_experiment(num_t alpha, num_t beta, num_t *C_d
 #ifdef C_TILE_J_MAJOR
 		auto c_tile_layout_parameter = mpl::subarray_layout<num_t>::parameter{
 			/* second dimension */ {NJ, (int)SJ, /* index of the first element */ (int)(SJ * j)},
-			/* first dimension */ {NI, (int)SI, /* index of the first element */ (int)(SI * i)}};
+			/* first dimension */ {NI, (int)SI, /* index of the first element */ (int)(SI * i)},
+		};
 		c_tile_layout_parameter.order(mpl::array_orders::Fortran_order);
 #else
 		const auto c_tile_layout_parameter = mpl::subarray_layout<num_t>::parameter{
 			/* first dimension */ {NI, (int)SI, /* index of the first element */ (int)(SI * i)},
-			/* second dimension */ {NJ, (int)SJ, /* index of the first element */ (int)(SJ * j)}};
+			/* second dimension */ {NJ, (int)SJ, /* index of the first element */ (int)(SJ * j)},
+		};
 #endif
 
 #ifdef A_TILE_K_MAJOR
 		auto a_tile_layout_parameter = mpl::subarray_layout<num_t>::parameter{
 			/* second dimension */ {NK, NK, /* index of the first element */ 0},
-			/* first dimension */ {NI, (int)SI, /* index of the first element */ (int)(SI * i)}};
+			/* first dimension */ {NI, (int)SI, /* index of the first element */ (int)(SI * i)},
+		};
 		a_tile_layout_parameter.order(mpl::array_orders::Fortran_order);
 #else
 		const auto a_tile_layout_parameter = mpl::subarray_layout<num_t>::parameter{
 			/* first dimension */ {NI, (int)SI, /* index of the first element */ (int)(SI * i)},
-			/* second dimension */ {NK, NK, /* index of the first element */ 0}};
+			/* second dimension */ {NK, NK, /* index of the first element */ 0},
+		};
 #endif
 
 #ifdef B_TILE_J_MAJOR
 		auto b_tile_layout_parameter = mpl::subarray_layout<num_t>::parameter{
 			/* second dimension */ {NJ, (int)SJ, /* index of the first element */ (int)(SJ * j)},
-			/* first dimension */ {NK, NK, /* index of the first element */ 0}};
+			/* first dimension */ {NK, NK, /* index of the first element */ 0},
+		};
 		b_tile_layout_parameter.order(mpl::array_orders::Fortran_order);
 #else
 		const auto b_tile_layout_parameter = mpl::subarray_layout<num_t>::parameter{
 			/* first dimension */ {NK, NK, /* index of the first element */ 0},
-			/* second dimension */ {NJ, (int)SJ, /* index of the first element */ (int)(SJ * j)}};
+			/* second dimension */ {NJ, (int)SJ, /* index of the first element */ (int)(SJ * j)},
+		};
 #endif
 
 		const auto c_tile_layout = mpl::subarray_layout<num_t>{c_tile_layout_parameter};
@@ -229,7 +235,7 @@ std::chrono::duration<double> run_experiment(num_t alpha, num_t beta, num_t *C_d
 
 	const auto c_tile_layout = mpl::contiguous_layout<num_t>{(std::size_t)(SI * SJ)};
 	const auto a_tile_layout = mpl::contiguous_layout<num_t>{(std::size_t)(SI * NK)};
-	const auto b_tile_layout = mpl::contiguous_layout<num_t>{(std::size_t)(SJ * NK)};
+	const auto b_tile_layout = mpl::contiguous_layout<num_t>{(std::size_t)(NK * SJ)};
 
 	comm_world.scatterv(root, C_data, c_layouts, tileC_data, c_tile_layout);
 	comm_world.scatterv(root, A_data, a_layouts, tileA_data, a_tile_layout);
@@ -303,6 +309,8 @@ int main(int argc, char *argv[]) {
 		if (rank == root) {
 			init_array(alpha, C, beta, A, B);
 		}
+
+		comm_world.barrier();
 
 		times[i] = run_experiment(alpha, beta, C_data.get(), A_data.get(), B_data.get(), C, A, B, i_tiles, j_tiles,
 		                          tileC_data.get(), tileA_data.get(), tileB_data.get(), tileC, tileA, tileB, SI, SJ,
