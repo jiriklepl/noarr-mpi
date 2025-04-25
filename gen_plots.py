@@ -80,7 +80,7 @@ fig, axes = plt.subplots(
 )
 bar_width = 0.2
 
-for ax, ds in zip(axes, datasets):
+for ax, ds in zip(axes, datasets) if len(datasets) > 1 else [(axes, datasets[0])]:
     sub = df[df['dataset'] == ds]
     table = sub.pivot_table(
         index='tile_label',
@@ -131,7 +131,7 @@ for ax, ds in zip(axes, datasets):
     ax.yaxis.set_major_formatter(fmt)
 
 # Common y‑label
-aq = axes[0]
+aq = axes[0] if len(datasets) > 1 else axes
 aq.set_ylabel("Runtime [s]")
 
 # Framework legend (first subplot)
@@ -145,7 +145,9 @@ aq.legend(
 # Valid/Invalid legend (on the rightmost subplot)
 valid_patch   = Patch(facecolor='white', edgecolor='black', label='Valid')
 invalid_patch = Patch(facecolor='white', edgecolor='black', hatch='//', alpha=0.5, label='Invalid')
-axes[-1].legend(
+
+aend = axes[-1] if len(datasets) > 1 else axes
+aend.legend(
     [valid_patch, invalid_patch],
     ['Valid', 'Invalid'],
     title="Validation",
