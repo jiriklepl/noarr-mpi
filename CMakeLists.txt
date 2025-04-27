@@ -80,10 +80,11 @@ endfunction()
 include_directories(include)
 include_directories(${Noarr_SOURCE_DIR}/include)
 
-add_subdirectory(examples/noarr)
-add_subdirectory(examples/kokkosComm)
 add_subdirectory(examples/boost)
 add_subdirectory(examples/boostP2P)
+add_subdirectory(examples/kokkosComm)
+add_subdirectory(examples/mpi)
+add_subdirectory(examples/noarr)
 
 foreach(dataset ${DATASET_LIST})
   foreach(datatype ${DATATYPE_LIST})
