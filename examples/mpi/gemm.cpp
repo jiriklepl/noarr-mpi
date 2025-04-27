@@ -36,16 +36,12 @@ public:
 
 class RAII_Datatype {
 public:
-	explicit RAII_Datatype(MPI_Datatype type) : _type{type} {
-		MPI_Type_commit(&_type);
-	}
+	explicit RAII_Datatype(MPI_Datatype type) : _type{type} { MPI_Type_commit(&_type); }
 
 	RAII_Datatype(const RAII_Datatype &) = delete;
 	RAII_Datatype &operator=(const RAII_Datatype &) = delete;
 
-	RAII_Datatype(RAII_Datatype &&other) : _type{other._type} {
-		other._type = MPI_DATATYPE_NULL;
-	}
+	RAII_Datatype(RAII_Datatype &&other) : _type{other._type} { other._type = MPI_DATATYPE_NULL; }
 
 	RAII_Datatype &operator=(RAII_Datatype &&other) {
 		using std::swap;
@@ -59,13 +55,9 @@ public:
 		}
 	}
 
-	MPI_Datatype get() const {
-		return _type;
-	}
+	MPI_Datatype get() const { return _type; }
 
-	operator MPI_Datatype() const {
-		return _type;
-	}
+	operator MPI_Datatype() const { return _type; }
 
 private:
 	MPI_Datatype _type;
@@ -77,25 +69,19 @@ class mpi_type;
 template<>
 class mpi_type<int> {
 public:
-	static MPI_Datatype get() {
-		return MPI_INT;
-	}
+	static MPI_Datatype get() { return MPI_INT; }
 };
 
 template<>
 class mpi_type<float> {
 public:
-	static MPI_Datatype get() {
-		return MPI_FLOAT;
-	}
+	static MPI_Datatype get() { return MPI_FLOAT; }
 };
 
 template<>
 class mpi_type<double> {
 public:
-	static MPI_Datatype get() {
-		return MPI_DOUBLE;
-	}
+	static MPI_Datatype get() { return MPI_DOUBLE; }
 };
 
 template<typename MDSpan>
@@ -199,13 +185,18 @@ void kernel_gemm(num_t alpha, auto C, num_t beta, auto A, auto B, std::size_t SI
 
 std::chrono::duration<double> run_experiment(num_t alpha, num_t beta, auto C, auto A, auto B, std::size_t /*i_tiles*/,
                                              std::size_t j_tiles, auto tileC, auto tileA, auto tileB, std::size_t SI,
-                                             std::size_t SJ, MPI_Comm &world, int /*rank*/, int size,
-                                             int root) {
+                                             std::size_t SJ, MPI_Comm &world, int /*rank*/, int size, int root) {
 	const auto start = std::chrono::high_resolution_clock::now();
 
-	std::vector<decltype(stdex::submdspan(C, std::tuple<std::size_t, std::size_t>{}, std::tuple<std::size_t, std::size_t>{}))> c_layouts;
-	std::vector<decltype(stdex::submdspan(A, std::tuple<std::size_t, std::size_t>{}, std::tuple<std::size_t, std::size_t>{}))> a_layouts;
-	std::vector<decltype(stdex::submdspan(B, std::tuple<std::size_t, std::size_t>{}, std::tuple<std::size_t, std::size_t>{}))> b_layouts;
+	std::vector<decltype(stdex::submdspan(C, std::tuple<std::size_t, std::size_t>{},
+	                                      std::tuple<std::size_t, std::size_t>{}))>
+		c_layouts;
+	std::vector<decltype(stdex::submdspan(A, std::tuple<std::size_t, std::size_t>{},
+	                                      std::tuple<std::size_t, std::size_t>{}))>
+		a_layouts;
+	std::vector<decltype(stdex::submdspan(B, std::tuple<std::size_t, std::size_t>{},
+	                                      std::tuple<std::size_t, std::size_t>{}))>
+		b_layouts;
 
 	c_layouts.reserve(size);
 	a_layouts.reserve(size);
@@ -261,8 +252,8 @@ std::chrono::duration<double> run_experiment(num_t alpha, num_t beta, auto C, au
 
 	kernel_gemm(alpha, tileC, beta, tileA, tileB, SI, SJ, NK);
 
-	MPI_Gatherv(tileC.data_handle(), 1, cTileType.get(),
-	             c_layouts[0].data_handle(), send_counts.data(), c_displacements.data(), cType.get(), root, world);
+	MPI_Gatherv(tileC.data_handle(), 1, cTileType.get(), c_layouts[0].data_handle(), send_counts.data(),
+	            c_displacements.data(), cType.get(), root, world);
 
 	const auto end = std::chrono::high_resolution_clock::now();
 
@@ -337,9 +328,9 @@ int main(int argc, char *argv[]) {
 
 		MPI_Barrier(world_comm);
 
-		times[i] =
-			run_experiment(alpha, beta, C, A, B, i_tiles, j_tiles, tileC, tileA, tileB, SI, SJ, world_comm, rank, size, root)
-				.count();
+		times[i] = run_experiment(alpha, beta, C, A, B, i_tiles, j_tiles, tileC, tileA, tileB, SI, SJ, world_comm, rank,
+		                          size, root)
+		               .count();
 	}
 
 	const auto [mean, stddev] = mean_stddev(times);
