@@ -9,11 +9,11 @@
 #include <memory>
 #include <type_traits>
 #include <utility>
+#include <variant>
 
 #include <experimental/mdspan>
 
 #include <boost/mpi.hpp>
-#include <boost/serialization/version.hpp>
 
 #include "common.hpp"
 #include "defines.hpp"
@@ -27,18 +27,22 @@ using num_t = DATA_TYPE;
 namespace {
 
 template<typename MDSpan>
-void serialize(mpi::packed_oarchive &ar, const MDSpan &m) {
-	for (std::size_t i = 0; i < m.extent(0); ++i) {
-		for (std::size_t j = 0; j < m.extent(1); ++j) {
+void serialize(mpi::packed_oarchive &ar, MDSpan m) {
+	using index_type = typename std::remove_reference_t<MDSpan>::index_type;
+
+	for (index_type i = 0; i < m.extent(0); ++i) {
+		for (index_type j = 0; j < m.extent(1); ++j) {
 			ar << m[i, j];
 		}
 	}
 }
 
 template<typename MDSpan>
-void deserialize(mpi::packed_iarchive &ar, const MDSpan &m) {
-	for (std::size_t i = 0; i < m.extent(0); ++i) {
-		for (std::size_t j = 0; j < m.extent(1); ++j) {
+void deserialize(mpi::packed_iarchive &ar, MDSpan m) {
+	using index_type = typename std::remove_reference_t<MDSpan>::index_type;
+
+	for (index_type i = 0; i < m.extent(0); ++i) {
+		for (index_type j = 0; j < m.extent(1); ++j) {
 			ar >> m[i, j];
 		}
 	}
@@ -132,65 +136,65 @@ void kernel_gemm(num_t alpha, auto C, num_t beta, auto A, auto B, std::size_t SI
 
 std::chrono::duration<double> run_experiment(num_t alpha, num_t beta, auto C, auto A, auto B, std::size_t /*i_tiles*/,
                                              std::size_t j_tiles, auto tileC, auto tileA, auto tileB, std::size_t SI,
-                                             std::size_t SJ, mpi::communicator &world, int /*rank*/, int size,
-                                             int root) {
+                                             std::size_t SJ, mpi::communicator &world, int rank, int size, int root) {
 	const auto start = std::chrono::high_resolution_clock::now();
 
 	std::vector<decltype(stdex::submdspan(C, std::tuple<std::size_t, std::size_t>(0, 0),
 	                                      std::tuple<std::size_t, std::size_t>(0, 0)))>
-		c_layouts;
+		c_layouts(size);
 	std::vector<decltype(stdex::submdspan(A, std::tuple<std::size_t, std::size_t>(0, 0),
 	                                      std::tuple<std::size_t, std::size_t>(0, 0)))>
-		a_layouts;
+		a_layouts(size);
 	std::vector<decltype(stdex::submdspan(B, std::tuple<std::size_t, std::size_t>(0, 0),
 	                                      std::tuple<std::size_t, std::size_t>(0, 0)))>
-		b_layouts;
+		b_layouts(size);
 
 	{
-		std::vector<std::unique_ptr<mpi::packed_oarchive>> coarchives;
-		std::vector<std::unique_ptr<mpi::packed_oarchive>> aoarchives;
-		std::vector<std::unique_ptr<mpi::packed_oarchive>> boarchives;
+		std::vector<std::variant<std::monostate, mpi::packed_oarchive>> coarchives(size);
+		std::vector<std::variant<std::monostate, mpi::packed_oarchive>> aoarchives(size);
+		std::vector<std::variant<std::monostate, mpi::packed_oarchive>> boarchives(size);
 
 		std::vector<mpi::request> requests;
+		requests.reserve(rank == root ? 3 * (size + 1) : 3);
 
-		if (world.rank() == root) {
+		if (rank == root) {
 			for (int r = 0; r < size; ++r) {
 				const int i = r / j_tiles;
 				const int j = r % j_tiles;
 
-				c_layouts.emplace_back(stdex::submdspan(
-					C,
-					/* first dimension */ std::tuple<std::size_t, std::size_t>{SI * i, SI * (i + 1)},
-					/* second dimension */ std::tuple<std::size_t, std::size_t>{SJ * j, SJ * (j + 1)}));
+				c_layouts[r] =
+					stdex::submdspan(C,
+				                     /* first dimension */ std::tuple<std::size_t, std::size_t>{SI * i, SI * (i + 1)},
+				                     /* second dimension */ std::tuple<std::size_t, std::size_t>{SJ * j, SJ * (j + 1)});
 
-				a_layouts.emplace_back(
+				a_layouts[r] =
 					stdex::submdspan(A,
 				                     /* first dimension */ std::tuple<std::size_t, std::size_t>{SI * i, SI * (i + 1)},
-				                     /* second dimension */ stdex::full_extent));
+				                     /* second dimension */ stdex::full_extent);
 
-				b_layouts.emplace_back(stdex::submdspan(
-					B,
-					/* first dimension */ stdex::full_extent,
-					/* second dimension */ std::tuple<std::size_t, std::size_t>{SJ * j, SJ * (j + 1)}));
+				b_layouts[r] =
+					stdex::submdspan(B,
+				                     /* first dimension */ stdex::full_extent,
+				                     /* second dimension */ std::tuple<std::size_t, std::size_t>{SJ * j, SJ * (j + 1)});
 			}
 
 			for (int r = 0; r < size; ++r) {
-				auto &coarchive = *coarchives.emplace_back(
-					std::make_unique<mpi::packed_oarchive>(world, c_layouts[r].size() * sizeof(num_t)));
+				auto &coarchive =
+					coarchives[r].template emplace<mpi::packed_oarchive>(world, c_layouts[r].size() * sizeof(num_t));
 				serialize(coarchive, c_layouts[r]);
-				requests.push_back(world.isend(r, 0, coarchive));
+				requests.emplace_back(world.isend(r, 0, coarchive));
 			}
 			for (int r = 0; r < size; ++r) {
-				auto &aoarchive = *aoarchives.emplace_back(
-					std::make_unique<mpi::packed_oarchive>(world, a_layouts[r].size() * sizeof(num_t)));
+				auto &aoarchive =
+					aoarchives[r].template emplace<mpi::packed_oarchive>(world, a_layouts[r].size() * sizeof(num_t));
 				serialize(aoarchive, a_layouts[r]);
-				requests.push_back(world.isend(r, 1, aoarchive));
+				requests.emplace_back(world.isend(r, 1, aoarchive));
 			}
 			for (int r = 0; r < size; ++r) {
-				auto &boarchive = *boarchives.emplace_back(
-					std::make_unique<mpi::packed_oarchive>(world, b_layouts[r].size() * sizeof(num_t)));
+				auto &boarchive =
+					boarchives[r].template emplace<mpi::packed_oarchive>(world, b_layouts[r].size() * sizeof(num_t));
 				serialize(boarchive, b_layouts[r]);
-				requests.push_back(world.isend(r, 2, boarchive));
+				requests.emplace_back(world.isend(r, 2, boarchive));
 			}
 		}
 
@@ -198,36 +202,44 @@ std::chrono::duration<double> run_experiment(num_t alpha, num_t beta, auto C, au
 		mpi::packed_iarchive aiarchive(world, tileA.size() * sizeof(num_t));
 		mpi::packed_iarchive biarchive(world, tileB.size() * sizeof(num_t));
 
-		world.recv(root, 0, ciarchive);
-		world.recv(root, 1, aiarchive);
-		world.recv(root, 2, biarchive);
+		requests.emplace_back(world.irecv(root, 0, ciarchive));
+		requests.emplace_back(world.irecv(root, 1, aiarchive));
+		requests.emplace_back(world.irecv(root, 2, biarchive));
+
+		mpi::wait_all(requests.begin(), requests.end());
 
 		deserialize(ciarchive, tileC);
 		deserialize(aiarchive, tileA);
 		deserialize(biarchive, tileB);
-
-		mpi::wait_all(requests.begin(), requests.end());
 	}
 
 	kernel_gemm(alpha, tileC, beta, tileA, tileB, SI, SJ, NK);
 
 	{
 		std::vector<mpi::request> requests;
+		requests.reserve(rank == root ? size + 1 : 1);
 
 		mpi::packed_oarchive coarchive(world, tileC.size() * sizeof(num_t));
 		serialize(coarchive, tileC);
-		requests.push_back(world.isend(root, 3 + world.rank(), coarchive));
+		requests.emplace_back(world.isend(root, 3 + rank, coarchive));
 
-		if (world.rank() == root) {
+		std::vector<std::variant<std::monostate, mpi::packed_iarchive>> ciarchives(size);
+
+		if (rank == root) {
 			for (int r = 0; r < size; ++r) {
-				mpi::packed_iarchive ciarchive(world, c_layouts[r].size() * sizeof(num_t));
-				world.recv(r, 3 + r, ciarchive);
-
-				deserialize(ciarchive, c_layouts[r]);
+				auto &ciarchive =
+					ciarchives[r].template emplace<mpi::packed_iarchive>(world, c_layouts[r].size() * sizeof(num_t));
+				requests.emplace_back(world.irecv(r, 3 + r, ciarchive));
 			}
 		}
 
 		mpi::wait_all(requests.begin(), requests.end());
+
+		if (rank == root) {
+			for (int r = 0; r < size; ++r) {
+				deserialize(std::get<mpi::packed_iarchive>(ciarchives[r]), c_layouts[r]);
+			}
+		}
 	}
 
 	world.barrier();
