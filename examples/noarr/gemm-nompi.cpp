@@ -1,5 +1,7 @@
 // From:
 // https://github.com/jiriklepl/ParCo2024-artifact/blob/c0b2befc1980b3df7002b0fa77efc7d64044b232/PolybenchC-Noarr/linear-algebra/blas/gemm/gemm.cpp
+#include <cstddef>
+
 #include <chrono>
 #include <iomanip>
 #include <iostream>

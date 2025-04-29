@@ -1,6 +1,10 @@
 #ifndef NOARR_STRUCTURES_INTEROP_MPI_TRAVERSER_HPP
 #define NOARR_STRUCTURES_INTEROP_MPI_TRAVERSER_HPP
 
+#include <stdexcept>
+#include <type_traits>
+#include <utility>
+
 #include <mpi.h>
 
 #include <noarr/structures/base/contain.hpp>

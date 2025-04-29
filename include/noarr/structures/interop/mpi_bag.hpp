@@ -1,6 +1,7 @@
 #ifndef NOARR_STRUCTURES_INTEROP_MPI_BAG_HPP
 #define NOARR_STRUCTURES_INTEROP_MPI_BAG_HPP
 
+#include <type_traits>
 #include <utility>
 
 #include <mpi.h>
@@ -16,7 +17,9 @@ namespace noarr {
 template<class Bag>
 class mpi_bag_t : public Bag {
 public:
-	mpi_bag_t(const Bag &bag, MPI_custom_type mpi_type) : Bag(bag), mpi_type_(std::move(mpi_type)) {}
+	mpi_bag_t(const Bag &bag, MPI_custom_type mpi_type) : Bag(bag), mpi_type_(std::move(mpi_type)) {
+		mpi_type_.commit();
+	}
 
 	[[nodiscard]]
 	auto get_mpi_type() const -> MPI_Datatype {

@@ -1,7 +1,12 @@
 #ifndef NOARR_STRUCTURES_INTEROP_MPI_ALGORITHMS_HPP
 #define NOARR_STRUCTURES_INTEROP_MPI_ALGORITHMS_HPP
 
+#include <cstddef>
+
+#include <algorithm>
+#include <type_traits>
 #include <utility>
+#include <vector>
 
 #include <mpi.h>
 
@@ -54,7 +59,8 @@ constexpr auto mpi_run(IsMpiTraverser auto trav, const Bags &...bags) {
 
 inline void mpi_bcast(const ToStruct auto &has_struct, const IsMpiTraverser auto &trav, int rank) {
 	const auto structure = convert_to_struct(has_struct);
-	const auto type = mpi_transform(trav, structure);
+	auto type = mpi_transform(trav, structure);
+	type.commit();
 	MPICHK(MPI_Bcast(has_struct.data(), 1, convert_to_MPI_Datatype(type), rank, convert_to_MPI_Comm(trav)));
 }
 
@@ -185,34 +191,20 @@ inline void mpi_scatter(const auto &from, const auto &to, const IsMpiTraverser a
 		displacements[i] = (from_struct ^ set_length(state) ^ fix(state)) | offset_getter;
 	}
 
-	// compute the second smallest displacement
-	int min_displacement = std::numeric_limits<int>::max();
-	int second_min_displacement = std::numeric_limits<int>::max();
-	int min_rank = std::numeric_limits<int>::max();
-	for (int i = 0; i < comm_size; ++i) {
-		const auto displacement = displacements[i];
-		if (displacement < min_displacement) {
-			second_min_displacement = min_displacement;
-			min_displacement = displacement;
-			min_rank = i;
-		} else if (displacement < second_min_displacement && displacement != min_displacement) {
-			second_min_displacement = displacement;
-		}
-	}
+	const auto min_rank = std::min_element(displacements.begin(), displacements.end()) - displacements.begin();
 
-	const auto from_rep = mpi_transform_impl(from_struct, to_dim_filtered{}, trav.state(min_rank));
-	const auto to_rep = mpi_transform_impl(to_struct, to_dim_filtered{}, trav.state(min_rank));
+	const auto from_rep = mpi_transform(from_struct, to_dim_filtered{}, trav.state(min_rank));
+	auto to_rep = mpi_transform(to_struct, to_dim_filtered{}, trav.state(min_rank));
+	to_rep.commit();
 
 	MPI_Datatype from_rep_resized = MPI_DATATYPE_NULL;
-	MPICHK(MPI_Type_create_resized(convert_to_MPI_Datatype(from_rep), 0, second_min_displacement, &from_rep_resized));
-	const MPI_custom_type from_rep_resized_custom(from_rep_resized);
+	MPICHK(MPI_Type_create_resized(convert_to_MPI_Datatype(from_rep), 0, sizeof(char), &from_rep_resized));
+	auto from_rep_resized_custom = MPI_custom_type(from_rep_resized);
+	from_rep_resized_custom.commit();
 
-	for (auto &displacement : displacements) {
-		displacement /= second_min_displacement;
-	}
-
-	MPICHK(MPI_Scatterv(from.data(), sendcounts.data(), displacements.data(), convert_to_MPI_Datatype(from_rep_resized),
-	                    to.data(), 1, convert_to_MPI_Datatype(to_rep), root, comm));
+	MPICHK(MPI_Scatterv(from.data(), sendcounts.data(), displacements.data(),
+	                    convert_to_MPI_Datatype(from_rep_resized_custom), to.data(), 1, convert_to_MPI_Datatype(to_rep),
+	                    root, comm));
 }
 
 inline void mpi_gather(const auto &from, const auto &to, const IsMpiTraverser auto &trav, int root) {
@@ -262,34 +254,19 @@ inline void mpi_gather(const auto &from, const auto &to, const IsMpiTraverser au
 		displacements[i] = (to_struct ^ set_length(state) ^ fix(state)) | offset_getter;
 	}
 
-	// compute the second smallest displacement
-	int min_displacement = std::numeric_limits<int>::max();
-	int second_min_displacement = std::numeric_limits<int>::max();
-	int min_rank = std::numeric_limits<int>::max();
-	for (int i = 0; i < comm_size; ++i) {
-		const auto displacement = displacements[i];
-		if (displacement < min_displacement) {
-			second_min_displacement = min_displacement;
-			min_displacement = displacement;
-			min_rank = i;
-		} else if (displacement < second_min_displacement && displacement != min_displacement) {
-			second_min_displacement = displacement;
-		}
-	}
+	const auto min_rank = std::min_element(displacements.begin(), displacements.end()) - displacements.begin();
 
-	const auto from_rep = mpi_transform_impl(from_struct, from_dim_filtered{}, trav.state(min_rank));
-	const auto to_rep = mpi_transform_impl(to_struct, from_dim_filtered{}, trav.state(min_rank));
+	auto from_rep = mpi_transform(from_struct, from_dim_filtered{}, trav.state(min_rank));
+	const auto to_rep = mpi_transform(to_struct, from_dim_filtered{}, trav.state(min_rank));
+	from_rep.commit();
 
 	MPI_Datatype to_rep_resized = MPI_DATATYPE_NULL;
-	MPICHK(MPI_Type_create_resized(convert_to_MPI_Datatype(to_rep), 0, second_min_displacement, &to_rep_resized));
-	const MPI_custom_type to_rep_resized_custom(to_rep_resized);
-
-	for (auto &displacement : displacements) {
-		displacement /= second_min_displacement;
-	}
+	MPICHK(MPI_Type_create_resized(convert_to_MPI_Datatype(to_rep), 0, sizeof(char), &to_rep_resized));
+	auto to_rep_resized_custom = MPI_custom_type(to_rep_resized);
+	to_rep_resized_custom.commit();
 
 	MPICHK(MPI_Gatherv(from.data(), 1, convert_to_MPI_Datatype(from_rep), to.data(), sendcounts.data(),
-	                   displacements.data(), convert_to_MPI_Datatype(to_rep_resized), root, comm));
+	                   displacements.data(), convert_to_MPI_Datatype(to_rep_resized_custom), root, comm));
 }
 
 } // namespace noarr

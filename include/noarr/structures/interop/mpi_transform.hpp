@@ -6,6 +6,9 @@
 #include <cstdint>
 
 #include <array>
+#include <stdexcept>
+#include <string>
+#include <tuple>
 
 #include <mpi.h>
 
@@ -21,8 +24,8 @@ namespace noarr {
 namespace helpers {
 
 template<class Structure, IsState State>
-inline auto mpi_transform_impl(const Structure &structure, const dim_sequence<> & /*unused*/, State state)
-	-> MPI_custom_type {
+inline auto mpi_transform_impl(const Structure &structure, const dim_sequence<> & /*unused*/,
+                               State state) -> MPI_custom_type {
 	using scalar_type = scalar_t<Structure, State>;
 
 	constexpr bool has_offset = has_offset_of<scalar<scalar_type>, Structure, State>();
@@ -48,8 +51,8 @@ inline auto mpi_transform_impl(const Structure &structure, const dim_sequence<> 
 }
 
 template<auto Dim, class Branches, class Structure, IsState State>
-inline auto mpi_transform_impl(const Structure &structure, const dim_tree<Dim, Branches> & /*unused*/, State state)
-	-> MPI_custom_type
+inline auto mpi_transform_impl(const Structure &structure, const dim_tree<Dim, Branches> & /*unused*/,
+                               State state) -> MPI_custom_type
 requires (Structure::signature::template any_accept<Dim>)
 {
 	constexpr bool has_lower_bound = HasLowerBoundAlong<Structure, Dim, State>;
@@ -95,8 +98,8 @@ requires (Structure::signature::template any_accept<Dim>)
 }
 
 template<auto Dim, class Branches, class Structure, IsState State>
-inline auto mpi_transform_impl(const Structure &structure, const dim_tree<Dim, Branches> & /*unused*/, State state)
-	-> MPI_custom_type
+inline auto mpi_transform_impl(const Structure &structure, const dim_tree<Dim, Branches> & /*unused*/,
+                               State state) -> MPI_custom_type
 requires (!Structure::signature::template any_accept<Dim>)
 {
 	return mpi_transform_impl(structure, Branches{}, state);
@@ -104,11 +107,16 @@ requires (!Structure::signature::template any_accept<Dim>)
 
 } // namespace helpers
 
+template<class DimTree, class Structure, IsState State>
+inline auto mpi_transform(const Structure &structure, const DimTree &dim_tree, State state) {
+	return helpers::mpi_transform_impl(structure, dim_tree, state);
+}
+
 template<class Structure, ToTraverser Trav>
 constexpr auto mpi_transform(const Trav &trav, const Structure &structure) {
 	using dim_tree = sig_dim_tree<typename decltype(trav.top_struct())::signature>;
 
-	return mpi_transform_impl(structure, dim_tree{}, trav.state());
+	return mpi_transform(structure, dim_tree{}, trav.state());
 }
 
 template<class Structure, class... Structures, ToTraverser Trav>
@@ -118,7 +126,7 @@ constexpr auto mpi_transform(const Trav &trav, const Structure &structure, const
 
 template<class Structure>
 constexpr auto mpi_transform(const Structure &structure) {
-	return mpi_transform(noarr::traverser(structure), structure);
+	return mpi_transform(traverser(structure), structure);
 }
 
 } // namespace noarr

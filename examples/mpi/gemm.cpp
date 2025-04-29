@@ -239,6 +239,7 @@ std::chrono::duration<double> run_experiment(num_t alpha, num_t beta, auto C, au
 	auto aTileType = create_mpi_datatype(tileA);
 	auto bTileType = create_mpi_datatype(tileB);
 
+	// use the fact that all tiles of a given matrix share the same layout and dimensions
 	auto cType = create_mpi_datatype(c_layouts[0]);
 	auto aType = create_mpi_datatype(a_layouts[0]);
 	auto bType = create_mpi_datatype(b_layouts[0]);
