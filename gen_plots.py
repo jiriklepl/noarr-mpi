@@ -29,10 +29,19 @@ from matplotlib.patches import Patch
 parser = argparse.ArgumentParser(
     description="Plot runtime comparisons from a CSV of framework benchmarks"
 )
+
+parser.add_argument(
+    '--show-sdev',
+    action='store_true',
+    help='Show standard deviation as error bars'
+)
+
 parser.add_argument(
     'csv_file',
     help='Path to the input CSV file containing the benchmark data'
 )
+
+
 args = parser.parse_args()
 
 # ─── Load & prepare data ────────────────────────────────────────────────────────
@@ -78,14 +87,14 @@ fig, axes = plt.subplots(
     figsize=(3.5 * len(datasets), 3),
     sharey=False
 )
-bar_width = 0.2
+bar_width = 0.18
 
 for ax, ds in zip(axes, datasets) if len(datasets) > 1 else [(axes, datasets[0])]:
     sub = df[df['dataset'] == ds]
     table = sub.pivot_table(
         index='tile_label',
         columns=['framework', 'valid'],
-        values='mean_time'
+        values=['mean_time', 'sd_time']
     )
 
     labels = table.index.tolist()
@@ -95,13 +104,23 @@ for ax, ds in zip(axes, datasets) if len(datasets) > 1 else [(axes, datasets[0])
         offset = (i - (len(frameworks)-1)/2) * bar_width
         for valid in (1, 0):
             col = (fw, valid)
-            if col in table.columns:
-                vals = table[col].reindex(labels).values
+
+            if col in table['mean_time'].columns:
+                vals = table['mean_time'][col].reindex(labels).values
             else:
                 vals = np.full(len(labels), np.nan)
+
+            if args.show_sdev and col in table['sd_time'].columns:
+                sdev = table['sd_time'][col].reindex(labels).values
+            elif args.show_sdev:
+                sdev = np.full(len(labels), np.nan)
+            else:
+                sdev = None
+
             if valid == 0:
                 ax.bar(
                     x + offset, vals, bar_width,
+                    yerr=sdev,
                     color='white',
                     hatch=None,
                     alpha=1.0,
@@ -111,6 +130,7 @@ for ax, ds in zip(axes, datasets) if len(datasets) > 1 else [(axes, datasets[0])
                 )
             ax.bar(
                 x + offset, vals, bar_width,
+                yerr=sdev,
                 color=colors[fw],
                 hatch=None if valid == 1 else '//',
                 alpha=1.0 if valid == 1 else 0.5,
