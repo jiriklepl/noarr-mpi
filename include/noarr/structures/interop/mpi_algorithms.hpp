@@ -113,7 +113,7 @@ struct remove_indices {
 
 template<auto AlongDim, auto... AllDims, class MPITraverser>
 requires (IsDim<decltype(AlongDim)> && ... && IsDim<decltype(AllDims)>) && IsMpiTraverser<MPITraverser>
-inline auto mpi_comm_split_along(const MPITraverser &traverser) -> mpi_comm_guard {
+inline mpi_comm_guard mpi_comm_split_along(const MPITraverser &traverser) {
 	static_assert(dim_sequence<AllDims...>::template contains<AlongDim>,
 	              "The dimension must be present in the sequence");
 

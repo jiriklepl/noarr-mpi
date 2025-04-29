@@ -85,17 +85,23 @@ struct to_MPI_Datatype<MPI_Datatype> : std::true_type {
 
 class MPI_custom_type {
 	MPI_Datatype value;
+	bool free_on_destruction = true;
 
 public:
 	constexpr MPI_custom_type() noexcept : value(MPI_DATATYPE_NULL) {}
 
-	explicit MPI_custom_type(MPI_Datatype value) : value(value) {}
+	explicit MPI_custom_type(MPI_Datatype value, bool free_on_destruction = true) noexcept
+		: value(value), free_on_destruction(free_on_destruction) {}
 
 	MPI_custom_type(const MPI_custom_type &) = delete;
 	MPI_custom_type &operator=(const MPI_custom_type &) = delete;
 
 	// leaves the other in a valid but unspecified state
-	MPI_custom_type(MPI_custom_type &&other) noexcept : value(other.value) { other.value = MPI_DATATYPE_NULL; }
+	MPI_custom_type(MPI_custom_type &&other) noexcept
+		: value(other.value), free_on_destruction(other.free_on_destruction) {
+		other.value = MPI_DATATYPE_NULL;
+		other.free_on_destruction = false;
+	}
 
 	// leaves the other in a valid but unspecified state
 	MPI_custom_type &operator=(MPI_custom_type &&other) noexcept {
@@ -111,12 +117,13 @@ public:
 		}
 	}
 
-	void reset(MPI_Datatype value = MPI_DATATYPE_NULL) {
-		if (this->value != MPI_DATATYPE_NULL) {
+	void reset(MPI_Datatype value = MPI_DATATYPE_NULL, bool free_on_destruction = true) {
+		if (this->value != MPI_DATATYPE_NULL && free_on_destruction) {
 			MPICHK(MPI_Type_free(&this->value));
 		}
 
 		this->value = value;
+		this->free_on_destruction = value != MPI_DATATYPE_NULL && free_on_destruction;
 	}
 
 	~MPI_custom_type() noexcept(false) { reset(); }

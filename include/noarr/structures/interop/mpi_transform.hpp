@@ -1,11 +1,6 @@
 #ifndef NOARR_STRUCTURES_INTEROP_MPI_TRANSFORM_HPP
 #define NOARR_STRUCTURES_INTEROP_MPI_TRANSFORM_HPP
 
-#include <cassert>
-#include <cstddef>
-#include <cstdint>
-
-#include <array>
 #include <stdexcept>
 #include <string>
 #include <tuple>
@@ -24,8 +19,7 @@ namespace noarr {
 namespace helpers {
 
 template<class Structure, IsState State>
-inline auto mpi_transform_impl(const Structure &structure, const dim_sequence<> & /*unused*/,
-                               State state) -> MPI_custom_type {
+inline MPI_custom_type mpi_transform_impl(const Structure &structure, const dim_sequence<> & /*ds*/, State state) {
 	using scalar_type = scalar_t<Structure, State>;
 
 	constexpr bool has_offset = has_offset_of<scalar<scalar_type>, Structure, State>();
@@ -38,10 +32,10 @@ inline auto mpi_transform_impl(const Structure &structure, const dim_sequence<> 
 		if (offset == 0) {
 			MPICHK(MPI_Type_dup(datatype, &new_Datatype));
 		} else {
-			const auto block_lengths = std::array{1};
-			const auto offsets = std::array{static_cast<MPI_Aint>(offset)};
+			const int block_lengths = 1;
+			const auto offsets = static_cast<MPI_Aint>(offset);
 
-			MPICHK(MPI_Type_create_hindexed(1, block_lengths.data(), offsets.data(), datatype, &new_Datatype));
+			MPICHK(MPI_Type_create_hindexed(1, &block_lengths, &offsets, datatype, &new_Datatype));
 		}
 
 		return MPI_custom_type{new_Datatype};
@@ -51,8 +45,8 @@ inline auto mpi_transform_impl(const Structure &structure, const dim_sequence<> 
 }
 
 template<auto Dim, class Branches, class Structure, IsState State>
-inline auto mpi_transform_impl(const Structure &structure, const dim_tree<Dim, Branches> & /*unused*/,
-                               State state) -> MPI_custom_type
+inline MPI_custom_type mpi_transform_impl(const Structure &structure, const dim_tree<Dim, Branches> & /*dt*/,
+                                          State state)
 requires (Structure::signature::template any_accept<Dim>)
 {
 	constexpr bool has_lower_bound = HasLowerBoundAlong<Structure, Dim, State>;
@@ -66,21 +60,18 @@ requires (Structure::signature::template any_accept<Dim>)
 		const auto stride = stride_along<Dim>(structure, state);
 		const auto length = structure.template length<Dim>(state);
 
-		const auto sub_transformed =
-			mpi_transform_impl(structure, Branches{}, state.template with<index_in<Dim>>(lb_at));
-
 		if (lower_bound != 0) {
 			throw std::runtime_error("Unsupported: lower bound is not zero");
 		}
 
-		MPI_Datatype new_Datatype = MPI_DATATYPE_NULL;
-
 		if (stride == 0 || length == 1) {
-			MPICHK(MPI_Type_dup((MPI_Datatype)sub_transformed, &new_Datatype));
-		} else {
-			MPICHK(MPI_Type_create_hvector(length, 1, stride, (MPI_Datatype)sub_transformed, &new_Datatype));
+			return mpi_transform_impl(structure, Branches{}, state.template with<index_in<Dim>>(lb_at));
 		}
 
+		const MPI_custom_type sub_transformed =
+			mpi_transform_impl(structure, Branches{}, state.template with<index_in<Dim>>(lb_at));
+		MPI_Datatype new_Datatype = MPI_DATATYPE_NULL;
+		MPICHK(MPI_Type_create_hvector(length, 1, stride, (MPI_Datatype)sub_transformed, &new_Datatype));
 		return MPI_custom_type{new_Datatype};
 	} else {
 		if constexpr (!has_lower_bound) {
@@ -98,8 +89,8 @@ requires (Structure::signature::template any_accept<Dim>)
 }
 
 template<auto Dim, class Branches, class Structure, IsState State>
-inline auto mpi_transform_impl(const Structure &structure, const dim_tree<Dim, Branches> & /*unused*/,
-                               State state) -> MPI_custom_type
+inline MPI_custom_type mpi_transform_impl(const Structure &structure, const dim_tree<Dim, Branches> & /*dt*/,
+                                          State state)
 requires (!Structure::signature::template any_accept<Dim>)
 {
 	return mpi_transform_impl(structure, Branches{}, state);
