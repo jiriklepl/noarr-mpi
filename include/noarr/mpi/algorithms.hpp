@@ -133,130 +133,116 @@ inline int mpi_get_comm_size(const ToMPIComm auto &has_comm) {
 	return size;
 }
 
+namespace helpers {
 
-inline void scatter(const auto &from, const auto &to, const IsMpiTraverser auto &trav, int root) {
-	const auto from_struct = convert_to_struct(from);
-	const auto to_struct = convert_to_struct(to);
-	const auto comm = convert_to_MPI_Comm(trav);
-	const int comm_size = mpi_get_comm_size(comm);
+inline std::tuple<MPI_custom_type, MPI_custom_type> scatter_types(const auto &gathered, const auto &scattered,
+                                                                  const IsMpiTraverser auto &trav, int min_rank) {
+	const auto gathered_struct = convert_to_struct(gathered);
+	const auto scattered_struct = convert_to_struct(scattered);
 
-	using from_sig = typename decltype(from_struct ^ set_length(trav))::signature;
-	using to_sig = typename decltype(to_struct ^ set_length(trav))::signature;
+	using gathered_sig = typename decltype(gathered_struct ^ set_length(trav))::signature;
+	using scattered_sig = typename decltype(scattered_struct ^ set_length(trav))::signature;
 	using trav_sig = typename decltype(trav.top_struct())::signature;
-	using from_bound_sig = typename decltype(from_struct ^ set_length(trav) ^ fix(trav))::signature;
+	using gathered_bound_sig = typename decltype(gathered_struct ^ set_length(trav) ^ fix(trav))::signature;
 
-	using from_dim_tree = sig_dim_tree<from_sig>;
-	using to_dim_tree = sig_dim_tree<to_sig>;
+	using gathered_dim_tree = sig_dim_tree<gathered_sig>;
+	using scattered_dim_tree = sig_dim_tree<scattered_sig>;
 	using trav_dim_tree = sig_dim_tree<trav_sig>;
-	using from_bound_dim_tree = sig_dim_tree<from_bound_sig>;
+	using gathered_bound_dim_tree = sig_dim_tree<gathered_bound_sig>;
 
-	using to_dim_filtered = dim_tree_filter<to_dim_tree, in_signature<from_sig>>;
-	using to_dim_removed = dim_tree_filter<to_dim_tree, dim_pred_not<in_signature<from_sig>>>;
-	using from_dim_filtered = dim_tree_filter<from_dim_tree, in_signature<to_sig>>;
+	using scattered_dim_filtered = dim_tree_filter<scattered_dim_tree, in_signature<gathered_sig>>;
+	using scattered_dim_removed = dim_tree_filter<scattered_dim_tree, dim_pred_not<in_signature<gathered_sig>>>;
+	using gathered_dim_filtered = dim_tree_filter<gathered_dim_tree, in_signature<scattered_sig>>;
 
-	using to_dim_in_trav = dim_tree_filter<to_dim_tree, in_signature<trav_sig>>;
-	using from_dim_in_trav = dim_tree_filter<from_bound_dim_tree, in_signature<trav_sig>>;
+	using scattered_dim_in_trav = dim_tree_filter<scattered_dim_tree, in_signature<trav_sig>>;
+	using gathered_dim_in_trav = dim_tree_filter<gathered_bound_dim_tree, in_signature<trav_sig>>;
 
-	using trav_dim_in_from = dim_tree_filter<trav_dim_tree, in_signature<from_sig>>;
-	using trav_dim_in_to = dim_tree_filter<trav_dim_tree, in_signature<to_sig>>;
+	using trav_dim_in_gathered = dim_tree_filter<trav_dim_tree, in_signature<gathered_sig>>;
+	using trav_dim_in_scattered = dim_tree_filter<trav_dim_tree, in_signature<scattered_sig>>;
 
-	// to must be a subset of from
-	static_assert(std::is_same_v<to_dim_filtered, to_dim_tree> && !std::is_same_v<to_dim_filtered, dim_sequence<>> &&
-	                  std::is_same_v<to_dim_removed, dim_sequence<>>,
-	              R"(The "to" structure must be a nontrivial subset of the "from" structure)");
+	// scattered must be a subset of gathered
+	static_assert(std::is_same_v<scattered_dim_filtered, scattered_dim_tree> &&
+	                  !std::is_same_v<scattered_dim_filtered, dim_sequence<>> &&
+	                  std::is_same_v<scattered_dim_removed, dim_sequence<>>,
+	              R"(The "scattered" structure must be a nontrivial subset of the "gathered" structure)");
 
 	static_assert(
-		std::is_same_v<from_dim_filtered, from_dim_in_trav> && std::is_same_v<to_dim_tree, to_dim_in_trav>,
-		R"(The traverser must contain all dimensions of the "from" structure and bind the difference in the index spaces)");
+		std::is_same_v<gathered_dim_filtered, gathered_dim_in_trav> &&
+			std::is_same_v<scattered_dim_tree, scattered_dim_in_trav>,
+		R"(The traverser must contain all dimensions of the "gathered" structure and bind the difference in the index spaces)");
 
-	static_assert(std::is_same_v<trav_dim_in_from, trav_dim_in_to>,
-	              R"(The traverser must contain the same dimensions for both the "from" and "to" structures)");
+	static_assert(
+		std::is_same_v<trav_dim_in_gathered, trav_dim_in_scattered>,
+		R"(The traverser must contain the same dimensions for both the "gathered" and "scattered" structures)");
 
-	std::vector<int> displacements(comm_size);
-	const std::vector<int> sendcounts(comm_size, 1);
+	const auto gathered_rep = mpi_transform(gathered_struct, scattered_dim_filtered{}, trav.state(min_rank));
+	auto scattered_rep = mpi_transform(scattered_struct, scattered_dim_filtered{}, trav.state(min_rank));
+	scattered_rep.commit();
 
-	for (int i = 0; i < comm_size; ++i) {
-		const auto state = trav.state(i);
-		const auto offset_getter = offset(fix_zeros(from_dim_tree{}));
-		displacements[i] = (from_struct ^ set_length(state) ^ fix(state)) | offset_getter;
-	}
+	MPI_Datatype gathered_rep_resized = MPI_DATATYPE_NULL;
+	MPICHK(MPI_Type_create_resized(convert_to_MPI_Datatype(gathered_rep), 0, sizeof(char), &gathered_rep_resized));
+	auto gathered_rep_resized_custom = MPI_custom_type(gathered_rep_resized);
+	gathered_rep_resized_custom.commit();
 
-	const auto min_rank = std::min_element(displacements.begin(), displacements.end()) - displacements.begin();
-
-	const auto from_rep = mpi_transform(from_struct, to_dim_filtered{}, trav.state(min_rank));
-	auto to_rep = mpi_transform(to_struct, to_dim_filtered{}, trav.state(min_rank));
-	to_rep.commit();
-
-	MPI_Datatype from_rep_resized = MPI_DATATYPE_NULL;
-	MPICHK(MPI_Type_create_resized(convert_to_MPI_Datatype(from_rep), 0, sizeof(char), &from_rep_resized));
-	auto from_rep_resized_custom = MPI_custom_type(from_rep_resized);
-	from_rep_resized_custom.commit();
-
-	MPICHK(MPI_Scatterv(from.data(), sendcounts.data(), displacements.data(),
-	                    convert_to_MPI_Datatype(from_rep_resized_custom), to.data(), 1, convert_to_MPI_Datatype(to_rep),
-	                    root, comm));
+	return {std::move(gathered_rep_resized_custom), std::move(scattered_rep)};
 }
 
-inline void gather(const auto &from, const auto &to, const IsMpiTraverser auto &trav, int root) {
-	const auto from_struct = convert_to_struct(from);
-	const auto to_struct = convert_to_struct(to);
+inline std::vector<int> scatter_displacements(const auto &gathered, const IsMpiTraverser auto &trav) {
+	const auto gathered_struct = convert_to_struct(gathered);
+
 	const auto comm = convert_to_MPI_Comm(trav);
 	const int comm_size = mpi_get_comm_size(comm);
 
-	using from_sig = typename decltype(from_struct ^ set_length(trav))::signature;
-	using to_sig = typename decltype(to_struct ^ set_length(trav))::signature;
-	using trav_sig = typename decltype(trav.top_struct())::signature;
-	using to_bound_sig = typename decltype(to_struct ^ set_length(trav) ^ fix(trav))::signature;
+	using gathered_sig = typename decltype(gathered_struct ^ set_length(trav))::signature;
+	using gathered_dim_tree = sig_dim_tree<gathered_sig>;
 
-	using from_dim_tree = sig_dim_tree<from_sig>;
-	using to_dim_tree = sig_dim_tree<to_sig>;
-	using trav_dim_tree = sig_dim_tree<trav_sig>;
-	using to_bound_dim_tree = sig_dim_tree<to_bound_sig>;
-
-	using from_dim_filtered = dim_tree_filter<from_dim_tree, in_signature<to_sig>>;
-	using from_dim_removed = dim_tree_filter<from_dim_tree, dim_pred_not<in_signature<to_sig>>>;
-	using to_dim_filtered = dim_tree_filter<to_bound_dim_tree, in_signature<from_sig>>;
-
-	using to_dim_in_trav = dim_tree_filter<to_dim_tree, in_signature<trav_sig>>;
-	using from_dim_in_trav = dim_tree_filter<from_dim_tree, in_signature<trav_sig>>;
-
-	using trav_dim_in_from = dim_tree_filter<trav_dim_tree, in_signature<from_sig>>;
-	using trav_dim_in_to = dim_tree_filter<trav_dim_tree, in_signature<to_sig>>;
-
-	// from must be a subset of to
-	static_assert(std::is_same_v<from_dim_filtered, from_dim_tree> &&
-	                  !std::is_same_v<from_dim_filtered, dim_sequence<>> &&
-	                  std::is_same_v<from_dim_removed, dim_sequence<>>,
-	              R"(The "from" structure must be a nontrivial subset of the "to" structure)");
-
-	static_assert(std::is_same_v<from_dim_tree, from_dim_in_trav> && std::is_same_v<to_dim_filtered, to_dim_in_trav>,
-	              R"(The traverser must contain all dimensions of the "from" and "to" structures)");
-
-	static_assert(std::is_same_v<trav_dim_in_from, trav_dim_in_to>,
-	              R"(The traverser must contain the same dimensions for both the "from" and "to" structures)");
-
-	std::vector<int> displacements(comm_size);
-	const std::vector<int> sendcounts(comm_size, 1);
+	auto displacements = std::vector<int>(static_cast<std::size_t>(comm_size));
 
 	for (int i = 0; i < comm_size; ++i) {
 		const auto state = trav.state(i);
-		const auto offset_getter = offset(fix_zeros(to_dim_tree{}));
-		displacements[i] = (to_struct ^ set_length(state) ^ fix(state)) | offset_getter;
+		const auto offset_getter = offset(fix_zeros(gathered_dim_tree{}));
+		displacements[i] = (gathered_struct ^ set_length(state) ^ fix(state)) | offset_getter;
 	}
 
+	return displacements;
+}
+
+} // namespace helpers
+
+inline void scatter(const auto &gathered, const auto &scattered, const IsMpiTraverser auto &trav, int root) {
+	const auto gathered_struct = convert_to_struct(gathered);
+	const auto scattered_struct = convert_to_struct(scattered);
+
+	const auto comm = convert_to_MPI_Comm(trav);
+	const int comm_size = mpi_get_comm_size(comm);
+
+	const auto sendcounts = std::vector<int>(comm_size, 1);
+
+	const auto displacements = helpers::scatter_displacements(gathered, trav);
 	const auto min_rank = std::min_element(displacements.begin(), displacements.end()) - displacements.begin();
 
-	auto from_rep = mpi_transform(from_struct, from_dim_filtered{}, trav.state(min_rank));
-	const auto to_rep = mpi_transform(to_struct, from_dim_filtered{}, trav.state(min_rank));
-	from_rep.commit();
+	const auto &[gathered_rep, scattered_rep] = helpers::scatter_types(gathered, scattered, trav, min_rank);
 
-	MPI_Datatype to_rep_resized = MPI_DATATYPE_NULL;
-	MPICHK(MPI_Type_create_resized(convert_to_MPI_Datatype(to_rep), 0, sizeof(char), &to_rep_resized));
-	auto to_rep_resized_custom = MPI_custom_type(to_rep_resized);
-	to_rep_resized_custom.commit();
+	MPICHK(MPI_Scatterv(gathered.data(), sendcounts.data(), displacements.data(), convert_to_MPI_Datatype(gathered_rep),
+	                    scattered.data(), 1, convert_to_MPI_Datatype(scattered_rep), root, comm));
+}
 
-	MPICHK(MPI_Gatherv(from.data(), 1, convert_to_MPI_Datatype(from_rep), to.data(), sendcounts.data(),
-	                   displacements.data(), convert_to_MPI_Datatype(to_rep_resized_custom), root, comm));
+inline void gather(const auto &scattered, const auto &gathered, const IsMpiTraverser auto &trav, int root) {
+	const auto scattered_struct = convert_to_struct(scattered);
+	const auto gathered_struct = convert_to_struct(gathered);
+
+	const auto comm = convert_to_MPI_Comm(trav);
+	const int comm_size = mpi_get_comm_size(comm);
+
+	const auto sendcounts = std::vector<int>(comm_size, 1);
+
+	const auto displacements = helpers::scatter_displacements(gathered, trav);
+	const auto min_rank = std::min_element(displacements.begin(), displacements.end()) - displacements.begin();
+
+	const auto &[gathered_rep, scattered_rep] = helpers::scatter_types(gathered, scattered, trav, min_rank);
+
+	MPICHK(MPI_Gatherv(scattered.data(), 1, convert_to_MPI_Datatype(scattered_rep), gathered.data(), sendcounts.data(),
+	                   displacements.data(), convert_to_MPI_Datatype(gathered_rep), root, comm));
 }
 
 } // namespace noarr::mpi
