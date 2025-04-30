@@ -99,10 +99,18 @@ RAII_Datatype create_mpi_datatype(const MDSpan &mdspan) {
 
 		MPI_Datatype subarray_type = MPI_DATATYPE_NULL;
 		MPI_Type_create_hvector(dim, 1, stride * sizeof(value_type), type, &subarray_type);
-		MPI_Type_create_resized(subarray_type, 0, sizeof(value_type), &subarray_type);
+
+		if (i != rank - 1) {
+			MPI_Type_free(&type);
+		}
 
 		type = subarray_type;
 	}
+
+	MPI_Datatype subarray_type = MPI_DATATYPE_NULL;
+	MPI_Type_create_resized(type, 0, sizeof(value_type), &subarray_type);
+	MPI_Type_free(&type);
+	type = subarray_type;
 
 	return RAII_Datatype{type};
 }
@@ -251,6 +259,7 @@ std::chrono::duration<double> run_experiment(num_t alpha, num_t beta, auto C, au
 	MPI_Scatterv(b_layouts[0].data_handle(), send_counts.data(), b_displacements.data(), bType.get(),
 	             tileB.data_handle(), 1, bTileType.get(), root, world);
 
+	// run kernel
 	kernel_gemm(alpha, tileC, beta, tileA, tileB, SI, SJ, NK);
 
 	MPI_Gatherv(tileC.data_handle(), 1, cTileType.get(), c_layouts[0].data_handle(), send_counts.data(),
