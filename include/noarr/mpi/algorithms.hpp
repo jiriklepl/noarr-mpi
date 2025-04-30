@@ -1,5 +1,5 @@
-#ifndef NOARR_STRUCTURES_INTEROP_MPI_ALGORITHMS_HPP
-#define NOARR_STRUCTURES_INTEROP_MPI_ALGORITHMS_HPP
+#ifndef NOARR_MPI_ALGORITHMS_HPP
+#define NOARR_MPI_ALGORITHMS_HPP
 
 #include <cstddef>
 
@@ -13,12 +13,12 @@
 #include <noarr/structures/base/contain.hpp>
 #include <noarr/structures/extra/shortcuts.hpp>
 
-#include "../interop/mpi_bag.hpp"
-#include "../interop/mpi_transform.hpp"
-#include "../interop/mpi_traverser.hpp"
-#include "../interop/mpi_utility.hpp"
+#include "../mpi/bag.hpp"
+#include "../mpi/transform.hpp"
+#include "../mpi/traverser.hpp"
+#include "../mpi/utility.hpp"
 
-namespace noarr {
+namespace noarr::mpi {
 
 namespace helpers {
 
@@ -57,7 +57,7 @@ constexpr auto mpi_run(IsMpiTraverser auto trav, const Bags &...bags) {
 	return helpers::mpi_run_t(trav, bags.get_ref()...);
 }
 
-inline void mpi_bcast(const ToStruct auto &has_struct, const IsMpiTraverser auto &trav, int rank) {
+inline void broadcast(const ToStruct auto &has_struct, const IsMpiTraverser auto &trav, int rank) {
 	const auto structure = convert_to_struct(has_struct);
 	auto type = mpi_transform(trav, structure);
 	type.commit();
@@ -65,24 +65,13 @@ inline void mpi_bcast(const ToStruct auto &has_struct, const IsMpiTraverser auto
 }
 
 template<class T>
-inline void mpi_bcast(T &scalar, const ToMPIComm auto &has_comm, int rank)
+inline void broadcast(T &scalar, const ToMPIComm auto &has_comm, int rank)
 requires choose_mpi_type<T>::value
 {
 	MPICHK(MPI_Bcast(&scalar, 1, choose_mpi_type<T>::get(), rank, convert_to_MPI_Comm(has_comm)));
 }
 
-inline void mpi_barrier(const ToMPIComm auto &has_comm) { MPICHK(MPI_Barrier(convert_to_MPI_Comm(has_comm))); }
-
-inline std::pair<MPI_Aint, MPI_Aint> mpi_type_get_extent(const ToMPIDatatype auto &has_type) {
-	std::pair<MPI_Aint, MPI_Aint> result;
-
-	const auto type = convert_to_MPI_Datatype(has_type);
-
-	auto &[lb, extent] = result;
-	MPICHK(MPI_Type_get_extent(type, &lb, &extent));
-
-	return result;
-}
+inline void barrier(const ToMPIComm auto &has_comm) { MPICHK(MPI_Barrier(convert_to_MPI_Comm(has_comm))); }
 
 template<class T>
 struct is_length_in : std::false_type {};
@@ -118,8 +107,8 @@ inline mpi_comm_guard mpi_comm_split_along(const MPITraverser &traverser) {
 	              "The dimension must be present in the sequence");
 
 	const auto state = traverser.state().items_restrict(
-		typename helpers::state_filter_items<typename decltype(traverser.state())::items_pack,
-	                                         helpers::remove_indices<AllDims...>>::result());
+		typename noarr::helpers::state_filter_items<typename decltype(traverser.state())::items_pack,
+	                                                helpers::remove_indices<AllDims...>>::result());
 	const auto space = scalar<char>() ^ vectors_like<AllDims...>(traverser.get_struct(), state);
 	const auto comm = traverser.get_comm();
 
@@ -144,7 +133,8 @@ inline int mpi_get_comm_size(const ToMPIComm auto &has_comm) {
 	return size;
 }
 
-inline void mpi_scatter(const auto &from, const auto &to, const IsMpiTraverser auto &trav, int root) {
+
+inline void scatter(const auto &from, const auto &to, const IsMpiTraverser auto &trav, int root) {
 	const auto from_struct = convert_to_struct(from);
 	const auto to_struct = convert_to_struct(to);
 	const auto comm = convert_to_MPI_Comm(trav);
@@ -207,7 +197,7 @@ inline void mpi_scatter(const auto &from, const auto &to, const IsMpiTraverser a
 	                    root, comm));
 }
 
-inline void mpi_gather(const auto &from, const auto &to, const IsMpiTraverser auto &trav, int root) {
+inline void gather(const auto &from, const auto &to, const IsMpiTraverser auto &trav, int root) {
 	const auto from_struct = convert_to_struct(from);
 	const auto to_struct = convert_to_struct(to);
 	const auto comm = convert_to_MPI_Comm(trav);
@@ -269,6 +259,6 @@ inline void mpi_gather(const auto &from, const auto &to, const IsMpiTraverser au
 	                   displacements.data(), convert_to_MPI_Datatype(to_rep_resized_custom), root, comm));
 }
 
-} // namespace noarr
+} // namespace noarr::mpi
 
-#endif // NOARR_STRUCTURES_INTEROP_MPI_ALGORITHMS_HPP
+#endif // NOARR_MPI_ALGORITHMS_HPP

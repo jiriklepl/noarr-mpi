@@ -1,5 +1,5 @@
-#ifndef NOARR_STRUCTURES_INTEROP_MPI_TRANSFORM_HPP
-#define NOARR_STRUCTURES_INTEROP_MPI_TRANSFORM_HPP
+#ifndef NOARR_MPI_TRANSFORM_HPP
+#define NOARR_MPI_TRANSFORM_HPP
 
 #include <stdexcept>
 #include <string>
@@ -7,14 +7,17 @@
 
 #include <mpi.h>
 
+#include <noarr/structures/base/utility.hpp>
+#include <noarr/structures/extra/sig_utils.hpp>
+#include <noarr/structures/extra/struct_traits.hpp>
+#include <noarr/structures/extra/traverser.hpp>
 #include <noarr/structures/introspection/lower_bound_along.hpp>
 #include <noarr/structures/introspection/stride_along.hpp>
 #include <noarr/structures/introspection/uniform_along.hpp>
 
-#include "../interop/mpi_traverser.hpp"
-#include "../interop/mpi_utility.hpp"
+#include "../mpi/utility.hpp"
 
-namespace noarr {
+namespace noarr::mpi {
 
 namespace helpers {
 
@@ -120,6 +123,6 @@ constexpr auto mpi_transform(const Structure &structure) {
 	return mpi_transform(traverser(structure), structure);
 }
 
-} // namespace noarr
+} // namespace noarr::mpi
 
-#endif // NOARR_STRUCTURES_INTEROP_MPI_TRANSFORM_HPP
+#endif // NOARR_MPI_TRANSFORM_HPP

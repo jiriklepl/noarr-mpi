@@ -1,5 +1,5 @@
-#ifndef NOARR_STRUCTURES_INTEROP_MPI_BAG_HPP
-#define NOARR_STRUCTURES_INTEROP_MPI_BAG_HPP
+#ifndef NOARR_MPI_BAG_HPP
+#define NOARR_MPI_BAG_HPP
 
 #include <type_traits>
 #include <utility>
@@ -10,9 +10,9 @@
 #include <noarr/structures/extra/to_struct.hpp>
 #include <noarr/structures/interop/bag.hpp>
 
-#include "../interop/mpi_utility.hpp"
+#include "../mpi/utility.hpp"
 
-namespace noarr {
+namespace noarr::mpi {
 
 template<class Bag>
 class mpi_bag_t : public Bag {
@@ -39,13 +39,6 @@ template<class T>
 concept IsMpiBag = IsSpecialization<T, mpi_bag_t>;
 
 template<IsMpiBag Bag>
-struct to_struct<Bag> : std::true_type {
-	using type = decltype(convert_to_struct(std::declval<Bag>().get_bag()));
-
-	static constexpr type convert(const Bag &bag) { return convert_to_struct(bag.get_bag()); }
-};
-
-template<IsMpiBag Bag>
 struct to_MPI_Datatype<Bag> : std::true_type {
 	using type = MPI_Datatype;
 
@@ -70,6 +63,17 @@ auto mpi_bag(const Bag &bag, MPI_custom_type mpi_type) -> mpi_bag_t<Bag> {
 	return mpi_bag_t(bag, std::move(mpi_type));
 }
 
+} // namespace noarr::mpi
+
+namespace noarr {
+
+template<mpi::IsMpiBag Bag>
+struct to_struct<Bag> : std::true_type {
+	using type = decltype(convert_to_struct(std::declval<Bag>().get_bag()));
+
+	static constexpr type convert(const Bag &bag) { return convert_to_struct(bag.get_bag()); }
+};
+
 } // namespace noarr
 
-#endif // NOARR_STRUCTURES_INTEROP_MPI_BAG_HPP
+#endif // NOARR_MPI_BAG_HPP

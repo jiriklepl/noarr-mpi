@@ -6,11 +6,11 @@
 #ifndef NOARR_MPI_HPP
 #define NOARR_MPI_HPP
 
-#include "noarr/structures/interop/mpi_algorithms.hpp"
-#include "noarr/structures/interop/mpi_bag.hpp"
-#include "noarr/structures/interop/mpi_structs.hpp"
-#include "noarr/structures/interop/mpi_transform.hpp"
-#include "noarr/structures/interop/mpi_traverser.hpp"
-#include "noarr/structures/interop/mpi_utility.hpp"
+#include "noarr/mpi/algorithms.hpp"
+#include "noarr/mpi/bag.hpp"
+#include "noarr/mpi/structs.hpp"
+#include "noarr/mpi/transform.hpp"
+#include "noarr/mpi/traverser.hpp"
+#include "noarr/mpi/utility.hpp"
 
 #endif // NOARR_MPI_HPP

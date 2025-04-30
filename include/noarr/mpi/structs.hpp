@@ -1,14 +1,14 @@
-#ifndef NOARR_STRUCTURES_INTEROP_MPI_STRUCTS_HPP
-#define NOARR_STRUCTURES_INTEROP_MPI_STRUCTS_HPP
+#ifndef NOARR_MPI_STRUCTS_HPP
+#define NOARR_MPI_STRUCTS_HPP
 
 #include <mpi.h>
 
 #include <noarr/structures/base/contain.hpp>
 #include <noarr/structures/structs/setters.hpp>
 
-#include "../interop/mpi_utility.hpp"
+#include "../mpi/utility.hpp"
 
-namespace noarr {
+namespace noarr::mpi {
 
 template<IsDim auto Dim>
 inline auto mpi_bind(MPI_Comm comm) {
@@ -41,6 +41,6 @@ inline auto mpi_block(MPI_Comm comm) {
 	return into_blocks<Dim, MajorDim>(size) ^ fix<MajorDim>(rank);
 }
 
-} // namespace noarr
+} // namespace noarr::mpi
 
-#endif // NOARR_STRUCTURES_INTEROP_MPI_STRUCTS_HPP
+#endif // NOARR_MPI_STRUCTS_HPP

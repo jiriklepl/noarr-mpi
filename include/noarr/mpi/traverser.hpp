@@ -1,5 +1,5 @@
-#ifndef NOARR_STRUCTURES_INTEROP_MPI_TRAVERSER_HPP
-#define NOARR_STRUCTURES_INTEROP_MPI_TRAVERSER_HPP
+#ifndef NOARR_MPI_TRAVERSER_HPP
+#define NOARR_MPI_TRAVERSER_HPP
 
 #include <stdexcept>
 #include <type_traits>
@@ -12,10 +12,9 @@
 #include <noarr/structures/base/utility.hpp>
 #include <noarr/structures/extra/traverser.hpp>
 
-#include "../interop/mpi_bag.hpp"
-#include "../interop/mpi_structs.hpp"
+#include "../mpi/structs.hpp"
 
-namespace noarr {
+namespace noarr::mpi {
 
 template<IsDim auto Dim, class Traverser>
 requires IsTraverser<Traverser>
@@ -131,27 +130,6 @@ template<IsDim auto Dim, IsTraverser Traverser>
 struct is_mpi_traverser<mpi_traverser_t<Dim, Traverser>> : std::true_type {};
 
 template<IsMpiTraverser Traverser>
-struct to_traverser<Traverser> : std::true_type {
-	using type =
-		std::remove_cvref_t<decltype(std::declval<Traverser>().get_traverser() ^ std::declval<Traverser>().get_bind())>;
-
-	[[nodiscard]]
-	static constexpr type convert(const Traverser &traverser) noexcept {
-		return traverser.get_traverser() ^ traverser.get_bind();
-	}
-};
-
-template<IsMpiTraverser Traverser>
-struct to_state<Traverser> : std::true_type {
-	using type = decltype(std::declval<Traverser>().state());
-
-	[[nodiscard]]
-	static constexpr type convert(const Traverser &traverser) noexcept {
-		return traverser.state();
-	}
-};
-
-template<IsMpiTraverser Traverser>
 struct to_MPI_Comm<Traverser> : std::true_type {
 	using type = decltype(std::declval<Traverser>().get_comm());
 
@@ -167,23 +145,48 @@ constexpr auto operator|(Traverser traverser, auto f) -> decltype(traverser.for_
 }
 
 template<IsMpiTraverser Traverser, auto... Dims, class F>
-constexpr auto operator|(Traverser traverser, const helpers::for_each_t<F, Dims...> &f)
+constexpr auto operator|(Traverser traverser, const noarr::helpers::for_each_t<F, Dims...> &f)
 	-> decltype(traverser.template for_each<Dims...>(f)) {
 	return traverser.template for_each<Dims...>(f);
 }
 
 template<IsMpiTraverser Traverser, auto... Dims, class F>
-constexpr auto operator|(Traverser traverser, const helpers::for_sections_t<F, Dims...> &f)
+constexpr auto operator|(Traverser traverser, const noarr::helpers::for_sections_t<F, Dims...> &f)
 	-> decltype(traverser.template for_sections<Dims...>(f)) {
 	return traverser.template for_sections<Dims...>(f);
 }
 
 template<IsMpiTraverser Traverser, auto... Dims, class F>
-constexpr auto operator|(Traverser traverser, const helpers::for_dims_t<F, Dims...> &f)
+constexpr auto operator|(Traverser traverser, const noarr::helpers::for_dims_t<F, Dims...> &f)
 	-> decltype(traverser.template for_dims<Dims...>(f)) {
 	return traverser.template for_dims<Dims...>(f);
 }
 
+} // namespace noarr::mpi
+
+namespace noarr {
+
+template<mpi::IsMpiTraverser Traverser>
+struct to_traverser<Traverser> : std::true_type {
+	using type =
+		std::remove_cvref_t<decltype(std::declval<Traverser>().get_traverser() ^ std::declval<Traverser>().get_bind())>;
+
+	[[nodiscard]]
+	static constexpr type convert(const Traverser &traverser) noexcept {
+		return traverser.get_traverser() ^ traverser.get_bind();
+	}
+};
+
+template<mpi::IsMpiTraverser Traverser>
+struct to_state<Traverser> : std::true_type {
+	using type = decltype(std::declval<Traverser>().state());
+
+	[[nodiscard]]
+	static constexpr type convert(const Traverser &traverser) noexcept {
+		return traverser.state();
+	}
+};
+
 } // namespace noarr
 
-#endif // NOARR_STRUCTURES_INTEROP_MPI_TRAVERSER_HPP
+#endif // NOARR_MPI_TRAVERSER_HPP

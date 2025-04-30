@@ -1,5 +1,5 @@
-#ifndef NOARR_STRUCTURES_INTEROP_MPI_UTILITY_HPP
-#define NOARR_STRUCTURES_INTEROP_MPI_UTILITY_HPP
+#ifndef NOARR_MPI_UTILITY_HPP
+#define NOARR_MPI_UTILITY_HPP
 
 #include <cstdlib>
 
@@ -29,7 +29,7 @@
 		}                                                                                                              \
 	} while (0)
 
-namespace noarr {
+namespace noarr::mpi {
 
 class MPI_session {
 	MPI_Comm comm = MPI_COMM_WORLD;
@@ -374,6 +374,17 @@ struct choose_mpi_type<std::pair<int, int>> : std::true_type {
 	static constexpr MPI_Datatype get() noexcept { return MPI_2INT; }
 };
 
-} // namespace noarr
+inline std::pair<MPI_Aint, MPI_Aint> mpi_type_get_extent(const ToMPIDatatype auto &has_type) {
+	std::pair<MPI_Aint, MPI_Aint> result;
 
-#endif // NOARR_STRUCTURES_INTEROP_MPI_UTILITY_HPP
+	const auto type = convert_to_MPI_Datatype(has_type);
+
+	auto &[lb, extent] = result;
+	MPICHK(MPI_Type_get_extent(type, &lb, &extent));
+
+	return result;
+}
+
+} // namespace noarr::mpi
+
+#endif // NOARR_MPI_UTILITY_HPP

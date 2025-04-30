@@ -15,7 +15,7 @@ Message Passing Interface (MPI) has been a well-established technology in the do
 The project contains a header-only extension of the Noarr library that provides a layout-agnostic C++ abstraction for MPI. The library can be included using the following include directive (assuming an MPI implementation is available on the system and the [include](include) directory is in the include path):
 
 ```cpp
-#include <noarr/structures/mpi.hpp>
+#include <noarr/mpi.hpp>
 ```
 
 To showcase the proposed abstraction, we implemented a distributed GEMM kernel using the proposed Noarr MPI abstraction. The project contains the source code of the GEMM kernel and the necessary scripts to build, run, and compare the kernel with a baseline GEMM kernel implemented in the Noarr library.
@@ -54,7 +54,7 @@ The script `configure.sh` creates a build directory and runs CMake to configure 
 
 The two MPI-distributed GEMM kernels are proof-of-concept implementations of the proposed Noarr MPI abstraction showcasing the proposed layout-agnostic design. They test two different layout configurations to demonstrate that the abstraction can handle different layouts without changing the GEMM kernel code, possibly improving performance by optimizing the data layout.
 
-The baseline `gemm` kernel and the `gemm-mpi` kernel use an inefficient data layout for the `B` matrix. The `gemm-mpi-tileb-transpose` kernel uses the same (inefficient) layout as the initial input matrix but changes the layout during the `scatter` operation to a more efficient one for the per-node computation. The transposition of the layout involves no extra data movement and is implicitly handled by constructing appropriate MPI data types using the [mpi_transform](include/noarr/structures/interop/mpi_transform.hpp) function inside the Noarr MPI abstraction.
+The baseline `gemm` kernel and the `gemm-mpi` kernel use an inefficient data layout for the `B` matrix. The `gemm-mpi-tileb-transpose` kernel uses the same (inefficient) layout as the initial input matrix but changes the layout during the `scatter` operation to a more efficient one for the per-node computation. The transposition of the layout involves no extra data movement and is implicitly handled by constructing appropriate MPI data types using the [mpi_transform](include/noarr/mpi/transform.hpp) function inside the Noarr MPI abstraction.
 
 ## How to run
 
@@ -104,10 +104,10 @@ The result of the command is a list of tests and their outcomes. All tests shoul
 
 The paper describes type transformation from Noarr structures to MPI data types and MPI traversers. Proof-of-concept implementations of these abstractions are located in the following files:
 
-- [include/noarr/structures/interop/mpi_transform.hpp](include/noarr/structures/interop/mpi_transform.hpp) - defines the `mpi_transform` function that transforms Noarr structures to MPI data types.
-- [include/noarr/structures/interop/mpi_traverser.hpp](include/noarr/structures/interop/mpi_traverser.hpp) - defines the `mpi_traverser_t` class that associates a Noarr traverser with an MPI communicator.
+- [include/noarr/mpi/transform.hpp](include/noarr/mpi/transform.hpp) - defines the `mpi_transform` function that transforms Noarr structures to MPI data types.
+- [include/noarr/mpi/traverser.hpp](include/noarr/mpi/traverser.hpp) - defines the `mpi_traverser_t` class that associates a Noarr traverser with an MPI communicator.
 
-The MPI bindings for collective operations (broadcast, scatter, gather) are implemented in [include/noarr/structures/interop/mpi_algorithms.hpp](include/noarr/structures/interop/mpi_algorithms.hpp).
+The MPI bindings for collective operations (broadcast, scatter, gather) are implemented in [include/noarr/mpi/algorithms.hpp](include/noarr/mpi/algorithms.hpp).
 
 ## Visualization
 

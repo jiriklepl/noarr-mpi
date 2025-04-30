@@ -4,11 +4,12 @@
 #include <noarr/mpi.hpp>
 
 using namespace noarr;
+namespace mpi = noarr::mpi;
 
 constexpr int root = 0;
 
 int main() {
-	MPI_session mpi_session;
+	mpi::MPI_session mpi_session;
 
 	const auto root_structure = scalar<int>() ^ vectors<'x', 'y', 'z'>(2, 2, 2);
 	const auto grid = into_blocks<'x', 'X'>() ^ into_blocks<'y', 'Y'>() ^ into_blocks<'z', 'Z'>();
@@ -16,12 +17,12 @@ int main() {
 		set_length<'X', 'Y'>(2, 2) ^ merge_blocks<'X', 'Y', '_'>() ^ merge_blocks<'_', 'Z', 'r'>();
 
 	const auto trav = traverser(root_structure ^ grid);
-	const auto mpi_trav = mpi_traverser<'r'>(trav ^ distr_strategy, mpi_session);
+	const auto mpi_trav = mpi::mpi_traverser<'r'>(trav ^ distr_strategy, mpi_session);
 
 	auto root_bag = bag(root_structure ^ grid, nullptr);
 	auto tile_bag = bag(scalar<int>() ^ vectors_like<'x', 'y', 'z'>(mpi_trav));
 
 	// The following function call is incorrect (the root structure and the tile structure are swapped), fails at
 	// compile time
-	mpi_gather(root_bag, tile_bag, mpi_trav, root);
+	mpi::gather(root_bag, tile_bag, mpi_trav, root);
 }

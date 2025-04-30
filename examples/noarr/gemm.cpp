@@ -18,6 +18,8 @@
 
 using num_t = DATA_TYPE;
 
+namespace mpi = noarr::mpi;
+
 namespace {
 
 constexpr auto i_vec = noarr::vector<'i'>();
@@ -95,14 +97,14 @@ std::chrono::duration<double> run_experiment(num_t alpha, num_t beta, auto C, au
                                              auto tileB, auto &mpi_trav, int root) {
 	const auto start = std::chrono::high_resolution_clock::now();
 
-	mpi_scatter(C, tileC, mpi_trav, root);
-	mpi_scatter(A, tileA, mpi_trav, root);
-	mpi_scatter(B, tileB, mpi_trav, root);
+	mpi::scatter(C, tileC, mpi_trav, root);
+	mpi::scatter(A, tileA, mpi_trav, root);
+	mpi::scatter(B, tileB, mpi_trav, root);
 
 	// run kernel
 	kernel_gemm(mpi_trav, alpha, tileC, beta, tileA, tileB);
 
-	mpi_gather(tileC, C, mpi_trav, root);
+	mpi::gather(tileC, C, mpi_trav, root);
 
 	const auto end = std::chrono::high_resolution_clock::now();
 
@@ -116,7 +118,7 @@ int main(int argc, char *argv[]) {
 
 	constexpr int num_runs = 10;
 
-	const noarr::MPI_session mpi_session(argc, argv);
+	const mpi::MPI_session mpi_session(argc, argv);
 
 	const int rank = mpi_get_comm_rank(mpi_session);
 	const int size = mpi_get_comm_size(mpi_session);
@@ -153,7 +155,7 @@ int main(int argc, char *argv[]) {
 
 	const auto trav =
 		noarr::traverser(C, A, B) ^ noarr::set_length<'I'>(i_tiles) ^ noarr::merge_blocks<'I', 'J', 'r'>();
-	const auto mpi_trav = noarr::mpi_traverser<'r'>(trav, MPI_COMM_WORLD);
+	const auto mpi_trav = mpi::mpi_traverser<'r'>(trav, MPI_COMM_WORLD);
 
 	const auto tileC = noarr::bag(scalar ^ tuning.c_tile_layout ^ lengths_like<'j', 'i'>(mpi_trav));
 	const auto tileA = noarr::bag(scalar ^ tuning.a_tile_layout ^ lengths_like<'k', 'i'>(mpi_trav));
@@ -168,8 +170,8 @@ int main(int argc, char *argv[]) {
 		           bag(B_structure, B.data()));
 	}
 
-	mpi_bcast(alpha, mpi_trav, root);
-	mpi_bcast(beta, mpi_trav, root);
+	mpi::broadcast(alpha, mpi_trav, root);
+	mpi::broadcast(beta, mpi_trav, root);
 
 	// Warm up
 	run_experiment(alpha, beta, C, A, B, tileC.get_ref(), tileA.get_ref(), tileB.get_ref(), mpi_trav, root);
@@ -182,7 +184,7 @@ int main(int argc, char *argv[]) {
 			           bag(B_structure, B.data()));
 		}
 
-		mpi_barrier(mpi_trav);
+		mpi::barrier(mpi_trav);
 
 		times[i] =
 			run_experiment(alpha, beta, C, A, B, tileC.get_ref(), tileA.get_ref(), tileB.get_ref(), mpi_trav, root)
@@ -216,7 +218,7 @@ int main(int argc, char *argv[]) {
 		}
 	}
 
-	mpi_bcast(return_code, mpi_trav, root);
+	mpi::broadcast(return_code, mpi_trav, root);
 
 	return return_code;
 }
