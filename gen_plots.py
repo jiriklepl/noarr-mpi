@@ -166,7 +166,7 @@ aq.legend(
 valid_patch   = Patch(facecolor='white', edgecolor='black', label='Valid')
 invalid_patch = Patch(facecolor='white', edgecolor='black', hatch='//', alpha=0.5, label='Invalid')
 
-aend = axes[-1] if len(datasets) > 1 else axes
+aend = axes[-1] if len(datasets) > 1 else axes.twinx()
 aend.legend(
     [valid_patch, invalid_patch],
     ['Valid', 'Invalid'],
