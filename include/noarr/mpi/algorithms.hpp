@@ -179,8 +179,8 @@ inline decltype(auto) scatter_types(auto &&cache, const auto &gathered, const au
 		R"(The traverser must contain the same dimensions for both the "gathered" and "scattered" structures)");
 
 	if constexpr (std::is_same_v<std::remove_cvref_t<decltype(cache)>, no_type_cache>) {
-		const auto gathered_rep = mpi_transform(gathered_struct, scattered_dim_filtered{}, trav.state(min_rank));
-		auto scattered_rep = mpi_transform(scattered_struct, scattered_dim_filtered{}, trav.state(min_rank));
+		const auto gathered_rep = mpi_transform(gathered_struct, trav_dim_in_scattered{}, trav.state(min_rank));
+		auto scattered_rep = mpi_transform(scattered_struct, trav_dim_in_scattered{}, trav.state(min_rank));
 		scattered_rep.commit();
 
 		MPI_Datatype gathered_rep_resized = MPI_DATATYPE_NULL;
@@ -192,16 +192,16 @@ inline decltype(auto) scatter_types(auto &&cache, const auto &gathered, const au
 		                                                    std::move(scattered_rep)};
 	} else {
 		decltype(auto) gathered_rep =
-			mpi_transform(cache, gathered_struct, scattered_dim_filtered{}, trav.state(min_rank));
+			mpi_transform(cache, gathered_struct, trav_dim_in_scattered{}, trav.state(min_rank));
 		decltype(auto) scattered_rep =
-			mpi_transform(cache, scattered_struct, scattered_dim_filtered{}, trav.state(min_rank));
+			mpi_transform(cache, scattered_struct, trav_dim_in_scattered{}, trav.state(min_rank));
+		scattered_rep.commit();
 
 		MPI_Datatype gathered_rep_resized = MPI_DATATYPE_NULL;
 		MPICHK(MPI_Type_create_resized(convert_to_MPI_Datatype(gathered_rep), 0, sizeof(char), &gathered_rep_resized));
 		auto gathered_rep_resized_custom = MPI_custom_type(gathered_rep_resized);
 		gathered_rep_resized_custom.commit();
-		return std::tuple<MPI_custom_type, MPI_custom_type &>{std::move(gathered_rep_resized_custom),
-		                                                      std::ref(scattered_rep)};
+		return std::tuple<MPI_custom_type, MPI_custom_type &>{std::move(gathered_rep_resized_custom), scattered_rep};
 	}
 }
 
@@ -231,14 +231,14 @@ template<class TypeCache = helpers::no_type_cache>
 inline void scatter(const auto &gathered, const auto &scattered, const IsMpiTraverser auto &trav, int root,
                     TypeCache &&type_cache = {}) {
 	const auto comm = convert_to_MPI_Comm(trav);
-	const int comm_size = mpi_get_comm_size(comm);
+	const int comm_size = trav.get_size();
 
 	const auto sendcounts = std::vector<int>(comm_size, 1);
 
 	const auto displacements = helpers::scatter_displacements(gathered, trav);
 	const auto min_rank = std::min_element(displacements.begin(), displacements.end()) - displacements.begin();
 
-	const auto &[gathered_rep, scattered_rep] =
+	const auto [gathered_rep, scattered_rep] =
 		helpers::scatter_types(std::forward<TypeCache>(type_cache), gathered, scattered, trav, min_rank);
 
 	MPICHK(MPI_Scatterv(gathered.data(), sendcounts.data(), displacements.data(), convert_to_MPI_Datatype(gathered_rep),
@@ -249,14 +249,14 @@ template<class TypeCache = helpers::no_type_cache>
 inline void gather(const auto &scattered, const auto &gathered, const IsMpiTraverser auto &trav, int root,
                    TypeCache &&type_cache = {}) {
 	const auto comm = convert_to_MPI_Comm(trav);
-	const int comm_size = mpi_get_comm_size(comm);
+	const int comm_size = trav.get_size();
 
 	const auto sendcounts = std::vector<int>(comm_size, 1);
 
 	const auto displacements = helpers::scatter_displacements(gathered, trav);
 	const auto min_rank = std::min_element(displacements.begin(), displacements.end()) - displacements.begin();
 
-	const auto &[gathered_rep, scattered_rep] =
+	const auto [gathered_rep, scattered_rep] =
 		helpers::scatter_types(std::forward<TypeCache>(type_cache), gathered, scattered, trav, min_rank);
 
 	MPICHK(MPI_Gatherv(scattered.data(), 1, convert_to_MPI_Datatype(scattered_rep), gathered.data(), sendcounts.data(),
