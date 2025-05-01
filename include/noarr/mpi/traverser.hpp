@@ -18,19 +18,35 @@ namespace noarr::mpi {
 
 template<IsDim auto Dim, class Traverser>
 requires IsTraverser<Traverser>
-struct mpi_traverser_t : strict_contain<Traverser, MPI_Comm> {
-	using base = strict_contain<Traverser, MPI_Comm>;
+struct mpi_traverser_t : strict_contain<Traverser, MPI_Comm, int, int> {
+	using base = strict_contain<Traverser, MPI_Comm, int, int>;
 	using base::base;
+
+	mpi_traverser_t(Traverser traverser, MPI_Comm comm) : base{traverser, comm, 0, 0} {
+
+		MPICHK(MPI_Comm_rank(comm, &const_cast<int &>(base::template get<2>())));
+		MPICHK(MPI_Comm_size(comm, &const_cast<int &>(base::template get<3>())));
+	}
+
+	explicit mpi_traverser_t(Traverser traverser, MPI_Comm comm, int rank, int size)
+		: base{traverser, comm, rank, size} {}
 
 	static constexpr auto dim = Dim;
 
 	[[nodiscard]]
-	constexpr auto get_bind() const {
-		int rank = 0;
-		int size = 0;
+	constexpr int get_rank() const noexcept {
+		return base::template get<2>();
+	}
 
-		MPICHK(MPI_Comm_rank(get_comm(), &rank));
-		MPICHK(MPI_Comm_size(get_comm(), &size));
+	[[nodiscard]]
+	constexpr int get_size() const noexcept {
+		return base::template get<3>();
+	}
+
+	[[nodiscard]]
+	constexpr auto get_bind() const {
+		int rank = get_rank();
+		int size = get_size();
 
 		if constexpr (decltype(get_traverser().top_struct())::template has_length<Dim, noarr::state<>>()) {
 			if (get_traverser().top_struct().template length<Dim>(empty_state) != size) {
@@ -96,17 +112,20 @@ struct mpi_traverser_t : strict_contain<Traverser, MPI_Comm> {
 	requires (... && IsDim<decltype(Dims)>)
 	constexpr void for_sections(F &&f) const {
 		(get_traverser() ^ get_bind())
-			.template for_sections<Dims...>([&f, comm = get_comm()]<class Inner>(Inner inner) {
-				std::forward<F>(f)(mpi_traverser_t<Dim, Inner>{inner, comm});
-			});
+			.template for_sections<Dims...>(
+				[&f, comm = get_comm(), rank = get_rank(), size = get_size()]<class Inner>(Inner inner) {
+					std::forward<F>(f)(mpi_traverser_t<Dim, Inner>{inner, comm, rank, size});
+				});
 	}
 
 	template<auto... Dims, class F>
 	requires (... && IsDim<decltype(Dims)>)
 	constexpr void for_dims(F &&f) const {
-		(get_traverser() ^ get_bind()).template for_dims<Dims...>([&f, comm = get_comm()]<class Inner>(Inner inner) {
-			std::forward<F>(f)(mpi_traverser_t<Dim, Inner>{inner, comm});
-		});
+		(get_traverser() ^ get_bind())
+			.template for_dims<Dims...>(
+				[&f, comm = get_comm(), rank = get_rank(), size = get_size()]<class Inner>(Inner inner) {
+					std::forward<F>(f)(mpi_traverser_t<Dim, Inner>{inner, comm, rank, size});
+				});
 	}
 };
 
