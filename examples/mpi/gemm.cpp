@@ -93,14 +93,14 @@ RAII_Datatype create_mpi_datatype(const MDSpan &mdspan) {
 
 	MPI_Datatype type{mpi_type<value_type>::get()};
 
-	for (int i = rank - 1; i >= 0; --i) {
+	for (int i = 0; i < rank; ++i) {
 		const std::size_t dim = mdspan.extent(i);
 		const std::size_t stride = mdspan.stride(i);
 
 		MPI_Datatype subarray_type = MPI_DATATYPE_NULL;
 		MPI_Type_create_hvector(dim, 1, stride * sizeof(value_type), type, &subarray_type);
 
-		if (i != rank - 1) {
+		if (i != 0) {
 			MPI_Type_free(&type);
 		}
 

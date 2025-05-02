@@ -23,6 +23,31 @@ using num_t = DATA_TYPE;
 
 namespace {
 
+
+template <KokkosComm::KokkosView RecvView, KokkosComm::KokkosExecutionSpace ExecSpace = Kokkos::DefaultExecutionSpace,
+          KokkosComm::CommunicationSpace CommSpace = KokkosComm::DefaultCommunicationSpace>
+KokkosComm::Req<KokkosComm::Mpi> layout_agnostic_recv(KokkosComm::Handle<ExecSpace, CommSpace> &h, RecvView &rv, int src) {
+	// return KokkosComm::recv(handle, view, r);
+	KokkosComm::Req<KokkosComm::Mpi> req;
+	MPI_Datatype rv_type = KokkosComm::Impl::view_mpi_type(rv);
+	MPI_Irecv(rv.data(), 1, rv_type, src, KokkosComm::Impl::POINTTOPOINT_TAG, h.mpi_comm(),
+				&req.mpi_request());
+	req.extend_view_lifetime(rv);
+	return req;
+}
+
+template <KokkosComm::KokkosView SendView, KokkosComm::KokkosExecutionSpace ExecSpace = Kokkos::DefaultExecutionSpace,
+		  KokkosComm::CommunicationSpace CommSpace = KokkosComm::DefaultCommunicationSpace>
+KokkosComm::Req<KokkosComm::Mpi> layout_agnostic_send(KokkosComm::Handle<ExecSpace, CommSpace> &h, SendView &sv, int dest) {
+	// return KokkosComm::send(handle, view, dest);
+	KokkosComm::Req<KokkosComm::Mpi> req;
+	MPI_Datatype sv_type = KokkosComm::Impl::view_mpi_type(sv);
+	MPI_Isend(sv.data(), 1, sv_type, dest, KokkosComm::Impl::POINTTOPOINT_TAG, h.mpi_comm(),
+			  &req.mpi_request());
+	req.extend_view_lifetime(sv);
+	return req;
+}
+
 template<typename T, typename Layout = Kokkos::LayoutRight>
 struct matrix_factory {
 	auto operator()(T *data, std::size_t rows, std::size_t cols) const {
@@ -120,22 +145,29 @@ std::chrono::duration<double> run_experiment(num_t alpha, num_t beta, auto &C, a
 			const auto a_subview = Kokkos::subview(A, std::make_pair<int, int>(SI * i, SI * (i + 1)), Kokkos::ALL);
 			const auto b_subview = Kokkos::subview(B, Kokkos::ALL, std::make_pair<int, int>(SJ * j, SJ * (j + 1)));
 
-			reqs.push_back(KokkosComm::send(handle, c_subview, r));
-			reqs.push_back(KokkosComm::send(handle, a_subview, r));
-			reqs.push_back(KokkosComm::send(handle, b_subview, r));
+			// reqs.push_back(KokkosComm::send(handle, c_subview, r));
+			// reqs.push_back(KokkosComm::send(handle, a_subview, r));
+			// reqs.push_back(KokkosComm::send(handle, b_subview, r));
+			reqs.push_back(layout_agnostic_send(handle, c_subview, r));
+			reqs.push_back(layout_agnostic_send(handle, a_subview, r));
+			reqs.push_back(layout_agnostic_send(handle, b_subview, r));
 		}
 	}
 
-	reqs.push_back(KokkosComm::recv(handle, tileC, root));
-	reqs.push_back(KokkosComm::recv(handle, tileA, root));
-	reqs.push_back(KokkosComm::recv(handle, tileB, root));
+	// reqs.push_back(KokkosComm::recv(handle, tileC, root));
+	// reqs.push_back(KokkosComm::recv(handle, tileA, root));
+	// reqs.push_back(KokkosComm::recv(handle, tileB, root));
+	reqs.push_back(layout_agnostic_recv(handle, tileC, root));
+	reqs.push_back(layout_agnostic_recv(handle, tileA, root));
+	reqs.push_back(layout_agnostic_recv(handle, tileB, root));
 
 	KokkosComm::wait_all(reqs);
 	reqs.clear();
 
 	kernel_gemm(alpha, tileC, beta, tileA, tileB, SI, SJ, NK);
 
-	reqs.push_back(KokkosComm::send(handle, tileC, root));
+	// reqs.push_back(KokkosComm::send(handle, tileC, root));
+	reqs.push_back(layout_agnostic_send(handle, tileC, root));
 
 	if (rank == root) {
 		for (int r = 0; r < size; ++r) {
@@ -145,7 +177,8 @@ std::chrono::duration<double> run_experiment(num_t alpha, num_t beta, auto &C, a
 			const auto c_subview = Kokkos::subview(C, std::make_pair<int, int>(SI * i, SI * (i + 1)),
 			                                       std::make_pair<int, int>(SJ * j, SJ * (j + 1)));
 
-			reqs.push_back(KokkosComm::recv(handle, c_subview, r));
+			// reqs.push_back(KokkosComm::recv(handle, c_subview, r));
+			reqs.push_back(layout_agnostic_recv(handle, c_subview, r));
 		}
 	}
 

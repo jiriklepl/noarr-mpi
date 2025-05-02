@@ -154,7 +154,7 @@ int main(int argc, char *argv[]) {
 	const std::size_t i_tiles = (argc > 1) ? std::atoi(argv[1]) : 1;
 
 	const auto trav = noarr::traverser(C, A, B) ^ noarr::set_length<'I'>(i_tiles) ^
-	                  noarr::merge_blocks<'I', 'J', 'r'>() ^ noarr::hoist<'r', 'i', 'k', 'j'>();
+	                  noarr::merge_blocks<'I', 'J', 'r'>() ^ noarr::hoist<'r', 'j', 'k', 'i'>();
 	const auto mpi_trav = mpi::mpi_traverser<'r'>(trav, MPI_COMM_WORLD);
 
 	const auto tileC = noarr::bag(scalar ^ tuning.c_tile_layout ^ lengths_like<'j', 'i'>(mpi_trav));
