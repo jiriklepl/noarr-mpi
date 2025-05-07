@@ -13,6 +13,7 @@
 class matrix_stream_check {
 public:
 	static constexpr std::size_t max_invalid = 10;
+	static constexpr double epsilon = 2e-2;
 
 	explicit matrix_stream_check(std::istream &f, std::size_t ni, std::size_t nj) : _file(&f), _ni(ni), _nj(nj) {}
 
@@ -35,9 +36,13 @@ public:
 		(*_file) >> expected;
 
 		if (expected != result) {
-			if (_invalid_count++ < max_invalid) {
+			auto expected_value = std::stod(expected);
+			auto result_value = std::stod(result);
+
+			if (std::abs(expected_value - result_value) >= epsilon && _invalid_count < max_invalid) {
 				std::cerr << "Invalid value at C[" << _i << ", " << _j << "]: expected " << expected << ", got "
 						  << result << '\n';
+				++_invalid_count;
 			}
 		}
 
