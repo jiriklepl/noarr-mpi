@@ -41,11 +41,13 @@ parser.add_argument(
     help='Path to the input CSV file containing the benchmark data'
 )
 
-
 args = parser.parse_args()
 
 # ─── Load & prepare data ────────────────────────────────────────────────────────
 df = pd.read_csv(args.csv_file)
+
+if df.empty:
+    raise ValueError("Input CSV file is empty or not found.")
 
 # Ultra-concise labels: strip prefixes/suffixes to just letter codes
 df['c_code'] = (

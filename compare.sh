@@ -22,11 +22,23 @@ SLURM_TIMEOUT=${SLURM_TIMEOUT:-"2:00:00"}
 LD_LIBRARY_PATH="${BUILD_DIR}/boost-install/lib${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"
 
 echo "algorithm,framework,dataset,datatype,c_tile,a_tile,b_tile,i_tiles,mean_time,sd_time,valid"
-files=$(find "$BUILD_DIR/examples/" -mindepth 2 -maxdepth 2 -type f -executable -name "gemm-*-*-*-*-*-*")
+files=$(find "$BUILD_DIR/examples/" -mindepth 2 -maxdepth 2 -type f -executable -name "gemm-*-*-*-*-*-*" | shuf)
 printf "Running the following algorithm implementations\n%s\n" "${files}" >&2
 for file in ${files}; do
 	IFS="-" read -r algorithmRaw framework dataset datatype c_tile a_tile b_tile <<< "${file}"
 	IFS="/" read -r buildDir _ _ algorithm <<< "${algorithmRaw}"
+
+	if [[ -z "${algorithm}" ]]; then
+		continue
+	fi
+
+	if [[ -z "${framework}" ]]; then
+		continue
+	fi
+
+	if [[ -z "${dataset}" ]]; then
+		continue
+	fi
 
 	testFile="${buildDir}/${algorithm}-${dataset}-${datatype}.data"
 
