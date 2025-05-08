@@ -28,11 +28,15 @@ template <KokkosComm::KokkosView RecvView, KokkosComm::KokkosExecutionSpace Exec
           KokkosComm::CommunicationSpace CommSpace = KokkosComm::DefaultCommunicationSpace>
 KokkosComm::Req<KokkosComm::Mpi> layout_agnostic_recv(KokkosComm::Handle<ExecSpace, CommSpace> &h, RecvView &rv, int src) {
 	// return KokkosComm::recv(handle, view, r);
+	const ExecSpace &space = h.space();
 	KokkosComm::Req<KokkosComm::Mpi> req;
 	MPI_Datatype rv_type = KokkosComm::Impl::view_mpi_type(rv);
-	MPI_Irecv(rv.data(), 1, rv_type, src, KokkosComm::Impl::POINTTOPOINT_TAG, h.mpi_comm(),
+
+	space.fence("fence before irecv");
+	// no pack and unpack; its current implementation in KokkosComm is no-op
+	MPI_Irecv(KokkosComm::data_handle(rv), 1, rv_type, src, KokkosComm::Impl::POINTTOPOINT_TAG, h.mpi_comm(),
 				&req.mpi_request());
-	req.extend_view_lifetime(rv);
+	// req.extend_view_lifetime(rv); // we know the view does not have ownership of the data
 	return req;
 }
 
@@ -40,11 +44,15 @@ template <KokkosComm::KokkosView SendView, KokkosComm::KokkosExecutionSpace Exec
 		  KokkosComm::CommunicationSpace CommSpace = KokkosComm::DefaultCommunicationSpace>
 KokkosComm::Req<KokkosComm::Mpi> layout_agnostic_send(KokkosComm::Handle<ExecSpace, CommSpace> &h, SendView &sv, int dest) {
 	// return KokkosComm::send(handle, view, dest);
+	const ExecSpace &space = h.space();
 	KokkosComm::Req<KokkosComm::Mpi> req;
 	MPI_Datatype sv_type = KokkosComm::Impl::view_mpi_type(sv);
-	MPI_Isend(sv.data(), 1, sv_type, dest, KokkosComm::Impl::POINTTOPOINT_TAG, h.mpi_comm(),
+
+	space.fence("fence before isend");
+	// no pack and unpack; its current implementation in KokkosComm is no-op
+	MPI_Isend(KokkosComm::data_handle(sv), 1, sv_type, dest, KokkosComm::Impl::POINTTOPOINT_TAG, h.mpi_comm(),
 			  &req.mpi_request());
-	req.extend_view_lifetime(sv);
+	// req.extend_view_lifetime(sv); // we know the view does not have ownership of the data
 	return req;
 }
 
@@ -221,7 +229,7 @@ int run_environment(int argc, char *argv[]) {
 
 	const auto tileC_data = std::make_unique<num_t[]>(SI * SJ);
 	const auto tileA_data = std::make_unique<num_t[]>(SI * NK);
-	const auto tileB_data = std::make_unique<num_t[]>(SJ * NK);
+	const auto tileB_data = std::make_unique<num_t[]>(NK * SJ);
 
 	const auto tileC = tuning.c_tile_layout(tileC_data.get(), SI, SJ);
 	const auto tileA = tuning.a_tile_layout(tileA_data.get(), SI, NK);
