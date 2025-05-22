@@ -76,6 +76,7 @@ algorithm,framework,dataset,datatype,c_tile,a_tile,b_tile,i_tiles,mean_time,sd_t
 - `i_tiles` - the number of tiles in the `i` dimension of the `C` matrix; the number of tiles in the `j` dimension is determined by the number of MPI processes.
 - `mean_time` - the average execution time of the GEMM kernel in seconds.
 - `sd_time` - the standard deviation of the execution time in seconds.
+- `valid` - a flag indicating whether the result of the GEMM kernel is valid (1) or not (0).
 
 ### Slurm
 
@@ -119,10 +120,18 @@ To reproduce the results reported in the paper, run the following sequence of co
 
 mkdir -p data
 
-# May run for few hours; add USE_SLURM=1 to run on a Slurm cluster
+# May run for over an hour; add USE_SLURM=1 to run on a Slurm cluster
 NUM_TASKS=8 NUM_NODES=8 I_TILES=2 ./compare.sh > data/compare.csv 2> data/compare.err
 
+# Further experiments for more stable results
+NUM_TASKS=8 NUM_NODES=8 I_TILES=2 ./compare.sh > data/compare2.csv 2> data/compare2.err
+NUM_TASKS=8 NUM_NODES=8 I_TILES=2 ./compare.sh > data/compare3.csv 2> data/compare3.err
+
+# Generate plots (only one experiment)
 ./gen_plots.py --show-sdev --no-validation --no-boostP2P data/compare.csv
+
+# Generate plots (all experiments aggregated)
+./gen_plots.py --show-sdev --no-validation --no-boostP2P data/compare.csv data/compare2.csv data/compare3.csv
 ```
 
 ## Testing

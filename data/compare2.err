@@ -1,0 +1,713 @@
+Running the following algorithm implementations
+build/examples/boost/gemm-boost-EXTRALARGE-FLOAT-C_TILE_J_MAJOR-A_TILE_I_MAJOR-B_TILE_J_MAJOR
+build/examples/noarr/gemm-noarr-MEDIUM-FLOAT-C_TILE_I_MAJOR-A_TILE_I_MAJOR-B_TILE_K_MAJOR
+build/examples/boost/gemm-boost-MINI-FLOAT-C_TILE_J_MAJOR-A_TILE_I_MAJOR-B_TILE_J_MAJOR
+build/examples/kokkosComm/gemm-kokkosComm-EXTRALARGE-FLOAT-C_TILE_I_MAJOR-A_TILE_I_MAJOR-B_TILE_K_MAJOR
+build/examples/noarr/gemm-noarr-MEDIUM-FLOAT-C_TILE_J_MAJOR-A_TILE_K_MAJOR-B_TILE_K_MAJOR
+build/examples/mpi/gemm-mpi-EXTRALARGE-FLOAT-C_TILE_J_MAJOR-A_TILE_I_MAJOR-B_TILE_K_MAJOR
+build/examples/kokkosComm/gemm-kokkosComm-MEDIUM-FLOAT-C_TILE_I_MAJOR-A_TILE_K_MAJOR-B_TILE_J_MAJOR
+build/examples/boostP2P/gemm-boostP2P-MINI-FLOAT-C_TILE_I_MAJOR-A_TILE_K_MAJOR-B_TILE_J_MAJOR
+build/examples/boost/gemm-boost-EXTRALARGE-FLOAT-C_TILE_I_MAJOR-A_TILE_K_MAJOR-B_TILE_K_MAJOR
+build/examples/boostP2P/gemm-boostP2P-EXTRALARGE-FLOAT-C_TILE_I_MAJOR-A_TILE_K_MAJOR-B_TILE_K_MAJOR
+build/examples/noarr/gemm-noarr-MINI-FLOAT-C_TILE_I_MAJOR-A_TILE_K_MAJOR-B_TILE_K_MAJOR
+build/examples/boostP2P/gemm-boostP2P-MEDIUM-FLOAT-C_TILE_I_MAJOR-A_TILE_K_MAJOR-B_TILE_J_MAJOR
+build/examples/boostP2P/gemm-boostP2P-MEDIUM-FLOAT-C_TILE_I_MAJOR-A_TILE_I_MAJOR-B_TILE_J_MAJOR
+build/examples/boost/gemm-boost-MEDIUM-FLOAT-C_TILE_I_MAJOR-A_TILE_K_MAJOR-B_TILE_K_MAJOR
+build/examples/mpi/gemm-mpi-MINI-FLOAT-C_TILE_J_MAJOR-A_TILE_K_MAJOR-B_TILE_K_MAJOR
+build/examples/boostP2P/gemm-boostP2P-EXTRALARGE-FLOAT-C_TILE_I_MAJOR-A_TILE_I_MAJOR-B_TILE_K_MAJOR
+build/examples/boostP2P/gemm-boostP2P-MINI-FLOAT-C_TILE_J_MAJOR-A_TILE_I_MAJOR-B_TILE_J_MAJOR
+build/examples/kokkosComm/gemm-kokkosComm-MINI-FLOAT-C_TILE_I_MAJOR-A_TILE_I_MAJOR-B_TILE_J_MAJOR
+build/examples/boostP2P/gemm-boostP2P-MEDIUM-FLOAT-C_TILE_J_MAJOR-A_TILE_I_MAJOR-B_TILE_J_MAJOR
+build/examples/mpi/gemm-mpi-MINI-FLOAT-C_TILE_I_MAJOR-A_TILE_I_MAJOR-B_TILE_K_MAJOR
+build/examples/mpi/gemm-mpi-MEDIUM-FLOAT-C_TILE_J_MAJOR-A_TILE_K_MAJOR-B_TILE_K_MAJOR
+build/examples/boostP2P/gemm-boostP2P-MEDIUM-FLOAT-C_TILE_I_MAJOR-A_TILE_K_MAJOR-B_TILE_K_MAJOR
+build/examples/mpi/gemm-mpi-MEDIUM-FLOAT-C_TILE_I_MAJOR-A_TILE_K_MAJOR-B_TILE_J_MAJOR
+build/examples/boostP2P/gemm-boostP2P-MINI-FLOAT-C_TILE_J_MAJOR-A_TILE_K_MAJOR-B_TILE_J_MAJOR
+build/examples/kokkosComm/gemm-kokkosComm-EXTRALARGE-FLOAT-C_TILE_I_MAJOR-A_TILE_K_MAJOR-B_TILE_K_MAJOR
+build/examples/kokkosComm/gemm-kokkosComm-MEDIUM-FLOAT-C_TILE_I_MAJOR-A_TILE_K_MAJOR-B_TILE_K_MAJOR
+build/examples/noarr/gemm-noarr-MINI-FLOAT-C_TILE_J_MAJOR-A_TILE_K_MAJOR-B_TILE_K_MAJOR
+build/examples/noarr/gemm-noarr-EXTRALARGE-FLOAT-C_TILE_J_MAJOR-A_TILE_K_MAJOR-B_TILE_K_MAJOR
+build/examples/kokkosComm/gemm-kokkosComm-MEDIUM-FLOAT-C_TILE_J_MAJOR-A_TILE_K_MAJOR-B_TILE_K_MAJOR
+build/examples/mpi/gemm-mpi-EXTRALARGE-FLOAT-C_TILE_I_MAJOR-A_TILE_K_MAJOR-B_TILE_K_MAJOR
+build/examples/boost/gemm-boost-MINI-FLOAT-C_TILE_I_MAJOR-A_TILE_I_MAJOR-B_TILE_J_MAJOR
+build/examples/noarr/gemm-noarr-EXTRALARGE-FLOAT-C_TILE_I_MAJOR-A_TILE_I_MAJOR-B_TILE_K_MAJOR
+build/examples/mpi/gemm-mpi-MINI-FLOAT-C_TILE_I_MAJOR-A_TILE_K_MAJOR-B_TILE_K_MAJOR
+build/examples/noarr/gemm-noarr-MEDIUM-FLOAT-C_TILE_I_MAJOR-A_TILE_I_MAJOR-B_TILE_J_MAJOR
+build/examples/noarr/gemm-noarr-MINI-FLOAT-C_TILE_J_MAJOR-A_TILE_I_MAJOR-B_TILE_K_MAJOR
+build/examples/noarr/gemm-noarr-MINI-FLOAT-C_TILE_J_MAJOR-A_TILE_I_MAJOR-B_TILE_J_MAJOR
+build/examples/boost/gemm-boost-MINI-FLOAT-C_TILE_I_MAJOR-A_TILE_K_MAJOR-B_TILE_K_MAJOR
+build/examples/noarr/gemm-noarr-MINI-FLOAT-C_TILE_J_MAJOR-A_TILE_K_MAJOR-B_TILE_J_MAJOR
+build/examples/boost/gemm-boost-MEDIUM-FLOAT-C_TILE_I_MAJOR-A_TILE_I_MAJOR-B_TILE_K_MAJOR
+build/examples/mpi/gemm-mpi-EXTRALARGE-FLOAT-C_TILE_I_MAJOR-A_TILE_I_MAJOR-B_TILE_J_MAJOR
+build/examples/kokkosComm/gemm-kokkosComm-MINI-FLOAT-C_TILE_I_MAJOR-A_TILE_I_MAJOR-B_TILE_K_MAJOR
+build/examples/kokkosComm/gemm-kokkosComm-MEDIUM-FLOAT-C_TILE_J_MAJOR-A_TILE_I_MAJOR-B_TILE_K_MAJOR
+build/examples/mpi/gemm-mpi-MINI-FLOAT-C_TILE_I_MAJOR-A_TILE_K_MAJOR-B_TILE_J_MAJOR
+build/examples/kokkosComm/gemm-kokkosComm-EXTRALARGE-FLOAT-C_TILE_J_MAJOR-A_TILE_I_MAJOR-B_TILE_J_MAJOR
+build/examples/noarr/gemm-noarr-EXTRALARGE-FLOAT-C_TILE_I_MAJOR-A_TILE_I_MAJOR-B_TILE_J_MAJOR
+build/examples/noarr/gemm-noarr-MINI-FLOAT-C_TILE_I_MAJOR-A_TILE_I_MAJOR-B_TILE_K_MAJOR
+build/examples/boostP2P/gemm-boostP2P-MEDIUM-FLOAT-C_TILE_J_MAJOR-A_TILE_I_MAJOR-B_TILE_K_MAJOR
+build/examples/mpi/gemm-mpi-MEDIUM-FLOAT-C_TILE_J_MAJOR-A_TILE_K_MAJOR-B_TILE_J_MAJOR
+build/examples/noarr/gemm-noarr-MEDIUM-FLOAT-C_TILE_J_MAJOR-A_TILE_I_MAJOR-B_TILE_K_MAJOR
+build/examples/kokkosComm/gemm-kokkosComm-MINI-FLOAT-C_TILE_J_MAJOR-A_TILE_K_MAJOR-B_TILE_J_MAJOR
+build/examples/boost/gemm-boost-MEDIUM-FLOAT-C_TILE_J_MAJOR-A_TILE_K_MAJOR-B_TILE_K_MAJOR
+build/examples/boost/gemm-boost-MEDIUM-FLOAT-C_TILE_I_MAJOR-A_TILE_I_MAJOR-B_TILE_J_MAJOR
+build/examples/noarr/gemm-noarr-EXTRALARGE-FLOAT-C_TILE_J_MAJOR-A_TILE_I_MAJOR-B_TILE_K_MAJOR
+build/examples/boostP2P/gemm-boostP2P-EXTRALARGE-FLOAT-C_TILE_I_MAJOR-A_TILE_I_MAJOR-B_TILE_J_MAJOR
+build/examples/boost/gemm-boost-EXTRALARGE-FLOAT-C_TILE_I_MAJOR-A_TILE_I_MAJOR-B_TILE_K_MAJOR
+build/examples/kokkosComm/gemm-kokkosComm-MINI-FLOAT-C_TILE_J_MAJOR-A_TILE_K_MAJOR-B_TILE_K_MAJOR
+build/examples/boost/gemm-boost-MINI-FLOAT-C_TILE_J_MAJOR-A_TILE_I_MAJOR-B_TILE_K_MAJOR
+build/examples/mpi/gemm-mpi-MEDIUM-FLOAT-C_TILE_I_MAJOR-A_TILE_I_MAJOR-B_TILE_K_MAJOR
+build/examples/boostP2P/gemm-boostP2P-MEDIUM-FLOAT-C_TILE_J_MAJOR-A_TILE_K_MAJOR-B_TILE_K_MAJOR
+build/examples/kokkosComm/gemm-kokkosComm-MEDIUM-FLOAT-C_TILE_I_MAJOR-A_TILE_I_MAJOR-B_TILE_K_MAJOR
+build/examples/boostP2P/gemm-boostP2P-EXTRALARGE-FLOAT-C_TILE_J_MAJOR-A_TILE_K_MAJOR-B_TILE_J_MAJOR
+build/examples/kokkosComm/gemm-kokkosComm-MEDIUM-FLOAT-C_TILE_J_MAJOR-A_TILE_I_MAJOR-B_TILE_J_MAJOR
+build/examples/mpi/gemm-mpi-EXTRALARGE-FLOAT-C_TILE_I_MAJOR-A_TILE_K_MAJOR-B_TILE_J_MAJOR
+build/examples/boost/gemm-boost-MEDIUM-FLOAT-C_TILE_I_MAJOR-A_TILE_K_MAJOR-B_TILE_J_MAJOR
+build/examples/boost/gemm-boost-MINI-FLOAT-C_TILE_I_MAJOR-A_TILE_K_MAJOR-B_TILE_J_MAJOR
+build/examples/noarr/gemm-noarr-EXTRALARGE-FLOAT-C_TILE_J_MAJOR-A_TILE_I_MAJOR-B_TILE_J_MAJOR
+build/examples/kokkosComm/gemm-kokkosComm-EXTRALARGE-FLOAT-C_TILE_J_MAJOR-A_TILE_K_MAJOR-B_TILE_J_MAJOR
+build/examples/kokkosComm/gemm-kokkosComm-EXTRALARGE-FLOAT-C_TILE_J_MAJOR-A_TILE_I_MAJOR-B_TILE_K_MAJOR
+build/examples/boost/gemm-boost-EXTRALARGE-FLOAT-C_TILE_J_MAJOR-A_TILE_K_MAJOR-B_TILE_K_MAJOR
+build/examples/noarr/gemm-noarr-MEDIUM-FLOAT-C_TILE_I_MAJOR-A_TILE_K_MAJOR-B_TILE_J_MAJOR
+build/examples/mpi/gemm-mpi-MEDIUM-FLOAT-C_TILE_I_MAJOR-A_TILE_K_MAJOR-B_TILE_K_MAJOR
+build/examples/boostP2P/gemm-boostP2P-EXTRALARGE-FLOAT-C_TILE_J_MAJOR-A_TILE_K_MAJOR-B_TILE_K_MAJOR
+build/examples/kokkosComm/gemm-kokkosComm-MINI-FLOAT-C_TILE_J_MAJOR-A_TILE_I_MAJOR-B_TILE_J_MAJOR
+build/examples/kokkosComm/gemm-kokkosComm-EXTRALARGE-FLOAT-C_TILE_I_MAJOR-A_TILE_I_MAJOR-B_TILE_J_MAJOR
+build/examples/kokkosComm/gemm-kokkosComm-MINI-FLOAT-C_TILE_I_MAJOR-A_TILE_K_MAJOR-B_TILE_J_MAJOR
+build/examples/boostP2P/gemm-boostP2P-MINI-FLOAT-C_TILE_I_MAJOR-A_TILE_I_MAJOR-B_TILE_J_MAJOR
+build/examples/boost/gemm-boost-MINI-FLOAT-C_TILE_I_MAJOR-A_TILE_I_MAJOR-B_TILE_K_MAJOR
+build/examples/kokkosComm/gemm-kokkosComm-MINI-FLOAT-C_TILE_I_MAJOR-A_TILE_K_MAJOR-B_TILE_K_MAJOR
+build/examples/kokkosComm/gemm-kokkosComm-MEDIUM-FLOAT-C_TILE_J_MAJOR-A_TILE_K_MAJOR-B_TILE_J_MAJOR
+build/examples/boost/gemm-boost-MEDIUM-FLOAT-C_TILE_J_MAJOR-A_TILE_I_MAJOR-B_TILE_K_MAJOR
+build/examples/mpi/gemm-mpi-EXTRALARGE-FLOAT-C_TILE_J_MAJOR-A_TILE_K_MAJOR-B_TILE_K_MAJOR
+build/examples/noarr/gemm-noarr-EXTRALARGE-FLOAT-C_TILE_J_MAJOR-A_TILE_K_MAJOR-B_TILE_J_MAJOR
+build/examples/boostP2P/gemm-boostP2P-EXTRALARGE-FLOAT-C_TILE_J_MAJOR-A_TILE_I_MAJOR-B_TILE_J_MAJOR
+build/examples/boost/gemm-boost-MEDIUM-FLOAT-C_TILE_J_MAJOR-A_TILE_K_MAJOR-B_TILE_J_MAJOR
+build/examples/mpi/gemm-mpi-MEDIUM-FLOAT-C_TILE_J_MAJOR-A_TILE_I_MAJOR-B_TILE_K_MAJOR
+build/examples/boostP2P/gemm-boostP2P-MINI-FLOAT-C_TILE_I_MAJOR-A_TILE_K_MAJOR-B_TILE_K_MAJOR
+build/examples/mpi/gemm-mpi-MINI-FLOAT-C_TILE_J_MAJOR-A_TILE_K_MAJOR-B_TILE_J_MAJOR
+build/examples/boost/gemm-boost-EXTRALARGE-FLOAT-C_TILE_J_MAJOR-A_TILE_I_MAJOR-B_TILE_K_MAJOR
+build/examples/mpi/gemm-mpi-MINI-FLOAT-C_TILE_J_MAJOR-A_TILE_I_MAJOR-B_TILE_J_MAJOR
+build/examples/mpi/gemm-mpi-MINI-FLOAT-C_TILE_J_MAJOR-A_TILE_I_MAJOR-B_TILE_K_MAJOR
+build/examples/boostP2P/gemm-boostP2P-MINI-FLOAT-C_TILE_I_MAJOR-A_TILE_I_MAJOR-B_TILE_K_MAJOR
+build/examples/boostP2P/gemm-boostP2P-EXTRALARGE-FLOAT-C_TILE_I_MAJOR-A_TILE_K_MAJOR-B_TILE_J_MAJOR
+build/examples/boost/gemm-boost-MINI-FLOAT-C_TILE_J_MAJOR-A_TILE_K_MAJOR-B_TILE_J_MAJOR
+build/examples/kokkosComm/gemm-kokkosComm-MEDIUM-FLOAT-C_TILE_I_MAJOR-A_TILE_I_MAJOR-B_TILE_J_MAJOR
+build/examples/boost/gemm-boost-MEDIUM-FLOAT-C_TILE_J_MAJOR-A_TILE_I_MAJOR-B_TILE_J_MAJOR
+build/examples/boostP2P/gemm-boostP2P-MINI-FLOAT-C_TILE_J_MAJOR-A_TILE_I_MAJOR-B_TILE_K_MAJOR
+build/examples/mpi/gemm-mpi-EXTRALARGE-FLOAT-C_TILE_J_MAJOR-A_TILE_I_MAJOR-B_TILE_J_MAJOR
+build/examples/boost/gemm-boost-EXTRALARGE-FLOAT-C_TILE_I_MAJOR-A_TILE_K_MAJOR-B_TILE_J_MAJOR
+build/examples/noarr/gemm-noarr-MEDIUM-FLOAT-C_TILE_J_MAJOR-A_TILE_K_MAJOR-B_TILE_J_MAJOR
+build/examples/boost/gemm-boost-EXTRALARGE-FLOAT-C_TILE_I_MAJOR-A_TILE_I_MAJOR-B_TILE_J_MAJOR
+build/examples/mpi/gemm-mpi-MINI-FLOAT-C_TILE_I_MAJOR-A_TILE_I_MAJOR-B_TILE_J_MAJOR
+build/examples/kokkosComm/gemm-kokkosComm-MINI-FLOAT-C_TILE_J_MAJOR-A_TILE_I_MAJOR-B_TILE_K_MAJOR
+build/examples/noarr/gemm-noarr-EXTRALARGE-FLOAT-C_TILE_I_MAJOR-A_TILE_K_MAJOR-B_TILE_J_MAJOR
+build/examples/noarr/gemm-noarr-MINI-FLOAT-C_TILE_I_MAJOR-A_TILE_I_MAJOR-B_TILE_J_MAJOR
+build/examples/boostP2P/gemm-boostP2P-MINI-FLOAT-C_TILE_J_MAJOR-A_TILE_K_MAJOR-B_TILE_K_MAJOR
+build/examples/noarr/gemm-noarr-MEDIUM-FLOAT-C_TILE_J_MAJOR-A_TILE_I_MAJOR-B_TILE_J_MAJOR
+build/examples/noarr/gemm-noarr-MEDIUM-FLOAT-C_TILE_I_MAJOR-A_TILE_K_MAJOR-B_TILE_K_MAJOR
+build/examples/boostP2P/gemm-boostP2P-EXTRALARGE-FLOAT-C_TILE_J_MAJOR-A_TILE_I_MAJOR-B_TILE_K_MAJOR
+build/examples/mpi/gemm-mpi-MEDIUM-FLOAT-C_TILE_J_MAJOR-A_TILE_I_MAJOR-B_TILE_J_MAJOR
+build/examples/boost/gemm-boost-MINI-FLOAT-C_TILE_J_MAJOR-A_TILE_K_MAJOR-B_TILE_K_MAJOR
+build/examples/boostP2P/gemm-boostP2P-MEDIUM-FLOAT-C_TILE_J_MAJOR-A_TILE_K_MAJOR-B_TILE_J_MAJOR
+build/examples/mpi/gemm-mpi-EXTRALARGE-FLOAT-C_TILE_I_MAJOR-A_TILE_I_MAJOR-B_TILE_K_MAJOR
+build/examples/kokkosComm/gemm-kokkosComm-EXTRALARGE-FLOAT-C_TILE_J_MAJOR-A_TILE_K_MAJOR-B_TILE_K_MAJOR
+build/examples/noarr/gemm-noarr-MINI-FLOAT-C_TILE_I_MAJOR-A_TILE_K_MAJOR-B_TILE_J_MAJOR
+build/examples/kokkosComm/gemm-kokkosComm-EXTRALARGE-FLOAT-C_TILE_I_MAJOR-A_TILE_K_MAJOR-B_TILE_J_MAJOR
+build/examples/boost/gemm-boost-EXTRALARGE-FLOAT-C_TILE_J_MAJOR-A_TILE_K_MAJOR-B_TILE_J_MAJOR
+build/examples/noarr/gemm-noarr-EXTRALARGE-FLOAT-C_TILE_I_MAJOR-A_TILE_K_MAJOR-B_TILE_K_MAJOR
+build/examples/mpi/gemm-mpi-EXTRALARGE-FLOAT-C_TILE_J_MAJOR-A_TILE_K_MAJOR-B_TILE_J_MAJOR
+build/examples/mpi/gemm-mpi-MEDIUM-FLOAT-C_TILE_I_MAJOR-A_TILE_I_MAJOR-B_TILE_J_MAJOR
+build/examples/boostP2P/gemm-boostP2P-MEDIUM-FLOAT-C_TILE_I_MAJOR-A_TILE_I_MAJOR-B_TILE_K_MAJOR
+srun: job 112716 queued and waiting for resources
+srun: job 112716 has been allocated resources
+Running with 8 processes
+srun: job 112717 queued and waiting for resources
+srun: job 112717 has been allocated resources
+Running with 8 processes
+srun: job 112718 queued and waiting for resources
+srun: job 112718 has been allocated resources
+Running with 8 processes
+srun: job 112719 queued and waiting for resources
+srun: job 112719 has been allocated resources
+[w201.parlab.local:2432507] pml_ucx.c:329  Warning: UCP worker does not support MPI_THREAD_MULTIPLE. PML UCX could not be selected
+[w203.parlab.local:2947598] pml_ucx.c:329  Warning: UCP worker does not support MPI_THREAD_MULTIPLE. PML UCX could not be selected
+[w202.parlab.local:1816778] pml_ucx.c:329  Warning: UCP worker does not support MPI_THREAD_MULTIPLE. PML UCX could not be selected
+[w204.parlab.local:37358] pml_ucx.c:329  Warning: UCP worker does not support MPI_THREAD_MULTIPLE. PML UCX could not be selected
+[w208.parlab.local:3370752] pml_ucx.c:329  Warning: UCP worker does not support MPI_THREAD_MULTIPLE. PML UCX could not be selected
+[w207.parlab.local:1032625] pml_ucx.c:329  Warning: UCP worker does not support MPI_THREAD_MULTIPLE. PML UCX could not be selected
+[w206.parlab.local:3778722] pml_ucx.c:329  Warning: UCP worker does not support MPI_THREAD_MULTIPLE. PML UCX could not be selected
+[w205.parlab.local:3245909] pml_ucx.c:329  Warning: UCP worker does not support MPI_THREAD_MULTIPLE. PML UCX could not be selected
+Running with 8 processes
+[w201:2432507:0:2432507] Caught signal 11 (Segmentation fault: address not mapped to object at address 0xf00000001)
+srun: error: w201: task 0: Segmentation fault (core dumped)
+srun: Job step aborted: Waiting up to 62 seconds for job step to finish.
+srun: error: w206: task 5: Killed
+srun: error: w203: task 2: Killed
+srun: error: w207: task 6: Killed
+srun: error: w208: task 7: Killed
+srun: error: w204: task 3: Killed
+srun: error: w205: task 4: Killed
+srun: error: w202: task 1: Killed
+srun: job 112720 queued and waiting for resources
+srun: job 112720 has been allocated resources
+Running with 8 processes
+srun: job 112721 queued and waiting for resources
+srun: job 112721 has been allocated resources
+Running with 8 processes
+srun: job 112722 queued and waiting for resources
+srun: job 112722 has been allocated resources
+[w203.parlab.local:2947882] pml_ucx.c:329  Warning: UCP worker does not support MPI_THREAD_MULTIPLE. PML UCX could not be selected
+[w205.parlab.local:3246192] pml_ucx.c:329  Warning: UCP worker does not support MPI_THREAD_MULTIPLE. PML UCX could not be selected
+[w208.parlab.local:3371034] pml_ucx.c:329  Warning: UCP worker does not support MPI_THREAD_MULTIPLE. PML UCX could not be selected
+[w201.parlab.local:2432890] pml_ucx.c:329  Warning: UCP worker does not support MPI_THREAD_MULTIPLE. PML UCX could not be selected
+[w206.parlab.local:3779005] pml_ucx.c:329  Warning: UCP worker does not support MPI_THREAD_MULTIPLE. PML UCX could not be selected
+[w207.parlab.local:1032908] pml_ucx.c:329  Warning: UCP worker does not support MPI_THREAD_MULTIPLE. PML UCX could not be selected
+[w204.parlab.local:37641] pml_ucx.c:329  Warning: UCP worker does not support MPI_THREAD_MULTIPLE. PML UCX could not be selected
+[w202.parlab.local:1817061] pml_ucx.c:329  Warning: UCP worker does not support MPI_THREAD_MULTIPLE. PML UCX could not be selected
+Running with 8 processes
+srun: job 112723 queued and waiting for resources
+srun: job 112723 has been allocated resources
+Running with 8 processes
+srun: job 112724 queued and waiting for resources
+srun: job 112724 has been allocated resources
+Running with 8 processes
+srun: job 112725 queued and waiting for resources
+srun: job 112725 has been allocated resources
+Running with 8 processes
+srun: job 112726 queued and waiting for resources
+srun: job 112726 has been allocated resources
+Running with 8 processes
+srun: job 112727 queued and waiting for resources
+srun: job 112727 has been allocated resources
+Running with 8 processes
+srun: job 112728 queued and waiting for resources
+srun: job 112728 has been allocated resources
+Running with 8 processes
+srun: job 112729 queued and waiting for resources
+srun: job 112729 has been allocated resources
+Running with 8 processes
+srun: job 112730 queued and waiting for resources
+srun: job 112730 has been allocated resources
+Running with 8 processes
+srun: job 112731 queued and waiting for resources
+srun: job 112731 has been allocated resources
+Running with 8 processes
+srun: job 112732 queued and waiting for resources
+srun: job 112732 has been allocated resources
+Running with 8 processes
+srun: job 112733 queued and waiting for resources
+srun: job 112733 has been allocated resources
+[w201.parlab.local:2434226] pml_ucx.c:329  Warning: UCP worker does not support MPI_THREAD_MULTIPLE. PML UCX could not be selected
+[w204.parlab.local:38654] pml_ucx.c:329  Warning: UCP worker does not support MPI_THREAD_MULTIPLE. PML UCX could not be selected
+[w202.parlab.local:1818070] pml_ucx.c:329  Warning: UCP worker does not support MPI_THREAD_MULTIPLE. PML UCX could not be selected
+[w203.parlab.local:2948896] pml_ucx.c:329  Warning: UCP worker does not support MPI_THREAD_MULTIPLE. PML UCX could not be selected
+[w205.parlab.local:3247205] pml_ucx.c:329  Warning: UCP worker does not support MPI_THREAD_MULTIPLE. PML UCX could not be selected
+[w206.parlab.local:3780017] pml_ucx.c:329  Warning: UCP worker does not support MPI_THREAD_MULTIPLE. PML UCX could not be selected
+[w208.parlab.local:3372047] pml_ucx.c:329  Warning: UCP worker does not support MPI_THREAD_MULTIPLE. PML UCX could not be selected
+[w207.parlab.local:1033923] pml_ucx.c:329  Warning: UCP worker does not support MPI_THREAD_MULTIPLE. PML UCX could not be selected
+Running with 8 processes
+srun: job 112734 queued and waiting for resources
+srun: job 112734 has been allocated resources
+Running with 8 processes
+srun: job 112735 queued and waiting for resources
+srun: job 112735 has been allocated resources
+Running with 8 processes
+srun: job 112736 queued and waiting for resources
+srun: job 112736 has been allocated resources
+Running with 8 processes
+srun: job 112737 queued and waiting for resources
+srun: job 112737 has been allocated resources
+Running with 8 processes
+srun: job 112738 queued and waiting for resources
+srun: job 112738 has been allocated resources
+Running with 8 processes
+srun: job 112739 queued and waiting for resources
+srun: job 112739 has been allocated resources
+Running with 8 processes
+srun: job 112740 queued and waiting for resources
+srun: job 112740 has been allocated resources
+[w203.parlab.local:2949537] pml_ucx.c:329  Warning: UCP worker does not support MPI_THREAD_MULTIPLE. PML UCX could not be selected
+[w206.parlab.local:3780661] pml_ucx.c:329  Warning: UCP worker does not support MPI_THREAD_MULTIPLE. PML UCX could not be selected
+[w205.parlab.local:3247845] pml_ucx.c:329  Warning: UCP worker does not support MPI_THREAD_MULTIPLE. PML UCX could not be selected
+[w208.parlab.local:3372689] pml_ucx.c:329  Warning: UCP worker does not support MPI_THREAD_MULTIPLE. PML UCX could not be selected
+[w201.parlab.local:2435071] pml_ucx.c:329  Warning: UCP worker does not support MPI_THREAD_MULTIPLE. PML UCX could not be selected
+[w202.parlab.local:1818714] pml_ucx.c:329  Warning: UCP worker does not support MPI_THREAD_MULTIPLE. PML UCX could not be selected
+[w207.parlab.local:1034562] pml_ucx.c:329  Warning: UCP worker does not support MPI_THREAD_MULTIPLE. PML UCX could not be selected
+[w204.parlab.local:39294] pml_ucx.c:329  Warning: UCP worker does not support MPI_THREAD_MULTIPLE. PML UCX could not be selected
+Running with 8 processes
+srun: job 112741 queued and waiting for resources
+srun: job 112741 has been allocated resources
+[w203.parlab.local:2949631] pml_ucx.c:329  Warning: UCP worker does not support MPI_THREAD_MULTIPLE. PML UCX could not be selected
+[w202.parlab.local:1818808] pml_ucx.c:329  Warning: UCP worker does not support MPI_THREAD_MULTIPLE. PML UCX could not be selected
+[w204.parlab.local:39389] pml_ucx.c:329  Warning: UCP worker does not support MPI_THREAD_MULTIPLE. PML UCX could not be selected
+[w207.parlab.local:1034656] pml_ucx.c:329  Warning: UCP worker does not support MPI_THREAD_MULTIPLE. PML UCX could not be selected
+[w208.parlab.local:3372783] pml_ucx.c:329  Warning: UCP worker does not support MPI_THREAD_MULTIPLE. PML UCX could not be selected
+[w201.parlab.local:2435196] pml_ucx.c:329  Warning: UCP worker does not support MPI_THREAD_MULTIPLE. PML UCX could not be selected
+[w205.parlab.local:3247938] pml_ucx.c:329  Warning: UCP worker does not support MPI_THREAD_MULTIPLE. PML UCX could not be selected
+[w206.parlab.local:3780755] pml_ucx.c:329  Warning: UCP worker does not support MPI_THREAD_MULTIPLE. PML UCX could not be selected
+Running with 8 processes
+srun: job 112742 queued and waiting for resources
+srun: job 112742 has been allocated resources
+Running with 8 processes
+srun: job 112743 queued and waiting for resources
+srun: job 112743 has been allocated resources
+Running with 8 processes
+srun: job 112744 queued and waiting for resources
+srun: job 112744 has been allocated resources
+[w202.parlab.local:1819084] pml_ucx.c:329  Warning: UCP worker does not support MPI_THREAD_MULTIPLE. PML UCX could not be selected
+[w204.parlab.local:39664] pml_ucx.c:329  Warning: UCP worker does not support MPI_THREAD_MULTIPLE. PML UCX could not be selected
+[w203.parlab.local:2949908] pml_ucx.c:329  Warning: UCP worker does not support MPI_THREAD_MULTIPLE. PML UCX could not be selected
+[w206.parlab.local:3781031] pml_ucx.c:329  Warning: UCP worker does not support MPI_THREAD_MULTIPLE. PML UCX could not be selected
+[w205.parlab.local:3248215] pml_ucx.c:329  Warning: UCP worker does not support MPI_THREAD_MULTIPLE. PML UCX could not be selected
+[w208.parlab.local:3373060] pml_ucx.c:329  Warning: UCP worker does not support MPI_THREAD_MULTIPLE. PML UCX could not be selected
+[w201.parlab.local:2435566] pml_ucx.c:329  Warning: UCP worker does not support MPI_THREAD_MULTIPLE. PML UCX could not be selected
+[w207.parlab.local:1034932] pml_ucx.c:329  Warning: UCP worker does not support MPI_THREAD_MULTIPLE. PML UCX could not be selected
+Running with 8 processes
+srun: job 112745 queued and waiting for resources
+srun: job 112745 has been allocated resources
+Running with 8 processes
+srun: job 112746 queued and waiting for resources
+srun: job 112746 has been allocated resources
+Running with 8 processes
+srun: job 112747 queued and waiting for resources
+srun: job 112747 has been allocated resources
+Running with 8 processes
+srun: job 112748 queued and waiting for resources
+srun: job 112748 has been allocated resources
+Running with 8 processes
+srun: job 112749 queued and waiting for resources
+srun: job 112749 has been allocated resources
+Running with 8 processes
+srun: job 112750 queued and waiting for resources
+srun: job 112750 has been allocated resources
+Running with 8 processes
+srun: job 112751 queued and waiting for resources
+srun: job 112751 has been allocated resources
+Running with 8 processes
+srun: job 112752 queued and waiting for resources
+srun: job 112752 has been allocated resources
+Running with 8 processes
+srun: job 112753 queued and waiting for resources
+srun: job 112753 has been allocated resources
+Running with 8 processes
+srun: job 112754 queued and waiting for resources
+srun: job 112754 has been allocated resources
+Running with 8 processes
+srun: job 112755 queued and waiting for resources
+srun: job 112755 has been allocated resources
+Running with 8 processes
+srun: job 112756 queued and waiting for resources
+srun: job 112756 has been allocated resources
+[w206.parlab.local:3782134] pml_ucx.c:329  Warning: UCP worker does not support MPI_THREAD_MULTIPLE. PML UCX could not be selected
+[w203.parlab.local:2951012] pml_ucx.c:329  Warning: UCP worker does not support MPI_THREAD_MULTIPLE. PML UCX could not be selected
+[w205.parlab.local:3249314] pml_ucx.c:329  Warning: UCP worker does not support MPI_THREAD_MULTIPLE. PML UCX could not be selected
+[w201.parlab.local:2437021] pml_ucx.c:329  Warning: UCP worker does not support MPI_THREAD_MULTIPLE. PML UCX could not be selected
+[w208.parlab.local:3374166] pml_ucx.c:329  Warning: UCP worker does not support MPI_THREAD_MULTIPLE. PML UCX could not be selected
+[w207.parlab.local:1036034] pml_ucx.c:329  Warning: UCP worker does not support MPI_THREAD_MULTIPLE. PML UCX could not be selected
+[w204.parlab.local:40769] pml_ucx.c:329  Warning: UCP worker does not support MPI_THREAD_MULTIPLE. PML UCX could not be selected
+[w202.parlab.local:1820186] pml_ucx.c:329  Warning: UCP worker does not support MPI_THREAD_MULTIPLE. PML UCX could not be selected
+Running with 8 processes
+srun: job 112757 queued and waiting for resources
+srun: job 112757 has been allocated resources
+[w201.parlab.local:2437142] pml_ucx.c:329  Warning: UCP worker does not support MPI_THREAD_MULTIPLE. PML UCX could not be selected
+[w204.parlab.local:40860] pml_ucx.c:329  Warning: UCP worker does not support MPI_THREAD_MULTIPLE. PML UCX could not be selected
+[w202.parlab.local:1820277] pml_ucx.c:329  Warning: UCP worker does not support MPI_THREAD_MULTIPLE. PML UCX could not be selected
+[w203.parlab.local:2951103] pml_ucx.c:329  Warning: UCP worker does not support MPI_THREAD_MULTIPLE. PML UCX could not be selected
+[w206.parlab.local:3782225] pml_ucx.c:329  Warning: UCP worker does not support MPI_THREAD_MULTIPLE. PML UCX could not be selected
+[w205.parlab.local:3249405] pml_ucx.c:329  Warning: UCP worker does not support MPI_THREAD_MULTIPLE. PML UCX could not be selected
+[w207.parlab.local:1036125] pml_ucx.c:329  Warning: UCP worker does not support MPI_THREAD_MULTIPLE. PML UCX could not be selected
+[w208.parlab.local:3374257] pml_ucx.c:329  Warning: UCP worker does not support MPI_THREAD_MULTIPLE. PML UCX could not be selected
+Running with 8 processes
+srun: job 112758 queued and waiting for resources
+srun: job 112758 has been allocated resources
+Running with 8 processes
+srun: job 112759 queued and waiting for resources
+srun: job 112759 has been allocated resources
+[w203.parlab.local:2951286] pml_ucx.c:329  Warning: UCP worker does not support MPI_THREAD_MULTIPLE. PML UCX could not be selected
+[w205.parlab.local:3249588] pml_ucx.c:329  Warning: UCP worker does not support MPI_THREAD_MULTIPLE. PML UCX could not be selected
+[w201.parlab.local:2437384] pml_ucx.c:329  Warning: UCP worker does not support MPI_THREAD_MULTIPLE. PML UCX could not be selected
+[w204.parlab.local:41042] pml_ucx.c:329  Warning: UCP worker does not support MPI_THREAD_MULTIPLE. PML UCX could not be selected
+[w202.parlab.local:1820460] pml_ucx.c:329  Warning: UCP worker does not support MPI_THREAD_MULTIPLE. PML UCX could not be selected
+[w206.parlab.local:3782407] pml_ucx.c:329  Warning: UCP worker does not support MPI_THREAD_MULTIPLE. PML UCX could not be selected
+[w207.parlab.local:1036307] pml_ucx.c:329  Warning: UCP worker does not support MPI_THREAD_MULTIPLE. PML UCX could not be selected
+[w208.parlab.local:3374441] pml_ucx.c:329  Warning: UCP worker does not support MPI_THREAD_MULTIPLE. PML UCX could not be selected
+Running with 8 processes
+[w201:2437384:0:2437384] Caught signal 11 (Segmentation fault: address not mapped to object at address 0xf00000001)
+srun: error: w201: task 0: Segmentation fault (core dumped)
+srun: Job step aborted: Waiting up to 62 seconds for job step to finish.
+srun: error: w203: task 2: Killed
+srun: error: w204: task 3: Killed
+srun: error: w207: task 6: Killed
+srun: error: w208: task 7: Killed
+srun: error: w206: task 5: Killed
+srun: error: w202: task 1: Killed
+srun: error: w205: task 4: Killed
+srun: job 112760 queued and waiting for resources
+srun: job 112760 has been allocated resources
+Running with 8 processes
+srun: job 112761 queued and waiting for resources
+srun: job 112761 has been allocated resources
+Running with 8 processes
+srun: job 112762 queued and waiting for resources
+srun: job 112762 has been allocated resources
+Running with 8 processes
+srun: job 112763 queued and waiting for resources
+srun: job 112763 has been allocated resources
+Running with 8 processes
+srun: job 112764 queued and waiting for resources
+srun: job 112764 has been allocated resources
+Running with 8 processes
+srun: job 112765 queued and waiting for resources
+srun: job 112765 has been allocated resources
+[w202.parlab.local:1821018] pml_ucx.c:329  Warning: UCP worker does not support MPI_THREAD_MULTIPLE. PML UCX could not be selected
+[w204.parlab.local:41599] pml_ucx.c:329  Warning: UCP worker does not support MPI_THREAD_MULTIPLE. PML UCX could not be selected
+[w203.parlab.local:2951844] pml_ucx.c:329  Warning: UCP worker does not support MPI_THREAD_MULTIPLE. PML UCX could not be selected
+[w206.parlab.local:3782965] pml_ucx.c:329  Warning: UCP worker does not support MPI_THREAD_MULTIPLE. PML UCX could not be selected
+[w207.parlab.local:1036865] pml_ucx.c:329  Warning: UCP worker does not support MPI_THREAD_MULTIPLE. PML UCX could not be selected
+[w205.parlab.local:3250143] pml_ucx.c:329  Warning: UCP worker does not support MPI_THREAD_MULTIPLE. PML UCX could not be selected
+[w208.parlab.local:3375000] pml_ucx.c:329  Warning: UCP worker does not support MPI_THREAD_MULTIPLE. PML UCX could not be selected
+[w201.parlab.local:2438133] pml_ucx.c:329  Warning: UCP worker does not support MPI_THREAD_MULTIPLE. PML UCX could not be selected
+Running with 8 processes
+srun: job 112766 queued and waiting for resources
+srun: job 112766 has been allocated resources
+Running with 8 processes
+srun: job 112767 queued and waiting for resources
+srun: job 112767 has been allocated resources
+Running with 8 processes
+srun: job 112768 queued and waiting for resources
+srun: job 112768 has been allocated resources
+Running with 8 processes
+srun: job 112769 queued and waiting for resources
+srun: job 112769 has been allocated resources
+Running with 8 processes
+srun: job 112770 queued and waiting for resources
+srun: job 112770 has been allocated resources
+Running with 8 processes
+srun: job 112771 queued and waiting for resources
+srun: job 112771 has been allocated resources
+[w204.parlab.local:42149] pml_ucx.c:329  Warning: UCP worker does not support MPI_THREAD_MULTIPLE. PML UCX could not be selected
+[w202.parlab.local:1821569] pml_ucx.c:329  Warning: UCP worker does not support MPI_THREAD_MULTIPLE. PML UCX could not be selected
+[w203.parlab.local:2952397] pml_ucx.c:329  Warning: UCP worker does not support MPI_THREAD_MULTIPLE. PML UCX could not be selected
+[w201.parlab.local:2438857] pml_ucx.c:329  Warning: UCP worker does not support MPI_THREAD_MULTIPLE. PML UCX could not be selected
+[w206.parlab.local:3783516] pml_ucx.c:329  Warning: UCP worker does not support MPI_THREAD_MULTIPLE. PML UCX could not be selected
+[w208.parlab.local:3375554] pml_ucx.c:329  Warning: UCP worker does not support MPI_THREAD_MULTIPLE. PML UCX could not be selected
+[w207.parlab.local:1037415] pml_ucx.c:329  Warning: UCP worker does not support MPI_THREAD_MULTIPLE. PML UCX could not be selected
+[w205.parlab.local:3250695] pml_ucx.c:329  Warning: UCP worker does not support MPI_THREAD_MULTIPLE. PML UCX could not be selected
+Running with 8 processes
+srun: job 112772 queued and waiting for resources
+srun: job 112772 has been allocated resources
+Running with 8 processes
+srun: job 112773 queued and waiting for resources
+srun: job 112773 has been allocated resources
+Running with 8 processes
+srun: job 112774 queued and waiting for resources
+srun: job 112774 has been allocated resources
+Running with 8 processes
+srun: job 112775 queued and waiting for resources
+srun: job 112775 has been allocated resources
+[w207.parlab.local:1037779] pml_ucx.c:329  Warning: UCP worker does not support MPI_THREAD_MULTIPLE. PML UCX could not be selected
+[w202.parlab.local:1821933] pml_ucx.c:329  Warning: UCP worker does not support MPI_THREAD_MULTIPLE. PML UCX could not be selected
+[w203.parlab.local:2952761] pml_ucx.c:329  Warning: UCP worker does not support MPI_THREAD_MULTIPLE. PML UCX could not be selected
+[w204.parlab.local:42514] pml_ucx.c:329  Warning: UCP worker does not support MPI_THREAD_MULTIPLE. PML UCX could not be selected
+[w206.parlab.local:3783880] pml_ucx.c:329  Warning: UCP worker does not support MPI_THREAD_MULTIPLE. PML UCX could not be selected
+[w208.parlab.local:3375920] pml_ucx.c:329  Warning: UCP worker does not support MPI_THREAD_MULTIPLE. PML UCX could not be selected
+[w201.parlab.local:2439341] pml_ucx.c:329  Warning: UCP worker does not support MPI_THREAD_MULTIPLE. PML UCX could not be selected
+[w205.parlab.local:3251059] pml_ucx.c:329  Warning: UCP worker does not support MPI_THREAD_MULTIPLE. PML UCX could not be selected
+Running with 8 processes
+srun: job 112776 queued and waiting for resources
+srun: job 112776 has been allocated resources
+Running with 8 processes
+srun: job 112777 queued and waiting for resources
+srun: job 112777 has been allocated resources
+[w201.parlab.local:2439585] pml_ucx.c:329  Warning: UCP worker does not support MPI_THREAD_MULTIPLE. PML UCX could not be selected
+[w204.parlab.local:42699] pml_ucx.c:329  Warning: UCP worker does not support MPI_THREAD_MULTIPLE. PML UCX could not be selected
+[w202.parlab.local:1822117] pml_ucx.c:329  Warning: UCP worker does not support MPI_THREAD_MULTIPLE. PML UCX could not be selected
+[w207.parlab.local:1037963] pml_ucx.c:329  Warning: UCP worker does not support MPI_THREAD_MULTIPLE. PML UCX could not be selected
+[w206.parlab.local:3784065] pml_ucx.c:329  Warning: UCP worker does not support MPI_THREAD_MULTIPLE. PML UCX could not be selected
+[w203.parlab.local:2952947] pml_ucx.c:329  Warning: UCP worker does not support MPI_THREAD_MULTIPLE. PML UCX could not be selected
+[w208.parlab.local:3376106] pml_ucx.c:329  Warning: UCP worker does not support MPI_THREAD_MULTIPLE. PML UCX could not be selected
+[w205.parlab.local:3251245] pml_ucx.c:329  Warning: UCP worker does not support MPI_THREAD_MULTIPLE. PML UCX could not be selected
+Running with 8 processes
+srun: job 112778 queued and waiting for resources
+srun: job 112778 has been allocated resources
+Running with 8 processes
+srun: job 112779 queued and waiting for resources
+srun: job 112779 has been allocated resources
+Running with 8 processes
+srun: job 112780 queued and waiting for resources
+srun: job 112780 has been allocated resources
+Running with 8 processes
+srun: job 112781 queued and waiting for resources
+srun: job 112781 has been allocated resources
+Running with 8 processes
+srun: job 112782 queued and waiting for resources
+srun: job 112782 has been allocated resources
+[w205.parlab.local:3251707] pml_ucx.c:329  Warning: UCP worker does not support MPI_THREAD_MULTIPLE. PML UCX could not be selected
+[w203.parlab.local:2953411] pml_ucx.c:329  Warning: UCP worker does not support MPI_THREAD_MULTIPLE. PML UCX could not be selected
+[w201.parlab.local:2440193] pml_ucx.c:329  Warning: UCP worker does not support MPI_THREAD_MULTIPLE. PML UCX could not be selected
+[w206.parlab.local:3784525] pml_ucx.c:329  Warning: UCP worker does not support MPI_THREAD_MULTIPLE. PML UCX could not be selected
+[w207.parlab.local:1038424] pml_ucx.c:329  Warning: UCP worker does not support MPI_THREAD_MULTIPLE. PML UCX could not be selected
+[w208.parlab.local:3376567] pml_ucx.c:329  Warning: UCP worker does not support MPI_THREAD_MULTIPLE. PML UCX could not be selected
+[w202.parlab.local:1822579] pml_ucx.c:329  Warning: UCP worker does not support MPI_THREAD_MULTIPLE. PML UCX could not be selected
+[w204.parlab.local:43160] pml_ucx.c:329  Warning: UCP worker does not support MPI_THREAD_MULTIPLE. PML UCX could not be selected
+Running with 8 processes
+srun: job 112783 queued and waiting for resources
+srun: job 112783 has been allocated resources
+[w201.parlab.local:2440315] pml_ucx.c:329  Warning: UCP worker does not support MPI_THREAD_MULTIPLE. PML UCX could not be selected
+[w202.parlab.local:1822672] pml_ucx.c:329  Warning: UCP worker does not support MPI_THREAD_MULTIPLE. PML UCX could not be selected
+[w203.parlab.local:2953505] pml_ucx.c:329  Warning: UCP worker does not support MPI_THREAD_MULTIPLE. PML UCX could not be selected
+[w204.parlab.local:43253] pml_ucx.c:329  Warning: UCP worker does not support MPI_THREAD_MULTIPLE. PML UCX could not be selected
+[w205.parlab.local:3251800] pml_ucx.c:329  Warning: UCP worker does not support MPI_THREAD_MULTIPLE. PML UCX could not be selected
+[w208.parlab.local:3376660] pml_ucx.c:329  Warning: UCP worker does not support MPI_THREAD_MULTIPLE. PML UCX could not be selected
+[w206.parlab.local:3784620] pml_ucx.c:329  Warning: UCP worker does not support MPI_THREAD_MULTIPLE. PML UCX could not be selected
+[w207.parlab.local:1038518] pml_ucx.c:329  Warning: UCP worker does not support MPI_THREAD_MULTIPLE. PML UCX could not be selected
+Running with 8 processes
+[w201:2440315:0:2440315] Caught signal 11 (Segmentation fault: address not mapped to object at address 0xf00000001)
+srun: error: w201: task 0: Segmentation fault (core dumped)
+srun: Job step aborted: Waiting up to 62 seconds for job step to finish.
+srun: error: w203: task 2: Killed
+srun: error: w207: task 6: Killed
+srun: error: w206: task 5: Killed
+srun: error: w208: task 7: Killed
+srun: error: w202: task 1: Killed
+srun: error: w205: task 4: Killed
+srun: error: w204: task 3: Killed
+srun: job 112784 queued and waiting for resources
+srun: job 112784 has been allocated resources
+Running with 8 processes
+srun: job 112785 queued and waiting for resources
+srun: job 112785 has been allocated resources
+Running with 8 processes
+srun: job 112786 queued and waiting for resources
+srun: job 112786 has been allocated resources
+Running with 8 processes
+srun: job 112787 queued and waiting for resources
+srun: job 112787 has been allocated resources
+Running with 8 processes
+srun: job 112788 queued and waiting for resources
+srun: job 112788 has been allocated resources
+[w205.parlab.local:3252269] pml_ucx.c:329  Warning: UCP worker does not support MPI_THREAD_MULTIPLE. PML UCX could not be selected
+[w201.parlab.local:2440940] pml_ucx.c:329  Warning: UCP worker does not support MPI_THREAD_MULTIPLE. PML UCX could not be selected
+[w203.parlab.local:2953977] pml_ucx.c:329  Warning: UCP worker does not support MPI_THREAD_MULTIPLE. PML UCX could not be selected
+[w206.parlab.local:3785088] pml_ucx.c:329  Warning: UCP worker does not support MPI_THREAD_MULTIPLE. PML UCX could not be selected
+[w208.parlab.local:3377131] pml_ucx.c:329  Warning: UCP worker does not support MPI_THREAD_MULTIPLE. PML UCX could not be selected
+[w202.parlab.local:1823142] pml_ucx.c:329  Warning: UCP worker does not support MPI_THREAD_MULTIPLE. PML UCX could not be selected
+[w207.parlab.local:1038993] pml_ucx.c:329  Warning: UCP worker does not support MPI_THREAD_MULTIPLE. PML UCX could not be selected
+[w204.parlab.local:43724] pml_ucx.c:329  Warning: UCP worker does not support MPI_THREAD_MULTIPLE. PML UCX could not be selected
+Running with 8 processes
+srun: job 112789 queued and waiting for resources
+srun: job 112789 has been allocated resources
+[w201.parlab.local:2441061] pml_ucx.c:329  Warning: UCP worker does not support MPI_THREAD_MULTIPLE. PML UCX could not be selected
+[w203.parlab.local:2954068] pml_ucx.c:329  Warning: UCP worker does not support MPI_THREAD_MULTIPLE. PML UCX could not be selected
+[w208.parlab.local:3377224] pml_ucx.c:329  Warning: UCP worker does not support MPI_THREAD_MULTIPLE. PML UCX could not be selected
+[w202.parlab.local:1823235] pml_ucx.c:329  Warning: UCP worker does not support MPI_THREAD_MULTIPLE. PML UCX could not be selected
+[w204.parlab.local:43816] pml_ucx.c:329  Warning: UCP worker does not support MPI_THREAD_MULTIPLE. PML UCX could not be selected
+[w206.parlab.local:3785179] pml_ucx.c:329  Warning: UCP worker does not support MPI_THREAD_MULTIPLE. PML UCX could not be selected
+[w207.parlab.local:1039085] pml_ucx.c:329  Warning: UCP worker does not support MPI_THREAD_MULTIPLE. PML UCX could not be selected
+[w205.parlab.local:3252361] pml_ucx.c:329  Warning: UCP worker does not support MPI_THREAD_MULTIPLE. PML UCX could not be selected
+Running with 8 processes
+[w201:2441061:0:2441061] Caught signal 11 (Segmentation fault: address not mapped to object at address 0xf00000001)
+srun: error: w201: task 0: Segmentation fault (core dumped)
+srun: Job step aborted: Waiting up to 62 seconds for job step to finish.
+srun: error: w207: task 6: Killed
+srun: error: w204: task 3: Killed
+srun: error: w203: task 2: Killed
+srun: error: w206: task 5: Killed
+srun: error: w205: task 4: Killed
+srun: error: w208: task 7: Killed
+srun: error: w202: task 1: Killed
+srun: job 112790 queued and waiting for resources
+srun: job 112790 has been allocated resources
+[w205.parlab.local:3252460] pml_ucx.c:329  Warning: UCP worker does not support MPI_THREAD_MULTIPLE. PML UCX could not be selected
+[w201.parlab.local:2441198] pml_ucx.c:329  Warning: UCP worker does not support MPI_THREAD_MULTIPLE. PML UCX could not be selected
+[w203.parlab.local:2954167] pml_ucx.c:329  Warning: UCP worker does not support MPI_THREAD_MULTIPLE. PML UCX could not be selected
+[w206.parlab.local:3785277] pml_ucx.c:329  Warning: UCP worker does not support MPI_THREAD_MULTIPLE. PML UCX could not be selected
+[w202.parlab.local:1823334] pml_ucx.c:329  Warning: UCP worker does not support MPI_THREAD_MULTIPLE. PML UCX could not be selected
+[w207.parlab.local:1039183] pml_ucx.c:329  Warning: UCP worker does not support MPI_THREAD_MULTIPLE. PML UCX could not be selected
+[w204.parlab.local:43914] pml_ucx.c:329  Warning: UCP worker does not support MPI_THREAD_MULTIPLE. PML UCX could not be selected
+[w208.parlab.local:3377323] pml_ucx.c:329  Warning: UCP worker does not support MPI_THREAD_MULTIPLE. PML UCX could not be selected
+Running with 8 processes
+srun: job 112791 queued and waiting for resources
+srun: job 112791 has been allocated resources
+Running with 8 processes
+srun: job 112792 queued and waiting for resources
+srun: job 112792 has been allocated resources
+Running with 8 processes
+srun: job 112793 queued and waiting for resources
+srun: job 112793 has been allocated resources
+[w201.parlab.local:2441560] pml_ucx.c:329  Warning: UCP worker does not support MPI_THREAD_MULTIPLE. PML UCX could not be selected
+[w203.parlab.local:2954442] pml_ucx.c:329  Warning: UCP worker does not support MPI_THREAD_MULTIPLE. PML UCX could not be selected
+[w204.parlab.local:44188] pml_ucx.c:329  Warning: UCP worker does not support MPI_THREAD_MULTIPLE. PML UCX could not be selected
+[w202.parlab.local:1823608] pml_ucx.c:329  Warning: UCP worker does not support MPI_THREAD_MULTIPLE. PML UCX could not be selected
+[w206.parlab.local:3785552] pml_ucx.c:329  Warning: UCP worker does not support MPI_THREAD_MULTIPLE. PML UCX could not be selected
+[w208.parlab.local:3377598] pml_ucx.c:329  Warning: UCP worker does not support MPI_THREAD_MULTIPLE. PML UCX could not be selected
+[w207.parlab.local:1039457] pml_ucx.c:329  Warning: UCP worker does not support MPI_THREAD_MULTIPLE. PML UCX could not be selected
+[w205.parlab.local:3252734] pml_ucx.c:329  Warning: UCP worker does not support MPI_THREAD_MULTIPLE. PML UCX could not be selected
+Running with 8 processes
+srun: job 112794 queued and waiting for resources
+srun: job 112794 has been allocated resources
+[w201.parlab.local:2441683] pml_ucx.c:329  Warning: UCP worker does not support MPI_THREAD_MULTIPLE. PML UCX could not be selected
+[w205.parlab.local:3252825] pml_ucx.c:329  Warning: UCP worker does not support MPI_THREAD_MULTIPLE. PML UCX could not be selected
+[w203.parlab.local:2954533] pml_ucx.c:329  Warning: UCP worker does not support MPI_THREAD_MULTIPLE. PML UCX could not be selected
+[w206.parlab.local:3785643] pml_ucx.c:329  Warning: UCP worker does not support MPI_THREAD_MULTIPLE. PML UCX could not be selected
+[w202.parlab.local:1823699] pml_ucx.c:329  Warning: UCP worker does not support MPI_THREAD_MULTIPLE. PML UCX could not be selected
+[w207.parlab.local:1039548] pml_ucx.c:329  Warning: UCP worker does not support MPI_THREAD_MULTIPLE. PML UCX could not be selected
+[w204.parlab.local:44279] pml_ucx.c:329  Warning: UCP worker does not support MPI_THREAD_MULTIPLE. PML UCX could not be selected
+[w208.parlab.local:3377690] pml_ucx.c:329  Warning: UCP worker does not support MPI_THREAD_MULTIPLE. PML UCX could not be selected
+Running with 8 processes
+srun: job 112795 queued and waiting for resources
+srun: job 112795 has been allocated resources
+Running with 8 processes
+srun: job 112796 queued and waiting for resources
+srun: job 112796 has been allocated resources
+Running with 8 processes
+srun: job 112797 queued and waiting for resources
+srun: job 112797 has been allocated resources
+Running with 8 processes
+srun: job 112798 queued and waiting for resources
+srun: job 112798 has been allocated resources
+Running with 8 processes
+srun: job 112799 queued and waiting for resources
+srun: job 112799 has been allocated resources
+Running with 8 processes
+srun: job 112800 queued and waiting for resources
+srun: job 112800 has been allocated resources
+Running with 8 processes
+srun: job 112801 queued and waiting for resources
+srun: job 112801 has been allocated resources
+Running with 8 processes
+srun: job 112802 queued and waiting for resources
+srun: job 112802 has been allocated resources
+Running with 8 processes
+srun: job 112803 queued and waiting for resources
+srun: job 112803 has been allocated resources
+Running with 8 processes
+srun: job 112804 queued and waiting for resources
+srun: job 112804 has been allocated resources
+Running with 8 processes
+srun: job 112805 queued and waiting for resources
+srun: job 112805 has been allocated resources
+Running with 8 processes
+srun: job 112806 queued and waiting for resources
+srun: job 112806 has been allocated resources
+Running with 8 processes
+srun: job 112807 queued and waiting for resources
+srun: job 112807 has been allocated resources
+Running with 8 processes
+srun: job 112808 queued and waiting for resources
+srun: job 112808 has been allocated resources
+Running with 8 processes
+srun: job 112809 queued and waiting for resources
+srun: job 112809 has been allocated resources
+[w201.parlab.local:2443508] pml_ucx.c:329  Warning: UCP worker does not support MPI_THREAD_MULTIPLE. PML UCX could not be selected
+[w204.parlab.local:45661] pml_ucx.c:329  Warning: UCP worker does not support MPI_THREAD_MULTIPLE. PML UCX could not be selected
+[w203.parlab.local:2955917] pml_ucx.c:329  Warning: UCP worker does not support MPI_THREAD_MULTIPLE. PML UCX could not be selected
+[w202.parlab.local:1825083] pml_ucx.c:329  Warning: UCP worker does not support MPI_THREAD_MULTIPLE. PML UCX could not be selected
+[w206.parlab.local:3787029] pml_ucx.c:329  Warning: UCP worker does not support MPI_THREAD_MULTIPLE. PML UCX could not be selected
+[w208.parlab.local:3379081] pml_ucx.c:329  Warning: UCP worker does not support MPI_THREAD_MULTIPLE. PML UCX could not be selected
+[w205.parlab.local:3254208] pml_ucx.c:329  Warning: UCP worker does not support MPI_THREAD_MULTIPLE. PML UCX could not be selected
+[w207.parlab.local:1040934] pml_ucx.c:329  Warning: UCP worker does not support MPI_THREAD_MULTIPLE. PML UCX could not be selected
+Running with 8 processes
+srun: job 112810 queued and waiting for resources
+srun: job 112810 has been allocated resources
+Running with 8 processes
+srun: job 112811 queued and waiting for resources
+srun: job 112811 has been allocated resources
+Running with 8 processes
+srun: job 112812 queued and waiting for resources
+srun: job 112812 has been allocated resources
+Running with 8 processes
+srun: job 112813 queued and waiting for resources
+srun: job 112813 has been allocated resources
+Running with 8 processes
+srun: job 112814 queued and waiting for resources
+srun: job 112814 has been allocated resources
+Running with 8 processes
+srun: job 112815 queued and waiting for resources
+srun: job 112815 has been allocated resources
+Running with 8 processes
+srun: job 112816 queued and waiting for resources
+srun: job 112816 has been allocated resources
+Running with 8 processes
+srun: job 112817 queued and waiting for resources
+srun: job 112817 has been allocated resources
+[w201.parlab.local:2444478] pml_ucx.c:329  Warning: UCP worker does not support MPI_THREAD_MULTIPLE. PML UCX could not be selected
+[w202.parlab.local:1825814] pml_ucx.c:329  Warning: UCP worker does not support MPI_THREAD_MULTIPLE. PML UCX could not be selected
+[w204.parlab.local:46395] pml_ucx.c:329  Warning: UCP worker does not support MPI_THREAD_MULTIPLE. PML UCX could not be selected
+[w203.parlab.local:2956647] pml_ucx.c:329  Warning: UCP worker does not support MPI_THREAD_MULTIPLE. PML UCX could not be selected
+[w207.parlab.local:1041665] pml_ucx.c:329  Warning: UCP worker does not support MPI_THREAD_MULTIPLE. PML UCX could not be selected
+[w205.parlab.local:3254938] pml_ucx.c:329  Warning: UCP worker does not support MPI_THREAD_MULTIPLE. PML UCX could not be selected
+[w208.parlab.local:3379814] pml_ucx.c:329  Warning: UCP worker does not support MPI_THREAD_MULTIPLE. PML UCX could not be selected
+[w206.parlab.local:3787761] pml_ucx.c:329  Warning: UCP worker does not support MPI_THREAD_MULTIPLE. PML UCX could not be selected
+Running with 8 processes
+srun: job 112818 queued and waiting for resources
+srun: job 112818 has been allocated resources
+Running with 8 processes
+srun: job 112819 queued and waiting for resources
+srun: job 112819 has been allocated resources
+Running with 8 processes
+srun: job 112820 queued and waiting for resources
+srun: job 112820 has been allocated resources
+Running with 8 processes
+srun: job 112821 queued and waiting for resources
+srun: job 112821 has been allocated resources
+Running with 8 processes
+srun: job 112822 queued and waiting for resources
+srun: job 112822 has been allocated resources
+Running with 8 processes
+srun: job 112823 queued and waiting for resources
+srun: job 112823 has been allocated resources
+Running with 8 processes
+srun: job 112824 queued and waiting for resources
+srun: job 112824 has been allocated resources
+Running with 8 processes
+srun: job 112825 queued and waiting for resources
+srun: job 112825 has been allocated resources
+Running with 8 processes
+srun: job 112826 queued and waiting for resources
+srun: job 112826 has been allocated resources
+Running with 8 processes
+srun: job 112827 queued and waiting for resources
+srun: job 112827 has been allocated resources
+Running with 8 processes
+srun: job 112828 queued and waiting for resources
+srun: job 112828 has been allocated resources
+[w202.parlab.local:1826826] pml_ucx.c:329  Warning: UCP worker does not support MPI_THREAD_MULTIPLE. PML UCX could not be selected
+[w203.parlab.local:2957665] pml_ucx.c:329  Warning: UCP worker does not support MPI_THREAD_MULTIPLE. PML UCX could not be selected
+[w204.parlab.local:47406] pml_ucx.c:329  Warning: UCP worker does not support MPI_THREAD_MULTIPLE. PML UCX could not be selected
+[w208.parlab.local:3380829] pml_ucx.c:329  Warning: UCP worker does not support MPI_THREAD_MULTIPLE. PML UCX could not be selected
+[w205.parlab.local:3255949] pml_ucx.c:329  Warning: UCP worker does not support MPI_THREAD_MULTIPLE. PML UCX could not be selected
+[w207.parlab.local:1042675] pml_ucx.c:329  Warning: UCP worker does not support MPI_THREAD_MULTIPLE. PML UCX could not be selected
+[w201.parlab.local:2445819] pml_ucx.c:329  Warning: UCP worker does not support MPI_THREAD_MULTIPLE. PML UCX could not be selected
+[w206.parlab.local:3788776] pml_ucx.c:329  Warning: UCP worker does not support MPI_THREAD_MULTIPLE. PML UCX could not be selected
+Running with 8 processes
+srun: job 112829 queued and waiting for resources
+srun: job 112829 has been allocated resources
+Running with 8 processes
+srun: job 112830 queued and waiting for resources
+srun: job 112830 has been allocated resources
+[w202.parlab.local:1827013] pml_ucx.c:329  Warning: UCP worker does not support MPI_THREAD_MULTIPLE. PML UCX could not be selected
+[w203.parlab.local:2957851] pml_ucx.c:329  Warning: UCP worker does not support MPI_THREAD_MULTIPLE. PML UCX could not be selected
+[w204.parlab.local:47592] pml_ucx.c:329  Warning: UCP worker does not support MPI_THREAD_MULTIPLE. PML UCX could not be selected
+[w201.parlab.local:2446063] pml_ucx.c:329  Warning: UCP worker does not support MPI_THREAD_MULTIPLE. PML UCX could not be selected
+[w208.parlab.local:3381015] pml_ucx.c:329  Warning: UCP worker does not support MPI_THREAD_MULTIPLE. PML UCX could not be selected
+[w205.parlab.local:3256135] pml_ucx.c:329  Warning: UCP worker does not support MPI_THREAD_MULTIPLE. PML UCX could not be selected
+[w206.parlab.local:3788961] pml_ucx.c:329  Warning: UCP worker does not support MPI_THREAD_MULTIPLE. PML UCX could not be selected
+[w207.parlab.local:1042861] pml_ucx.c:329  Warning: UCP worker does not support MPI_THREAD_MULTIPLE. PML UCX could not be selected
+Running with 8 processes
+srun: job 112831 queued and waiting for resources
+srun: job 112831 has been allocated resources
+Running with 8 processes
+srun: job 112832 queued and waiting for resources
+srun: job 112832 has been allocated resources
+Running with 8 processes
+srun: job 112833 queued and waiting for resources
+srun: job 112833 has been allocated resources
+Running with 8 processes
+srun: job 112834 queued and waiting for resources
+srun: job 112834 has been allocated resources
+Running with 8 processes
+srun: job 112835 queued and waiting for resources
+srun: job 112835 has been allocated resources
+Running with 8 processes

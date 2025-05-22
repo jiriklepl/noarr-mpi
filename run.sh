@@ -34,7 +34,7 @@ fi
 case "${EXECUTABLE}" in
 	(*-nompi*)
 		if [ "${USE_SLURM}" -eq 1 ]; then
-			srun -n 1 -N 1 --ntasks-per-node="${TASKS_PER_NODE}" -c "${CPUS_PER_TASK}" \
+			srun -n 1 -N 1 --ntasks-per-node="${TASKS_PER_NODE}" -c "${CPUS_PER_TASK}" --mpi=pmix --cpu-bind=cores
 				"${SLURM_OPTIONS[@]}" -- "${EXECUTABLE}" "$@"
 		else
 			"${EXECUTABLE}" "$@"

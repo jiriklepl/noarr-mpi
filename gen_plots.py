@@ -37,8 +37,9 @@ parser.add_argument(
 )
 
 parser.add_argument(
-    'csv_file',
-    help='Path to the input CSV file containing the benchmark data'
+    'csv_files',
+    nargs='+',
+    help='Path to the input CSV file(s) containing the benchmark data'
 )
 
 parser.add_argument(
@@ -60,6 +61,12 @@ parser.add_argument(
 )
 
 parser.add_argument(
+    '--no-renaming',
+    action='store_true',
+    help='Do not rename the frameworks to official names'
+)
+
+parser.add_argument(
     '--no-boostP2P',
     action='store_true',
     help='Do not show the Boost.MPI implementation that uses point-to-point communication'
@@ -68,10 +75,22 @@ parser.add_argument(
 args = parser.parse_args()
 
 # ─── Load & prepare data ────────────────────────────────────────────────────────
-df = pd.read_csv(args.csv_file)
+if len(args.csv_files) > 1:
+    # If multiple CSV files are provided, concatenate them into a single DataFrame
+    df = pd.concat([pd.read_csv(f) for f in args.csv_files], ignore_index=True)
+elif len(args.csv_files) == 1:
+    # If a single CSV file is provided, read it directly
+    df = pd.read_csv(args.csv_files[0])
+else:
+    # If no CSV file is provided, raise an error
+    parser.print_help()
+    raise ValueError("No CSV file provided. Please specify a CSV file.")
 
 if df.empty:
     raise ValueError("Input CSV file is empty or not found.")
+
+if args.no_boostP2P:
+    df = df[~df['framework'].str.contains('boostP2P', na=False)]
 
 # Ultra-concise labels: strip prefixes/suffixes to just letter codes
 df['c_code'] = (
@@ -90,9 +109,6 @@ df['b_code'] = (
       .str.replace('B_TILE_', '', regex=False)
 )
 
-if args.no_boostP2P:
-    df = df[~df['framework'].str.contains('boostP2P', na=False)]
-
 df['framework'] = (df['framework']
                    .str.replace('C_SCATTER_', '', regex=False)
                    .str.replace('C_GATHER_', '', regex=False)
@@ -103,14 +119,34 @@ df['framework'] = (df['framework']
                    .str.replace('_MAJOR', '', regex=False)
 )
 
+df['mean_time'] = df['mean_time'].astype(float)
+df['sd_time'] = df['sd_time'].astype(float)
+df['valid'] = df['valid'].astype(int)
+
+if not args.no_renaming:
+    df['framework'] = df['framework'].str.replace('noarr', 'Noarr-MPI', regex=False)
+    df['framework'] = df['framework'].str.replace('boost', 'Boost.MPI', regex=False)
+    df['framework'] = df['framework'].str.replace('boostP2P', 'Boost.MPI (P2P)', regex=False)
+    df['framework'] = df['framework'].str.replace('mpi', 'MPI', regex=False)
+
 df['tile_label'] = df['c_code'] + '/' + df['a_code'] + '/' + df['b_code']
 
 # Automatically discover unique frameworks & datasets
 frameworks = df['framework'].unique()
+frameworks.sort()
+
 if 'noarr' in frameworks:
     frameworks = ['noarr'] + [fw for fw in frameworks if fw != 'noarr']
+elif 'Noarr-MPI' in frameworks:
+    frameworks = ['Noarr-MPI'] + [fw for fw in frameworks if fw != 'Noarr-MPI']
 if 'boost' in frameworks:
     frameworks = [fw for fw in frameworks if fw != 'boost'] + ['boost']
+elif 'Boost.MPI' in frameworks:
+    frameworks = [fw for fw in frameworks if fw != 'Boost.MPI'] + ['Boost.MPI']
+if 'boostP2P' in frameworks:
+    frameworks = [fw for fw in frameworks if fw != 'boostP2P'] + ['boostP2P']
+elif 'Boost.MPI (P2P)' in frameworks:
+    frameworks = [fw for fw in frameworks if fw != 'Boost.MPI (P2P)'] + ['Boost.MPI (P2P)']
 
 datasets   = df['dataset'].unique()
 
@@ -132,6 +168,15 @@ fig, axes = plt.subplots(
     layout='constrained',
 )
 bar_width = 0.18
+
+# If multiple records are present for the same algorithm+dataset+tile configuration,
+# take the mean and standard deviation
+def aggregate(group):
+    mean = group['mean_time'].mean()
+    variance = (group['sd_time']**2 + group['mean_time']**2).mean() - mean**2
+    return pd.Series({'mean_time': mean, 'sd_time': np.sqrt(variance)})
+
+df = df.groupby(['framework', 'dataset', 'tile_label', 'valid']).apply(aggregate, include_groups=False).reset_index()
 
 for ax, ds in zip(axes, datasets) if len(datasets) > 1 else [(axes, datasets[0])]:
     sub = df[df['dataset'] == ds]
@@ -235,8 +280,8 @@ fw_handles = [plt.Rectangle((0,0),1,1, color=colors[fw]) for fw in frameworks]
 fig.legend(
     fw_handles, frameworks,
     title="Framework",
-    loc='upper right',
-    bbox_to_anchor=(1., 0.94),
+    loc='upper left',
+    bbox_to_anchor=(0.045, 0.94),
 )
 
 if not args.no_validation:
@@ -260,8 +305,13 @@ if not args.no_validation:
 
 os.makedirs('plots', exist_ok=True)
 
-file_name = os.path.splitext(os.path.basename(args.csv_file))[0]
-file_path = f'plots/{file_name}.pdf'
+if args.csv_files[0].endswith('.csv'):
+    FILE_NAME = os.path.splitext(os.path.basename(args.csv_files[0]))[0]
+else:
+    # If the CSV file name is not provided, use a default name
+    FILE_NAME = 'plot'
+
+FILE_PATH = f'plots/{FILE_NAME}.pdf'
 
 # plt.tight_layout(pad=0.2)
-plt.savefig(file_path, bbox_inches='tight')
+plt.savefig(FILE_PATH, bbox_inches='tight')
