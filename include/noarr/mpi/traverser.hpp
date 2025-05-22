@@ -23,7 +23,6 @@ struct mpi_traverser_t : strict_contain<Traverser, MPI_Comm, int, int> {
 	using base::base;
 
 	mpi_traverser_t(Traverser traverser, MPI_Comm comm) : base{traverser, comm, 0, 0} {
-
 		MPICHK(MPI_Comm_rank(comm, &const_cast<int &>(base::template get<2>())));
 		MPICHK(MPI_Comm_size(comm, &const_cast<int &>(base::template get<3>())));
 	}
@@ -43,8 +42,18 @@ struct mpi_traverser_t : strict_contain<Traverser, MPI_Comm, int, int> {
 		return base::template get<3>();
 	}
 
+	template<IsProtoStruct Order>
 	[[nodiscard]]
-	constexpr auto get_bind() const {
+	constexpr auto order(Order order) const noexcept {
+		const auto new_traverser = get_traverser() ^ order;
+		const auto new_comm = get_comm();
+		const auto new_rank = get_rank();
+		const auto new_size = get_size();
+		return mpi_traverser_t<Dim, decltype(new_traverser)>{new_traverser, new_comm, new_rank, new_size};
+	}
+
+	[[nodiscard]]
+	constexpr auto get_bind() const noexcept {
 		int rank = get_rank();
 		int size = get_size();
 
@@ -70,7 +79,7 @@ struct mpi_traverser_t : strict_contain<Traverser, MPI_Comm, int, int> {
 	}
 
 	[[nodiscard]]
-	constexpr auto state() const {
+	constexpr auto state() const noexcept {
 		return (get_traverser() ^ get_bind()).state();
 	}
 
@@ -91,12 +100,12 @@ struct mpi_traverser_t : strict_contain<Traverser, MPI_Comm, int, int> {
 	}
 
 	[[nodiscard]]
-	constexpr auto top_struct() const {
+	constexpr auto top_struct() const noexcept {
 		return (get_traverser() ^ get_bind()).top_struct();
 	}
 
 	[[nodiscard]]
-	constexpr auto top_struct(int root) const {
+	constexpr auto top_struct(int root) const noexcept {
 		return (get_traverser() ^ fix<Dim>(root) ^ get_bind()).top_struct();
 	}
 
@@ -157,6 +166,11 @@ struct to_MPI_Comm<Traverser> : std::true_type {
 		return traverser.get_comm();
 	}
 };
+
+template<IsMpiTraverser Traverser, IsProtoStruct Struct>
+constexpr auto operator^(const Traverser &traverser, Struct s) noexcept {
+	return traverser.order(s);
+}
 
 template<IsMpiTraverser Traverser>
 constexpr auto operator|(Traverser traverser, auto f) -> decltype(traverser.for_each(f)) {

@@ -48,6 +48,31 @@ const struct tuning {
 #else
 	DEFINE_LAYOUT(b_tile_layout, j_vec ^ k_vec);
 #endif
+
+#ifdef C_SCATTER_J_MAJOR
+	DEFINE_LAYOUT(c_scatter_order, noarr::hoist<'j', 'i'>());
+#elif defined(C_SCATTER_I_MAJOR)
+	DEFINE_LAYOUT(c_scatter_order, noarr::hoist<'i', 'j'>());
+#else
+	DEFINE_LAYOUT(c_scatter_order, noarr::neutral_proto{});
+#endif
+
+#ifdef A_SCATTER_K_MAJOR
+	DEFINE_LAYOUT(a_scatter_order, noarr::hoist<'k', 'i'>());
+#elif defined(A_SCATTER_I_MAJOR)
+	DEFINE_LAYOUT(a_scatter_order, noarr::hoist<'i', 'k'>());
+#else
+	DEFINE_LAYOUT(a_scatter_order, noarr::neutral_proto{});
+#endif
+
+#ifdef B_SCATTER_J_MAJOR
+	DEFINE_LAYOUT(b_scatter_order, noarr::hoist<'j', 'k'>());
+#elif defined(B_SCATTER_K_MAJOR)
+	DEFINE_LAYOUT(b_scatter_order, noarr::hoist<'k', 'j'>());
+#else
+	DEFINE_LAYOUT(b_scatter_order, noarr::neutral_proto{});
+#endif
+
 } tuning;
 
 // initialization function
@@ -97,14 +122,14 @@ std::chrono::duration<double> run_experiment(num_t alpha, num_t beta, auto C, au
                                              auto tileB, auto &mpi_trav, int root) {
 	const auto start = std::chrono::high_resolution_clock::now();
 
-	mpi::scatter(C, tileC, mpi_trav, root);
-	mpi::scatter(A, tileA, mpi_trav, root);
-	mpi::scatter(B, tileB, mpi_trav, root);
+	mpi::scatter(C, tileC, mpi_trav ^ tuning.c_scatter_order, root);
+	mpi::scatter(A, tileA, mpi_trav ^ tuning.a_scatter_order, root);
+	mpi::scatter(B, tileB, mpi_trav ^ tuning.b_scatter_order, root);
 
 	// run kernel
 	kernel_gemm(mpi_trav, alpha, tileC, beta, tileA, tileB);
 
-	mpi::gather(tileC, C, mpi_trav, root);
+	mpi::gather(tileC, C, mpi_trav ^ tuning.c_scatter_order, root);
 
 	const auto end = std::chrono::high_resolution_clock::now();
 
@@ -116,7 +141,7 @@ std::chrono::duration<double> run_experiment(num_t alpha, num_t beta, auto C, au
 int main(int argc, char *argv[]) {
 	using namespace std::string_literals;
 
-	constexpr int num_runs = 10;
+	constexpr int num_runs = 20;
 
 	const mpi::MPI_session mpi_session(argc, argv);
 

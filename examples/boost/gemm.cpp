@@ -242,7 +242,7 @@ std::chrono::duration<double> run_experiment(num_t alpha, num_t beta, auto C, au
 int main(int argc, char *argv[]) {
 	using namespace std::string_literals;
 
-	constexpr int num_runs = 10;
+	constexpr int num_runs = 20;
 
 	mpi::environment env(argc, argv);
 	mpi::communicator world;

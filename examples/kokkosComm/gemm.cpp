@@ -201,7 +201,7 @@ std::chrono::duration<double> run_experiment(num_t alpha, num_t beta, auto &C, a
 int run_environment(int argc, char *argv[]) {
 	using namespace std::string_literals;
 
-	constexpr int num_runs = 10;
+	constexpr int num_runs = 20;
 
 	KokkosComm::Handle<> handle;
 

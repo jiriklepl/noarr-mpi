@@ -140,16 +140,17 @@ std::chrono::duration<double> run_experiment(num_t alpha, num_t beta, auto C, au
 	const auto start = std::chrono::high_resolution_clock::now();
 
 	std::vector<decltype(stdex::submdspan(C, std::tuple<std::size_t, std::size_t>(0, 0),
-	                                      std::tuple<std::size_t, std::size_t>(0, 0)))>
-		c_layouts(size);
+										std::tuple<std::size_t, std::size_t>(0, 0)))>
+		c_layouts;
 	std::vector<decltype(stdex::submdspan(A, std::tuple<std::size_t, std::size_t>(0, 0),
-	                                      std::tuple<std::size_t, std::size_t>(0, 0)))>
-		a_layouts(size);
+										std::tuple<std::size_t, std::size_t>(0, 0)))>
+		a_layouts;
 	std::vector<decltype(stdex::submdspan(B, std::tuple<std::size_t, std::size_t>(0, 0),
-	                                      std::tuple<std::size_t, std::size_t>(0, 0)))>
-		b_layouts(size);
+										std::tuple<std::size_t, std::size_t>(0, 0)))>
+		b_layouts;
 
 	{
+
 		std::vector<std::variant<std::monostate, mpi::packed_oarchive>> coarchives(size);
 		std::vector<std::variant<std::monostate, mpi::packed_oarchive>> aoarchives(size);
 		std::vector<std::variant<std::monostate, mpi::packed_oarchive>> boarchives(size);
@@ -158,6 +159,10 @@ std::chrono::duration<double> run_experiment(num_t alpha, num_t beta, auto C, au
 		requests.reserve(rank == root ? 3 * (size + 1) : 3);
 
 		if (rank == root) {
+			c_layouts.resize(size);
+			a_layouts.resize(size);
+			b_layouts.resize(size);
+
 			for (int r = 0; r < size; ++r) {
 				const int i = r / j_tiles;
 				const int j = r % j_tiles;
@@ -180,21 +185,21 @@ std::chrono::duration<double> run_experiment(num_t alpha, num_t beta, auto C, au
 
 			for (int r = 0; r < size; ++r) {
 				auto &coarchive =
-					coarchives[r].template emplace<mpi::packed_oarchive>(world, c_layouts[r].size() * sizeof(num_t));
+					coarchives[r].emplace<mpi::packed_oarchive>(world, c_layouts[r].size() * sizeof(num_t));
 				serialize(coarchive, c_layouts[r]);
-				requests.emplace_back(world.isend(r, 0, coarchive));
+				requests.emplace_back(world.isend(r, 3 * r + 0, coarchive));
 			}
 			for (int r = 0; r < size; ++r) {
 				auto &aoarchive =
-					aoarchives[r].template emplace<mpi::packed_oarchive>(world, a_layouts[r].size() * sizeof(num_t));
+					aoarchives[r].emplace<mpi::packed_oarchive>(world, a_layouts[r].size() * sizeof(num_t));
 				serialize(aoarchive, a_layouts[r]);
-				requests.emplace_back(world.isend(r, 1, aoarchive));
+				requests.emplace_back(world.isend(r, 3 * r + 1, aoarchive));
 			}
 			for (int r = 0; r < size; ++r) {
 				auto &boarchive =
-					boarchives[r].template emplace<mpi::packed_oarchive>(world, b_layouts[r].size() * sizeof(num_t));
+					boarchives[r].emplace<mpi::packed_oarchive>(world, b_layouts[r].size() * sizeof(num_t));
 				serialize(boarchive, b_layouts[r]);
-				requests.emplace_back(world.isend(r, 2, boarchive));
+				requests.emplace_back(world.isend(r, 3 * r + 2, boarchive));
 			}
 		}
 
@@ -202,9 +207,9 @@ std::chrono::duration<double> run_experiment(num_t alpha, num_t beta, auto C, au
 		mpi::packed_iarchive aiarchive(world, tileA.size() * sizeof(num_t));
 		mpi::packed_iarchive biarchive(world, tileB.size() * sizeof(num_t));
 
-		requests.emplace_back(world.irecv(root, 0, ciarchive));
-		requests.emplace_back(world.irecv(root, 1, aiarchive));
-		requests.emplace_back(world.irecv(root, 2, biarchive));
+		requests.emplace_back(world.irecv(root, 3 * rank + 0, ciarchive));
+		requests.emplace_back(world.irecv(root, 3 * rank + 1, aiarchive));
+		requests.emplace_back(world.irecv(root, 3 * rank + 2, biarchive));
 
 		mpi::wait_all(requests.begin(), requests.end());
 
@@ -221,15 +226,15 @@ std::chrono::duration<double> run_experiment(num_t alpha, num_t beta, auto C, au
 
 		mpi::packed_oarchive coarchive(world, tileC.size() * sizeof(num_t));
 		serialize(coarchive, tileC);
-		requests.emplace_back(world.isend(root, 3 + rank, coarchive));
+		requests.emplace_back(world.isend(root, 3 * size + rank, coarchive));
 
 		std::vector<std::variant<std::monostate, mpi::packed_iarchive>> ciarchives(size);
 
 		if (rank == root) {
 			for (int r = 0; r < size; ++r) {
 				auto &ciarchive =
-					ciarchives[r].template emplace<mpi::packed_iarchive>(world, c_layouts[r].size() * sizeof(num_t));
-				requests.emplace_back(world.irecv(r, 3 + r, ciarchive));
+					ciarchives[r].emplace<mpi::packed_iarchive>(world, c_layouts[r].size() * sizeof(num_t));
+				requests.emplace_back(world.irecv(r, 3 * size + r, ciarchive));
 			}
 		}
 
@@ -254,7 +259,7 @@ std::chrono::duration<double> run_experiment(num_t alpha, num_t beta, auto C, au
 int main(int argc, char *argv[]) {
 	using namespace std::string_literals;
 
-	constexpr int num_runs = 10;
+	constexpr int num_runs = 20;
 
 	mpi::environment env(argc, argv);
 	mpi::communicator world;
