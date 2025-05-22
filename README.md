@@ -1,14 +1,12 @@
 # Layout-Agnostic MPI Abstraction for Modern C++
 
-<!-- TODO: Rewrite this whole file -->
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](./LICENSE) [![DOI](https://img.shields.io/badge/License-DOI-yellow.svg)]()
 
-[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](./LICENSE) [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.14846545.svg)](https://doi.org/10.5281/zenodo.14846545)
-
-This repository contains the proof of concept implementation of the paper *Layout-Agnostic MPI Abstraction for Modern C++*.
+This repository contains the proof of concept implementation of the paper *Layout-Agnostic MPI Abstraction for Modern C++* and the evaluation of the proposed abstraction using a distributed GEMM kernel.
 
 ## About
 
-Message Passing Interface (MPI) has been a well-established technology in the domain of distributed high-performance computing for several decades. However, one of its greatest drawbacks is a rather ancient pure-C interface. It lacks many useful features of modern languages (namely C++), like basic type-checking or support for generic code design. We propose a novel abstraction for MPI, which we implemented as an extension of the C++ Noarr library. It follows Noarr paradigms (first-class types and traverser abstraction) and offers layout-agnostic design of MPI applications. We also implemented a layout agnostic distributed GEMM kernel as a proof of concept that our abstraction is viable.
+Message Passing Interface (MPI) has been a well-established technology in the domain of distributed high-performance computing for several decades. However, one of its greatest drawbacks is a rather ancient pure-C interface. It lacks many useful features of modern languages (namely C++), like basic type-checking or support for generic code design. In this paper, we propose a novel abstraction for MPI, which we implemented as an extension of the C++ Noarr library. It follows Noarr paradigms (first-class layout and traversal abstraction) and offers layout-agnostic design of MPI applications. We also implemented a layout-agnostic distributed GEMM kernel as a case study to demonstrate the usability and syntax of the proposed abstraction. We show that the abstraction achieves performance comparable to the state-of-the-art MPI C++ bindings while allowing for a more flexible design of distributed applications.
 
 ## Library
 
@@ -18,7 +16,23 @@ The project contains a header-only extension of the Noarr library that provides 
 #include <noarr/mpi.hpp>
 ```
 
-To showcase the proposed abstraction, we implemented a distributed GEMM kernel using the proposed Noarr MPI abstraction. The project contains the source code of the GEMM kernel and the necessary scripts to build, run, and compare the kernel with a baseline GEMM kernel implemented in the Noarr library.
+The library provides a set of abstractions for MPI operations, including:
+
+- `mpi_transform` ([include/noarr/mpi/transform.hpp](include/noarr/mpi/transform.hpp)) - a function that transforms Noarr structures to MPI data types.
+- `mpi_traverser_t` ([include/noarr/mpi/traverser.hpp](include/noarr/mpi/traverser.hpp)) - a class that associates a Noarr traverser with an MPI communicator.
+- `scatter`, `gather`, `broadcast` ([include/noarr/mpi/algorithms.hpp](include/noarr/mpi/algorithms.hpp)) - functions that implement collective operations for Noarr structures.
+
+## GEMM kernel implementations
+
+To showcase the proposed abstraction, we implemented a distributed GEMM kernel using the proposed Noarr MPI abstraction and compared it with other libraries. All these implementations are included in the [examples](examples) directory.
+
+- [examples/noarr/gemm.cpp](examples/noarr/gemm.cpp) - implementation of the distributed GEMM kernel using the Noarr library and the proposed Noarr MPI abstraction.
+- [examples/boost/gemm.cpp](examples/boost/gemm.cpp) - implementation of the distributed GEMM kernel using the Boost.MPI library and serialization. This implementation ensures the layout-agnostic design of the GEMM kernel via the `mdspan` abstraction that is part of the C++ standard.
+- [examples/boostP2P/gemm.cpp](examples/boostP2P/gemm.cpp) - implementation of the distributed GEMM kernel using the Boost.MPI library and point-to-point communication of matrices serialized into input/output archives. This implementation ensures the layout-agnostic design of the GEMM kernel via the `mdspan` abstraction that is part of the C++ standard.
+- [examples/kokkosComm/gemm.cpp](examples/kokkosComm/gemm.cpp) - implementation of the distributed GEMM kernel using the Kokkos library and the KokkosComm abstraction that enables communication over MPI.
+- [examples/mpi/gemm.cpp](examples/mpi/gemm.cpp) - implementation of the distributed GEMM kernel using the MPI interface directly. This implementation ensures the layout-agnostic design of the GEMM kernel via the `mdspan` abstraction that is part of the C++ standard.
+
+All implementations are based on the GEMM kernel implementation from the PolyBench/C 4.2.1 benchmark suite by Louis-Noël Pouchet et al. The original code is available at <https://sourceforge.net/projects/polybench/files>.
 
 ## How to build
 
@@ -38,23 +52,7 @@ cd noarr-mpi
 ./build.sh
 ```
 
-The script `configure.sh` creates a build directory and runs CMake to configure the project. The script `build.sh` builds three executables:
-
-- `gemm` - the baseline GEMM kernel from PolyBench/C 4.2.1 implemented using the Noarr library; the layout of the `B` matrix is, for demonstration purposes, switched to a less efficient one.
-
-  The code for this variant is located in [examples/gemm/gemm.cpp](examples/gemm/gemm.cpp)
-
-- `gemm-mpi` - the distributed GEMM kernel using the proposed Noarr MPI abstraction; a slight modification of the `gemm` kernel (shares most of the code with the baseline GEMM kernel, all data structure layouts are the same)
-
-  The code for this variant is located in [examples/gemm/gemm-mpi.cpp](examples/gemm/gemm-mpi.cpp)
-
-- `gemm-mpi-tileb-transpose` - the same distributed GEMM kernel, differing solely in the layout of the distributed sub-matrices of the input matrix `B` (no other code is changed, the code for matrix initialization and the GEMM kernel is the same as in `gemm-mpi`)
-
-  The code for this variant is located in [examples/gemm/gemm-mpi.cpp](examples/gemm/gemm-mpi.cpp) as well. It is compiled with an additional preprocessor definition `B_TILE_J_MAJOR`, which changes the layout of sub-matrix tiles of `B`.
-
-The two MPI-distributed GEMM kernels are proof-of-concept implementations of the proposed Noarr MPI abstraction showcasing the proposed layout-agnostic design. They test two different layout configurations to demonstrate that the abstraction can handle different layouts without changing the GEMM kernel code, possibly improving performance by optimizing the data layout.
-
-The baseline `gemm` kernel and the `gemm-mpi` kernel use an inefficient data layout for the `B` matrix. The `gemm-mpi-tileb-transpose` kernel uses the same (inefficient) layout as the initial input matrix but changes the layout during the `scatter` operation to a more efficient one for the per-node computation. The transposition of the layout involves no extra data movement and is implicitly handled by constructing appropriate MPI data types using the [mpi_transform](include/noarr/mpi/transform.hpp) function inside the Noarr MPI abstraction.
+The script `configure.sh` creates a build directory and runs CMake to configure the project. The script `build.sh` builds the executables for all GEMM variants and configurations differing in the major dimensions of the privatized sub-matrices used in the distributed GEMM kernel and the dataset size. For each dataset size, there are eight configurations of the GEMM kernel in total, each named `gemm-<framework>-<dataset-size>-<C-tile-major-dim>-<A-tile-major-dim>-<B-tile-major-dim>`, where `<framework>` is the name of the framework used (e.g., `noarr`, `boost`, `boostP2P`, `kokkosComm`, `mpi`), `<dataset-size>` is the size of the dataset (`MINI`, `MEDIUM`, `EXTRALARGE`). The dataset sizes are defined in [examples/include/gemm.hpp](examples/include/gemm.hpp).
 
 ## How to run
 
@@ -64,50 +62,30 @@ To run the script that automatically runs each of the GEMM variants using `mpiru
 ./compare.sh
 ```
 
-The script performs 3 warm-up runs and 5 measurement runs of each GEMM variant. All outputs (the elements in the resulting *C* matrix) are discarded for all runs except the last one for each variant. The execution times are printed in seconds in a CSV format. [data/compare-example.csv](data/compare-example.csv) shows a possible output of the script. Note that each execution may take up to a minute due to data initialization and result dumping (even for the warm-up runs), so the measurements start to appear after a short delay.
+Each execution performs an unmeasured warm-up run followed by 20 measurement runs of a given GEMM kernel implementation, dataset size, and configuration. The execution then reports the average execution time and the standard deviation of the measurements in seconds. The output of the script is in CSV format with the following columns:
 
-After all measurements are done, the script then compares the results of each variant and, if they differ, prints an error message.
+```csv
+algorithm,framework,dataset,datatype,c_tile,a_tile,b_tile,i_tiles,mean_time,sd_time,valid
+```
 
-You can control the number of mpi processes using the `NUM_TASKS` variable (default is 4) and the number of nodes using the `NUM_NODES` variable (default is 1). The mpi-related variables do not apply to the baseline GEMM kernel, which is always executed in a single process without MPI.
+- `algorithm` - the name of the algorithm (always `gemm`).
+- `framework` - the name of the framework used (e.g., `noarr`, `boost`, `boostP2P`, `kokkosComm`, `mpi`).
+- `dataset` - the size of the dataset (`MINI`, `MEDIUM`, `EXTRALARGE`).
+- `datatype` - the type of the data used in the GEMM kernel (for the default configuration of the project, it is always `FLOAT`).
+- `c_tile`, `a_tile`, `b_tile` - the major dimensions of the privatized sub-matrices used in the distributed GEMM kernel.
+- `i_tiles` - the number of tiles in the `i` dimension of the `C` matrix; the number of tiles in the `j` dimension is determined by the number of MPI processes.
+- `mean_time` - the average execution time of the GEMM kernel in seconds.
+- `sd_time` - the standard deviation of the execution time in seconds.
 
 ### Slurm
 
 To run the same experiment on a Slurm cluster (such as <https://gitlab.mff.cuni.cz/mff/hpc/clusters>), modify the command as follows (replace `YOUR_ACCOUNT` and `YOUR_PARTITION` with your Slurm account and partition):
 
 ```bash
-USE_SLURM=1 NUM_NODES=4 NUM_TASKS=64 ACCOUNT=YOUR_ACCOUNT PARTITION=YOUR_PARTITION ./compare.sh
+USE_SLURM=1 NUM_TASKS=8 NUM_NODES=8 I_TILES=2 ACCOUNT=YOUR_ACCOUNT PARTITION=YOUR_PARTITION ./compare.sh
 ```
 
 [data/compare-example-slurm.csv](data/compare-example-slurm.csv) shows a possible output of the script when run on a Slurm cluster with the specified parameters.
-
-### Single run
-
-To run a single run of a particular GEMM variant, use the following command:
-
-```bash
-./run.sh gemm-mpi
-```
-
-Again, you can use the `USE_SLURM` variable to run the experiment on a Slurm cluster or the `NUM_NODES` and `NUM_TASKS` variables to control the number of nodes and MPI processes.
-
-## Testing
-
-To run the tests that verify the type safety of the Noarr MPI abstraction (requires `ctest`), run the following command:
-
-```bash
-./test.sh
-```
-
-The result of the command is a list of tests and their outcomes. All tests should pass.
-
-## Main abstractions
-
-The paper describes type transformation from Noarr structures to MPI data types and MPI traversers. Proof-of-concept implementations of these abstractions are located in the following files:
-
-- [include/noarr/mpi/transform.hpp](include/noarr/mpi/transform.hpp) - defines the `mpi_transform` function that transforms Noarr structures to MPI data types.
-- [include/noarr/mpi/traverser.hpp](include/noarr/mpi/traverser.hpp) - defines the `mpi_traverser_t` class that associates a Noarr traverser with an MPI communicator.
-
-The MPI bindings for collective operations (broadcast, scatter, gather) are implemented in [include/noarr/mpi/algorithms.hpp](include/noarr/mpi/algorithms.hpp).
 
 ## Visualization
 
@@ -124,6 +102,38 @@ Upgrade pip and install the requirements:
 pip install --upgrade pip
 pip install -r requirements.txt
 ```
+
+To visualize the results of the GEMM kernel execution, run the following command:
+
+```bash
+python3 gen_plots.py <path_to_csv_file>
+```
+
+## Reproducing the results reported in the paper
+
+To reproduce the results reported in the paper, run the following sequence of commands:
+
+```bash
+./configure.sh
+./build.sh
+
+mkdir -p data
+
+# May run for few hours; add USE_SLURM=1 to run on a Slurm cluster
+NUM_TASKS=8 NUM_NODES=8 I_TILES=2 ./compare.sh > data/compare.csv 2> data/compare.err
+
+./gen_plots.py --show-sdev --no-validation --no-boostP2P data/compare.csv
+```
+
+## Testing
+
+To run the tests that verify the type safety of the Noarr MPI abstraction (requires `ctest`), run the following command:
+
+```bash
+./test.sh
+```
+
+The result of the command is a list of tests and their outcomes. All tests should pass.
 
 ## License
 
