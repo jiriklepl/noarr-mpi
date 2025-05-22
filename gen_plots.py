@@ -53,6 +53,18 @@ parser.add_argument(
     help='Do not show the legend'
 )
 
+parser.add_argument(
+    '--no-validation',
+    action='store_true',
+    help='Do not show the validation status'
+)
+
+parser.add_argument(
+    '--no-boostP2P',
+    action='store_true',
+    help='Do not show the Boost.MPI implementation that uses point-to-point communication'
+)
+
 args = parser.parse_args()
 
 # ─── Load & prepare data ────────────────────────────────────────────────────────
@@ -77,6 +89,9 @@ df['b_code'] = (
       .str.replace('_MAJOR', '', regex=False)
       .str.replace('B_TILE_', '', regex=False)
 )
+
+if args.no_boostP2P:
+    df = df[~df['framework'].str.contains('boostP2P', na=False)]
 
 df['framework'] = (df['framework']
                    .str.replace('C_SCATTER_', '', regex=False)
@@ -113,7 +128,8 @@ shapes = {fw: raw_shapes[i % len(raw_shapes)] for i, fw in enumerate(frameworks)
 fig, axes = plt.subplots(
     1, len(datasets),
     figsize=(3.5 * len(datasets), 3),
-    sharey=False
+    sharey=False,
+    layout='constrained',
 )
 bar_width = 0.18
 
@@ -216,34 +232,36 @@ aq.set_ylabel("Runtime [s]")
 
 # Framework legend (first subplot)
 fw_handles = [plt.Rectangle((0,0),1,1, color=colors[fw]) for fw in frameworks]
-aq.legend(
+fig.legend(
     fw_handles, frameworks,
     title="Framework",
-    loc='upper left'
+    loc='upper right',
+    bbox_to_anchor=(1., 0.94),
 )
 
-# Valid/Invalid legend (on the rightmost subplot)
-valid_patch   = Patch(facecolor='white', edgecolor='black', label='Valid')
-invalid_patch = Patch(facecolor='white', edgecolor='black', hatch='//', alpha=0.5, label='Invalid')
+if not args.no_validation:
+    # Valid/Invalid legend (on the rightmost subplot)
+    valid_patch   = Patch(facecolor='white', edgecolor='black', label='Valid')
+    invalid_patch = Patch(facecolor='white', edgecolor='black', hatch='//', alpha=0.5, label='Invalid')
 
-if len(datasets) > 1:
-    aend = axes[-1]
-else:
-    aend = axes.twinx()
-    aend.set_yticklabels([])
-    aend.set_yticks([])
+    if len(datasets) > 1:
+        aend = axes[-1]
+    else:
+        aend = axes.twinx()
+        aend.set_yticklabels([])
+        aend.set_yticks([])
 
-aend.legend(
-    [valid_patch, invalid_patch],
-    ['Valid', 'Invalid'],
-    title="Validation",
-    loc='upper right'
-)
+    aend.legend(
+        [valid_patch, invalid_patch],
+        ['Valid', 'Invalid'],
+        title="Validation",
+        loc='upper right'
+    )
 
 os.makedirs('plots', exist_ok=True)
 
 file_name = os.path.splitext(os.path.basename(args.csv_file))[0]
 file_path = f'plots/{file_name}.pdf'
 
-plt.tight_layout(pad=0.2)
+# plt.tight_layout(pad=0.2)
 plt.savefig(file_path, bbox_inches='tight')
