@@ -36,7 +36,7 @@ KokkosComm::Req<KokkosComm::Mpi> layout_agnostic_recv(KokkosComm::Handle<ExecSpa
 	// no pack and unpack; its current implementation in KokkosComm is no-op
 	MPI_Irecv(KokkosComm::data_handle(rv), 1, rv_type, src, KokkosComm::Impl::POINTTOPOINT_TAG, h.mpi_comm(),
 				&req.mpi_request());
-	// req.extend_view_lifetime(rv); // we know the view does not have ownership of the data
+	req.extend_view_lifetime(rv);
 	return req;
 }
 
@@ -52,7 +52,7 @@ KokkosComm::Req<KokkosComm::Mpi> layout_agnostic_send(KokkosComm::Handle<ExecSpa
 	// no pack and unpack; its current implementation in KokkosComm is no-op
 	MPI_Isend(KokkosComm::data_handle(sv), 1, sv_type, dest, KokkosComm::Impl::POINTTOPOINT_TAG, h.mpi_comm(),
 			  &req.mpi_request());
-	// req.extend_view_lifetime(sv); // we know the view does not have ownership of the data
+	req.extend_view_lifetime(sv);
 	return req;
 }
 

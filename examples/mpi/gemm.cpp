@@ -277,13 +277,9 @@ int main(int argc, char *argv[]) {
 
 	constexpr int num_runs = 20;
 
-	// mpi::environment env(argc, argv);
-	// mpi::communicator world;
 	MPI_Init(&argc, &argv);
 	MPI_Comm world_comm = MPI_COMM_WORLD;
 
-	// const int rank = world.rank();
-	// const int size = world.size();
 	int rank = -1;
 	int size = -1;
 	MPI_Comm_rank(world_comm, &rank);
