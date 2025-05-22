@@ -16,7 +16,7 @@ SLURM_PARTITION=${SLURM_PARTITION:-"mpi-homo-short"}
 SLURM_ACCOUNT=${SLURM_ACCOUNT:-"kdss"}
 SLURM_TIMEOUT=${SLURM_TIMEOUT:-"2:00:00"}
 
-SLURM_OPTIONS=("--partition=${SLURM_PARTITION}" "--account=${SLURM_ACCOUNT}" "--distribution=cyclic" "--exclusive" "--time=${SLURM_TIMEOUT}")
+SLURM_OPTIONS=("--partition=${SLURM_PARTITION}" "--account=${SLURM_ACCOUNT}" "--distribution=cyclic" "--exclusive" "--time=${SLURM_TIMEOUT}" "--mem=0")
 
 if [ ! -f "${EXECUTABLE}" ]; then
 	echo "Error: Executable ${EXECUTABLE} not found. Run build.sh first." >&2

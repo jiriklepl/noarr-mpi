@@ -41,6 +41,18 @@ parser.add_argument(
     help='Path to the input CSV file containing the benchmark data'
 )
 
+parser.add_argument(
+    '--use-lines',
+    action='store_true',
+    help='Use lines instead of bars for plotting'
+)
+
+parser.add_argument(
+    '--use-points',
+    action='store_true',
+    help='Do not show the legend'
+)
+
 args = parser.parse_args()
 
 # ─── Load & prepare data ────────────────────────────────────────────────────────
@@ -65,6 +77,17 @@ df['b_code'] = (
       .str.replace('_MAJOR', '', regex=False)
       .str.replace('B_TILE_', '', regex=False)
 )
+
+df['framework'] = (df['framework']
+                   .str.replace('C_SCATTER_', '', regex=False)
+                   .str.replace('C_GATHER_', '', regex=False)
+                   .str.replace('A_SCATTER_', '', regex=False)
+                   .str.replace('A_GATHER_', '', regex=False)
+                   .str.replace('B_SCATTER_', '', regex=False)
+                   .str.replace('B_GATHER_', '', regex=False)
+                   .str.replace('_MAJOR', '', regex=False)
+)
+
 df['tile_label'] = df['c_code'] + '/' + df['a_code'] + '/' + df['b_code']
 
 # Automatically discover unique frameworks & datasets
@@ -82,6 +105,9 @@ if 'MINI' in datasets and 'MEDIUM' in datasets and 'EXTRALARGE' in datasets:
 # ─── Build color map ────────────────────────────────────────────────────────────
 palette = sns.color_palette("colorblind", len(frameworks))
 colors  = {fw: palette[i] for i, fw in enumerate(frameworks)}
+
+raw_shapes = ['o', '^', 'D', 'v', 'x', 'P', '*']
+shapes = {fw: raw_shapes[i % len(raw_shapes)] for i, fw in enumerate(frameworks)}
 
 # ─── Plot ───────────────────────────────────────────────────────────────────────
 fig, axes = plt.subplots(
@@ -119,6 +145,35 @@ for ax, ds in zip(axes, datasets) if len(datasets) > 1 else [(axes, datasets[0])
             else:
                 sdev = None
 
+            if args.use_lines:
+                ax.plot(
+                    x, vals,
+                    color=colors[fw],
+                    label=fw if valid == 1 else None
+                )
+
+            if args.use_points:
+                ax.scatter(
+                    x, vals,
+                    color=colors[fw],
+                    label=fw if valid == 1 else None,
+                    marker=shapes[fw],
+                    zorder=5
+                )
+
+            if args.use_lines or args.use_points:
+                if sdev is not None:
+                    ax.errorbar(
+                        x, vals,
+                        yerr=sdev,
+                        color=colors[fw],
+                        alpha=0.5,
+                        marker=None,
+                        zorder=4
+                    )
+
+                continue
+
             if valid == 0:
                 ax.bar(
                     x + offset, vals, bar_width,
@@ -130,6 +185,7 @@ for ax, ds in zip(axes, datasets) if len(datasets) > 1 else [(axes, datasets[0])
                     label=None,
                     zorder=4
                 )
+
             ax.bar(
                 x + offset, vals, bar_width,
                 yerr=sdev,
@@ -140,6 +196,8 @@ for ax, ds in zip(axes, datasets) if len(datasets) > 1 else [(axes, datasets[0])
                 label=fw if valid == 1 else None,
                 zorder=5
             )
+
+    ax.set_ylim(bottom=0)
     ax.set_xticks(x)
     ax.set_xticklabels(labels, rotation=0)
     ax.set_title(ds)
