@@ -12,8 +12,6 @@
 #include <noarr/structures/base/utility.hpp>
 #include <noarr/structures/extra/traverser.hpp>
 
-#include "../mpi/structs.hpp"
-
 namespace noarr::mpi {
 
 template<IsDim auto Dim, class Traverser>

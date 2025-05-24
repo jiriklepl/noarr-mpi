@@ -14,49 +14,11 @@
 #include <noarr/structures/base/contain.hpp>
 #include <noarr/structures/extra/shortcuts.hpp>
 
-#include "../mpi/bag.hpp"
 #include "../mpi/transform.hpp"
 #include "../mpi/traverser.hpp"
 #include "../mpi/utility.hpp"
 
 namespace noarr::mpi {
-
-namespace helpers {
-
-template<class Trav, class... Bags>
-struct mpi_run_t : flexible_contain<Trav, Bags...> {
-	using base = flexible_contain<Trav, Bags...>;
-	using base::base;
-
-	template<class F>
-	constexpr decltype(auto) operator()(F &&f) const {
-		return execute_impl(std::make_index_sequence<sizeof...(Bags)>{}, std::forward<F>(f));
-	}
-
-	template<class F>
-	friend decltype(auto) operator|(const mpi_run_t &run, F &&f) {
-		return run(std::forward<F>(f));
-	}
-
-private:
-	template<std::size_t... Is, class F>
-	constexpr decltype(auto) execute_impl(std::index_sequence<Is...> /*is*/, F &&f) const {
-		const auto trav = this->template get<0>();
-		return std::forward<F>(f)(trav, mpi_bag(this->template get<Is + 1>(),
-		                                        mpi_transform(trav, this->template get<Is + 1>().structure()))...);
-	}
-};
-
-template<class Trav, class... Bags>
-mpi_run_t(Trav, Bags...) -> mpi_run_t<Trav, Bags...>;
-
-} // namespace helpers
-
-template<class... Bags>
-requires (... && IsBag<Bags>)
-constexpr auto mpi_run(IsMpiTraverser auto trav, const Bags &...bags) {
-	return helpers::mpi_run_t(trav, bags.get_ref()...);
-}
 
 inline void broadcast(const ToStruct auto &has_struct, const IsMpiTraverser auto &trav, int rank) {
 	const auto structure = convert_to_struct(has_struct);
