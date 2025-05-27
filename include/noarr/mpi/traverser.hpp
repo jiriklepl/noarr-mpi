@@ -12,7 +12,13 @@
 #include <noarr/structures/base/utility.hpp>
 #include <noarr/structures/extra/traverser.hpp>
 
+#include "../mpi/utility.hpp"
+
 namespace noarr::mpi {
+
+namespace helpers {
+struct declare_safe {};
+}
 
 template<IsDim auto Dim, class Traverser>
 requires IsTraverser<Traverser>
@@ -23,9 +29,24 @@ struct mpi_traverser_t : strict_contain<Traverser, MPI_Comm, int, int> {
 	mpi_traverser_t(Traverser traverser, MPI_Comm comm) : base{traverser, comm, 0, 0} {
 		MPICHK(MPI_Comm_rank(comm, &const_cast<int &>(base::template get<2>())));
 		MPICHK(MPI_Comm_size(comm, &const_cast<int &>(base::template get<3>())));
+
+		if constexpr (decltype(get_traverser().top_struct())::template has_length<Dim, noarr::state<>>()) {
+			if (get_traverser().top_struct().template length<Dim>(empty_state) != base::template get<3>()) {
+				throw std::runtime_error("The MPI communicator size does not match the structure length");
+			}
+		}
 	}
 
 	explicit mpi_traverser_t(Traverser traverser, MPI_Comm comm, int rank, int size)
+		: base{traverser, comm, rank, size} {
+		if constexpr (decltype(get_traverser().top_struct())::template has_length<Dim, noarr::state<>>()) {
+			if (get_traverser().top_struct().template length<Dim>(empty_state) != size) {
+				throw std::runtime_error("The MPI communicator size does not match the structure length");
+			}
+		}
+	}
+
+	explicit mpi_traverser_t(Traverser traverser, MPI_Comm comm, int rank, int size, helpers::declare_safe /*unused*/) noexcept
 		: base{traverser, comm, rank, size} {}
 
 	static constexpr auto dim = Dim;
@@ -52,14 +73,10 @@ struct mpi_traverser_t : strict_contain<Traverser, MPI_Comm, int, int> {
 
 	[[nodiscard]]
 	constexpr auto get_bind() const noexcept {
-		int rank = get_rank();
-		int size = get_size();
+		const int rank = get_rank();
+		const int size = get_size();
 
 		if constexpr (decltype(get_traverser().top_struct())::template has_length<Dim, noarr::state<>>()) {
-			if (get_traverser().top_struct().template length<Dim>(empty_state) != size) {
-				throw std::runtime_error("The MPI communicator size does not match the structure length");
-			}
-
 			return fix<Dim>(rank);
 		} else {
 			return set_length<Dim>(size) ^ fix<Dim>(rank);
@@ -121,7 +138,7 @@ struct mpi_traverser_t : strict_contain<Traverser, MPI_Comm, int, int> {
 		(get_traverser() ^ get_bind())
 			.template for_sections<Dims...>(
 				[&f, comm = get_comm(), rank = get_rank(), size = get_size()]<class Inner>(Inner inner) {
-					std::forward<F>(f)(mpi_traverser_t<Dim, Inner>{inner, comm, rank, size});
+					std::forward<F>(f)(mpi_traverser_t<Dim, Inner>{inner, comm, rank, size, helpers::declare_safe{}});
 				});
 	}
 
@@ -131,7 +148,7 @@ struct mpi_traverser_t : strict_contain<Traverser, MPI_Comm, int, int> {
 		(get_traverser() ^ get_bind())
 			.template for_dims<Dims...>(
 				[&f, comm = get_comm(), rank = get_rank(), size = get_size()]<class Inner>(Inner inner) {
-					std::forward<F>(f)(mpi_traverser_t<Dim, Inner>{inner, comm, rank, size});
+					std::forward<F>(f)(mpi_traverser_t<Dim, Inner>{inner, comm, rank, size, helpers::declare_safe{}});
 				});
 	}
 };

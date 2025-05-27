@@ -1,13 +1,15 @@
 #ifndef NOARR_MPI_TRANSFORM_HPP
 #define NOARR_MPI_TRANSFORM_HPP
 
+#include <cassert>
 #include <cstddef>
 
 #include <atomic>
 #include <map>
 #include <stdexcept>
-#include <string>
 #include <tuple>
+#include <utility>
+#include <vector>
 
 #include <mpi.h>
 
@@ -167,15 +169,15 @@ inline MPI_custom_type mpi_transform_impl(const Structure &structure, const dim_
 		const auto offset = offset_of<scalar<scalar_type>>(structure, state);
 		const auto datatype = choose_mpi_type_v<scalar_type>();
 
-		MPI_Datatype new_Datatype = MPI_DATATYPE_NULL;
 		if (offset == 0) {
-			MPICHK(MPI_Type_dup(datatype, &new_Datatype));
-		} else {
-			const int block_lengths = 1;
-			const auto offsets = static_cast<MPI_Aint>(offset);
-
-			MPICHK(MPI_Type_create_hindexed(1, &block_lengths, &offsets, datatype, &new_Datatype));
+			return MPI_custom_type{datatype, false};
 		}
+
+		const int block_lengths = 1;
+		const auto offsets = static_cast<MPI_Aint>(offset);
+
+		MPI_Datatype new_Datatype = MPI_DATATYPE_NULL;
+		MPICHK(MPI_Type_create_hindexed(1, &block_lengths, &offsets, datatype, &new_Datatype));
 
 		return MPI_custom_type{new_Datatype};
 	} else {
@@ -199,28 +201,44 @@ requires (Structure::signature::template any_accept<Dim>)
 		const auto stride = stride_along<Dim>(structure, state);
 		const auto length = structure.template length<Dim>(state);
 
+		MPI_custom_type sub_transformed = mpi_transform_impl(structure, Branches{}, state.template with<index_in<Dim>>(lb_at));
+
+		if (lb_at != 0) {
+			assert(lb_at == length - 1 && "lower bound is not at the beginning or end of the dimension");
+			assert(stride < 0 && "stride must be negative when lower bound is at the end of the dimension");
+			std::vector<MPI_Aint> offsets(length);
+			const std::vector<int> block_lengths(length, 1);
+			for (std::size_t i = 0; i < length; ++i) {
+				offsets[i] = (length - 1 - i) * -stride;
+			}
+
+			MPI_Datatype new_Datatype = MPI_DATATYPE_NULL;
+			MPICHK(MPI_Type_create_hindexed(length, block_lengths.data(), offsets.data(), (MPI_Datatype)sub_transformed, &new_Datatype));
+			sub_transformed.reset(new_Datatype);
+		} else if (stride > 0 && length != 1) {
+			MPI_Datatype new_Datatype = MPI_DATATYPE_NULL;
+			MPICHK(MPI_Type_create_hvector(length, 1, stride, (MPI_Datatype)sub_transformed, &new_Datatype));
+			sub_transformed.reset(new_Datatype);
+		}
+
 		if (lower_bound != 0) {
-			throw std::runtime_error("Unsupported: lower bound is not zero");
+			const auto lb = static_cast<MPI_Aint>(lower_bound);
+			MPI_Datatype new_Datatype = MPI_DATATYPE_NULL;
+			const int block_lengths = 1;
+			MPICHK(MPI_Type_create_hindexed(1, &block_lengths, &lb, (MPI_Datatype)sub_transformed, &new_Datatype));
+			sub_transformed.reset(new_Datatype);
 		}
 
-		if (stride == 0 || length == 1) {
-			return mpi_transform_impl(structure, Branches{}, state.template with<index_in<Dim>>(lb_at));
-		}
-
-		const MPI_custom_type sub_transformed =
-			mpi_transform_impl(structure, Branches{}, state.template with<index_in<Dim>>(lb_at));
-		MPI_Datatype new_Datatype = MPI_DATATYPE_NULL;
-		MPICHK(MPI_Type_create_hvector(length, 1, stride, (MPI_Datatype)sub_transformed, &new_Datatype));
-		return MPI_custom_type{new_Datatype};
+		return sub_transformed;
 	} else {
 		if constexpr (!has_lower_bound) {
-			throw std::runtime_error("Unsupported: lower bound is not set");
+			throw std::runtime_error("Unsupported: lower bound cannot be determined");
 		} else if constexpr (!has_stride_along) {
-			throw std::runtime_error("Unsupported: stride is not set");
+			throw std::runtime_error("Unsupported: stride cannot be determined");
 		} else if constexpr (!is_uniform_along) {
-			throw std::runtime_error("Unsupported: non-uniform stride");
+			throw std::runtime_error("Unsupported: structure is not uniform along the dimension");
 		} else if constexpr (!has_length) {
-			throw std::runtime_error("Unsupported: length is not set for dimension " + std::to_string(Dim));
+			throw std::runtime_error("Unsupported: length cannot be determined");
 		} else {
 			throw std::runtime_error("Unsupported transformation");
 		}

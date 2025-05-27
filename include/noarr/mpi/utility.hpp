@@ -85,10 +85,10 @@ struct to_MPI_Datatype<MPI_Datatype> : std::true_type {
 
 class MPI_custom_type {
 	MPI_Datatype value;
-	bool free_on_destruction = true;
+	bool free_on_destruction;
 
 public:
-	constexpr MPI_custom_type() noexcept : value(MPI_DATATYPE_NULL) {}
+	constexpr MPI_custom_type() noexcept : value(MPI_DATATYPE_NULL), free_on_destruction(true) {}
 
 	explicit MPI_custom_type(MPI_Datatype value, bool free_on_destruction = true) noexcept
 		: value(value), free_on_destruction(free_on_destruction) {}
@@ -107,6 +107,7 @@ public:
 	MPI_custom_type &operator=(MPI_custom_type &&other) noexcept {
 		using std::swap;
 		swap(value, other.value);
+		swap(free_on_destruction, other.free_on_destruction);
 
 		return *this;
 	}
@@ -118,12 +119,12 @@ public:
 	}
 
 	void reset(MPI_Datatype value = MPI_DATATYPE_NULL, bool free_on_destruction = true) {
-		if (this->value != MPI_DATATYPE_NULL && free_on_destruction) {
+		if (this->value != MPI_DATATYPE_NULL && this->free_on_destruction) {
 			MPICHK(MPI_Type_free(&this->value));
 		}
 
 		this->value = value;
-		this->free_on_destruction = value != MPI_DATATYPE_NULL && free_on_destruction;
+		this->free_on_destruction = free_on_destruction;
 	}
 
 	~MPI_custom_type() noexcept(false) { reset(); }
