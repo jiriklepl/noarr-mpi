@@ -1,8 +1,13 @@
 CompileFlags:
-    Add: [-std=c++23, -Wall, -Wextra, -Wpedantic, -Wdeprecated]
+    Add: [
+        -std=c++23,
+        -Wall,
+        -Wextra,
+        -Wpedantic,
+        -Wdeprecated,
+    ]
 
-CompilationDatabase:
-    Path: build
+    CompilationDatabase: build
 
 Index:
     Background: Build
