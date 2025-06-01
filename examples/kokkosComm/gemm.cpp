@@ -142,6 +142,7 @@ std::chrono::duration<double> run_experiment(num_t alpha, num_t beta, auto &C, a
 	const auto start = std::chrono::high_resolution_clock::now();
 
 	std::vector<KokkosComm::Req<>> reqs;
+	reqs.reserve(rank == root ? (3 * size + 1) : 3);
 
 	if (rank == root) {
 		for (int r = 0; r < size; ++r) {
@@ -224,12 +225,12 @@ int run_environment(int argc, char *argv[]) {
 	const int i_tiles = (argc > 1) ? std::atoi(argv[1]) : 1;
 	const int j_tiles = size / i_tiles;
 
-	const std::size_t SI = NI / i_tiles;
-	const std::size_t SJ = NJ / j_tiles;
+	const int SI = NI / i_tiles;
+	const int SJ = NJ / j_tiles;
 
-	const auto tileC_data = std::make_unique<num_t[]>(SI * SJ);
-	const auto tileA_data = std::make_unique<num_t[]>(SI * NK);
-	const auto tileB_data = std::make_unique<num_t[]>(NK * SJ);
+	const auto tileC_data = std::make_unique<num_t[]>((std::size_t)(SI * SJ));
+	const auto tileA_data = std::make_unique<num_t[]>((std::size_t)(SI * NK));
+	const auto tileB_data = std::make_unique<num_t[]>((std::size_t)(NK * SJ));
 
 	const auto tileC = tuning.c_tile_layout(tileC_data.get(), SI, SJ);
 	const auto tileA = tuning.a_tile_layout(tileA_data.get(), SI, NK);
@@ -304,12 +305,7 @@ int run_environment(int argc, char *argv[]) {
 } // namespace
 
 int main(int argc, char *argv[]) {
-	int provided = 0;
-	MPI_Init_thread(&argc, &argv, MPI_THREAD_MULTIPLE, &provided);
-	if (provided < MPI_THREAD_MULTIPLE) {
-		std::cerr << "MPI does not support MPI_THREAD_MULTIPLE" << '\n';
-		MPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
-	}
+	MPI_Init(&argc, &argv);
 
 	int return_code = EXIT_FAILURE;
 	try {
