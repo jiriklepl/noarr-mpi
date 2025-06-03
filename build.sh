@@ -8,4 +8,6 @@ NUM_JOBS=${NUM_JOBS:-$(nproc)}
 TARGET=${1:-all}
 CONFIG=${2:-Release}
 
-cmake --build "${BUILD_DIR}" --parallel "${NUM_JOBS}" --target "${TARGET}" --config "${CONFIG}"
+shift 2
+
+cmake --build "${BUILD_DIR}" --parallel "${NUM_JOBS}" --target "${TARGET}" --config "${CONFIG}" "$@"

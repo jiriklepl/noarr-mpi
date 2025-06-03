@@ -1,0 +1,801 @@
+Running the following algorithm implementations
+build/examples/mpi/gemm-mpi-EXTRALARGE-FLOAT-C_TILE_I_MAJOR-A_TILE_K_MAJOR-B_TILE_J_MAJOR
+build/examples/boost/gemm-boost-MINI-FLOAT-C_TILE_I_MAJOR-A_TILE_K_MAJOR-B_TILE_J_MAJOR
+build/examples/kokkosComm/gemm-kokkosComm-LARGE-FLOAT-C_TILE_I_MAJOR-A_TILE_K_MAJOR-B_TILE_J_MAJOR
+build/examples/mpi/gemm-mpi-LARGE-FLOAT-C_TILE_J_MAJOR-A_TILE_K_MAJOR-B_TILE_K_MAJOR
+build/examples/boost/gemm-boost-LARGE-FLOAT-C_TILE_I_MAJOR-A_TILE_I_MAJOR-B_TILE_K_MAJOR
+build/examples/kokkosComm/gemm-kokkosComm-MEDIUM-FLOAT-C_TILE_I_MAJOR-A_TILE_I_MAJOR-B_TILE_K_MAJOR
+build/examples/boost/gemm-boost-SMALL-FLOAT-C_TILE_J_MAJOR-A_TILE_I_MAJOR-B_TILE_J_MAJOR
+build/examples/kokkosComm/gemm-kokkosComm-SMALL-FLOAT-C_TILE_I_MAJOR-A_TILE_I_MAJOR-B_TILE_J_MAJOR
+build/examples/mpi/gemm-mpi-SMALL-FLOAT-C_TILE_J_MAJOR-A_TILE_K_MAJOR-B_TILE_J_MAJOR
+build/examples/mpi/gemm-mpi-MEDIUM-FLOAT-C_TILE_I_MAJOR-A_TILE_I_MAJOR-B_TILE_K_MAJOR
+build/examples/mpi/gemm-mpi-SMALL-FLOAT-C_TILE_I_MAJOR-A_TILE_I_MAJOR-B_TILE_K_MAJOR
+build/examples/boost/gemm-boost-MINI-FLOAT-C_TILE_J_MAJOR-A_TILE_K_MAJOR-B_TILE_K_MAJOR
+build/examples/boostP2P/gemm-boostP2P-LARGE-FLOAT-C_TILE_I_MAJOR-A_TILE_I_MAJOR-B_TILE_K_MAJOR
+build/examples/boost/gemm-boost-EXTRALARGE-FLOAT-C_TILE_I_MAJOR-A_TILE_K_MAJOR-B_TILE_K_MAJOR
+build/examples/kokkosComm/gemm-kokkosComm-EXTRALARGE-FLOAT-C_TILE_J_MAJOR-A_TILE_K_MAJOR-B_TILE_K_MAJOR
+build/examples/mpi/gemm-mpi-MINI-FLOAT-C_TILE_I_MAJOR-A_TILE_K_MAJOR-B_TILE_K_MAJOR
+build/examples/boost/gemm-boost-MINI-FLOAT-C_TILE_J_MAJOR-A_TILE_I_MAJOR-B_TILE_J_MAJOR
+build/examples/boostP2P/gemm-boostP2P-LARGE-FLOAT-C_TILE_J_MAJOR-A_TILE_I_MAJOR-B_TILE_K_MAJOR
+build/examples/boostP2P/gemm-boostP2P-MEDIUM-FLOAT-C_TILE_J_MAJOR-A_TILE_I_MAJOR-B_TILE_J_MAJOR
+build/examples/mpi/gemm-mpi-MINI-FLOAT-C_TILE_I_MAJOR-A_TILE_K_MAJOR-B_TILE_J_MAJOR
+build/examples/boost/gemm-boost-SMALL-FLOAT-C_TILE_I_MAJOR-A_TILE_I_MAJOR-B_TILE_J_MAJOR
+build/examples/kokkosComm/gemm-kokkosComm-MEDIUM-FLOAT-C_TILE_I_MAJOR-A_TILE_K_MAJOR-B_TILE_K_MAJOR
+build/examples/boost/gemm-boost-MINI-FLOAT-C_TILE_I_MAJOR-A_TILE_I_MAJOR-B_TILE_K_MAJOR
+build/examples/noarr/gemm-noarr-EXTRALARGE-FLOAT-C_TILE_J_MAJOR-A_TILE_K_MAJOR-B_TILE_J_MAJOR
+build/examples/kokkosComm/gemm-kokkosComm-MINI-FLOAT-C_TILE_J_MAJOR-A_TILE_I_MAJOR-B_TILE_K_MAJOR
+build/examples/boost/gemm-boost-MEDIUM-FLOAT-C_TILE_I_MAJOR-A_TILE_I_MAJOR-B_TILE_K_MAJOR
+build/examples/boostP2P/gemm-boostP2P-MINI-FLOAT-C_TILE_J_MAJOR-A_TILE_I_MAJOR-B_TILE_K_MAJOR
+build/examples/noarr/gemm-noarr-EXTRALARGE-FLOAT-C_TILE_J_MAJOR-A_TILE_I_MAJOR-B_TILE_J_MAJOR
+build/examples/kokkosComm/gemm-kokkosComm-MINI-FLOAT-C_TILE_I_MAJOR-A_TILE_K_MAJOR-B_TILE_J_MAJOR
+build/examples/boost/gemm-boost-EXTRALARGE-FLOAT-C_TILE_J_MAJOR-A_TILE_I_MAJOR-B_TILE_K_MAJOR
+build/examples/boostP2P/gemm-boostP2P-EXTRALARGE-FLOAT-C_TILE_I_MAJOR-A_TILE_I_MAJOR-B_TILE_K_MAJOR
+build/examples/boost/gemm-boost-MEDIUM-FLOAT-C_TILE_I_MAJOR-A_TILE_K_MAJOR-B_TILE_K_MAJOR
+build/examples/noarr/gemm-noarr-LARGE-FLOAT-C_TILE_J_MAJOR-A_TILE_I_MAJOR-B_TILE_J_MAJOR
+build/examples/boost/gemm-boost-LARGE-FLOAT-C_TILE_J_MAJOR-A_TILE_K_MAJOR-B_TILE_J_MAJOR
+build/examples/boostP2P/gemm-boostP2P-SMALL-FLOAT-C_TILE_I_MAJOR-A_TILE_K_MAJOR-B_TILE_K_MAJOR
+build/examples/noarr/gemm-noarr-MINI-FLOAT-C_TILE_I_MAJOR-A_TILE_K_MAJOR-B_TILE_J_MAJOR
+build/examples/boostP2P/gemm-boostP2P-SMALL-FLOAT-C_TILE_I_MAJOR-A_TILE_I_MAJOR-B_TILE_K_MAJOR
+build/examples/mpi/gemm-mpi-MINI-FLOAT-C_TILE_J_MAJOR-A_TILE_K_MAJOR-B_TILE_J_MAJOR
+build/examples/boostP2P/gemm-boostP2P-MEDIUM-FLOAT-C_TILE_J_MAJOR-A_TILE_K_MAJOR-B_TILE_K_MAJOR
+build/examples/boost/gemm-boost-MINI-FLOAT-C_TILE_J_MAJOR-A_TILE_K_MAJOR-B_TILE_J_MAJOR
+build/examples/kokkosComm/gemm-kokkosComm-LARGE-FLOAT-C_TILE_I_MAJOR-A_TILE_K_MAJOR-B_TILE_K_MAJOR
+build/examples/noarr/gemm-noarr-MEDIUM-FLOAT-C_TILE_J_MAJOR-A_TILE_K_MAJOR-B_TILE_K_MAJOR
+build/examples/kokkosComm/gemm-kokkosComm-SMALL-FLOAT-C_TILE_I_MAJOR-A_TILE_I_MAJOR-B_TILE_K_MAJOR
+build/examples/mpi/gemm-mpi-EXTRALARGE-FLOAT-C_TILE_I_MAJOR-A_TILE_I_MAJOR-B_TILE_J_MAJOR
+build/examples/mpi/gemm-mpi-SMALL-FLOAT-C_TILE_I_MAJOR-A_TILE_I_MAJOR-B_TILE_J_MAJOR
+build/examples/kokkosComm/gemm-kokkosComm-SMALL-FLOAT-C_TILE_I_MAJOR-A_TILE_K_MAJOR-B_TILE_K_MAJOR
+build/examples/boostP2P/gemm-boostP2P-MINI-FLOAT-C_TILE_I_MAJOR-A_TILE_K_MAJOR-B_TILE_K_MAJOR
+build/examples/kokkosComm/gemm-kokkosComm-LARGE-FLOAT-C_TILE_I_MAJOR-A_TILE_I_MAJOR-B_TILE_J_MAJOR
+build/examples/noarr/gemm-noarr-MINI-FLOAT-C_TILE_I_MAJOR-A_TILE_I_MAJOR-B_TILE_J_MAJOR
+build/examples/boost/gemm-boost-EXTRALARGE-FLOAT-C_TILE_J_MAJOR-A_TILE_K_MAJOR-B_TILE_J_MAJOR
+build/examples/mpi/gemm-mpi-MINI-FLOAT-C_TILE_J_MAJOR-A_TILE_K_MAJOR-B_TILE_K_MAJOR
+build/examples/boost/gemm-boost-EXTRALARGE-FLOAT-C_TILE_I_MAJOR-A_TILE_I_MAJOR-B_TILE_K_MAJOR
+build/examples/kokkosComm/gemm-kokkosComm-EXTRALARGE-FLOAT-C_TILE_J_MAJOR-A_TILE_I_MAJOR-B_TILE_K_MAJOR
+build/examples/mpi/gemm-mpi-LARGE-FLOAT-C_TILE_J_MAJOR-A_TILE_I_MAJOR-B_TILE_K_MAJOR
+build/examples/boost/gemm-boost-SMALL-FLOAT-C_TILE_J_MAJOR-A_TILE_K_MAJOR-B_TILE_J_MAJOR
+build/examples/noarr/gemm-noarr-SMALL-FLOAT-C_TILE_I_MAJOR-A_TILE_K_MAJOR-B_TILE_K_MAJOR
+build/examples/boost/gemm-boost-MEDIUM-FLOAT-C_TILE_J_MAJOR-A_TILE_I_MAJOR-B_TILE_K_MAJOR
+build/examples/kokkosComm/gemm-kokkosComm-MINI-FLOAT-C_TILE_J_MAJOR-A_TILE_I_MAJOR-B_TILE_J_MAJOR
+build/examples/kokkosComm/gemm-kokkosComm-SMALL-FLOAT-C_TILE_J_MAJOR-A_TILE_K_MAJOR-B_TILE_K_MAJOR
+build/examples/boostP2P/gemm-boostP2P-SMALL-FLOAT-C_TILE_J_MAJOR-A_TILE_K_MAJOR-B_TILE_J_MAJOR
+build/examples/mpi/gemm-mpi-MEDIUM-FLOAT-C_TILE_I_MAJOR-A_TILE_K_MAJOR-B_TILE_K_MAJOR
+build/examples/noarr/gemm-noarr-MEDIUM-FLOAT-C_TILE_J_MAJOR-A_TILE_K_MAJOR-B_TILE_J_MAJOR
+build/examples/boost/gemm-boost-SMALL-FLOAT-C_TILE_I_MAJOR-A_TILE_K_MAJOR-B_TILE_J_MAJOR
+build/examples/noarr/gemm-noarr-MEDIUM-FLOAT-C_TILE_J_MAJOR-A_TILE_I_MAJOR-B_TILE_J_MAJOR
+build/examples/mpi/gemm-mpi-LARGE-FLOAT-C_TILE_I_MAJOR-A_TILE_K_MAJOR-B_TILE_K_MAJOR
+build/examples/boostP2P/gemm-boostP2P-EXTRALARGE-FLOAT-C_TILE_I_MAJOR-A_TILE_K_MAJOR-B_TILE_J_MAJOR
+build/examples/boostP2P/gemm-boostP2P-EXTRALARGE-FLOAT-C_TILE_J_MAJOR-A_TILE_K_MAJOR-B_TILE_J_MAJOR
+build/examples/noarr/gemm-noarr-MEDIUM-FLOAT-C_TILE_I_MAJOR-A_TILE_I_MAJOR-B_TILE_J_MAJOR
+build/examples/boost/gemm-boost-EXTRALARGE-FLOAT-C_TILE_I_MAJOR-A_TILE_I_MAJOR-B_TILE_J_MAJOR
+build/examples/noarr/gemm-noarr-MINI-FLOAT-C_TILE_J_MAJOR-A_TILE_K_MAJOR-B_TILE_K_MAJOR
+build/examples/mpi/gemm-mpi-MEDIUM-FLOAT-C_TILE_I_MAJOR-A_TILE_I_MAJOR-B_TILE_J_MAJOR
+build/examples/kokkosComm/gemm-kokkosComm-MINI-FLOAT-C_TILE_I_MAJOR-A_TILE_I_MAJOR-B_TILE_J_MAJOR
+build/examples/boost/gemm-boost-MEDIUM-FLOAT-C_TILE_I_MAJOR-A_TILE_K_MAJOR-B_TILE_J_MAJOR
+build/examples/boost/gemm-boost-LARGE-FLOAT-C_TILE_J_MAJOR-A_TILE_K_MAJOR-B_TILE_K_MAJOR
+build/examples/noarr/gemm-noarr-SMALL-FLOAT-C_TILE_J_MAJOR-A_TILE_K_MAJOR-B_TILE_J_MAJOR
+build/examples/kokkosComm/gemm-kokkosComm-SMALL-FLOAT-C_TILE_J_MAJOR-A_TILE_I_MAJOR-B_TILE_J_MAJOR
+build/examples/boostP2P/gemm-boostP2P-MINI-FLOAT-C_TILE_I_MAJOR-A_TILE_K_MAJOR-B_TILE_J_MAJOR
+build/examples/mpi/gemm-mpi-EXTRALARGE-FLOAT-C_TILE_J_MAJOR-A_TILE_I_MAJOR-B_TILE_J_MAJOR
+build/examples/kokkosComm/gemm-kokkosComm-EXTRALARGE-FLOAT-C_TILE_I_MAJOR-A_TILE_I_MAJOR-B_TILE_J_MAJOR
+build/examples/mpi/gemm-mpi-LARGE-FLOAT-C_TILE_I_MAJOR-A_TILE_I_MAJOR-B_TILE_K_MAJOR
+build/examples/kokkosComm/gemm-kokkosComm-LARGE-FLOAT-C_TILE_J_MAJOR-A_TILE_I_MAJOR-B_TILE_K_MAJOR
+build/examples/mpi/gemm-mpi-MEDIUM-FLOAT-C_TILE_J_MAJOR-A_TILE_K_MAJOR-B_TILE_J_MAJOR
+build/examples/boost/gemm-boost-MINI-FLOAT-C_TILE_I_MAJOR-A_TILE_I_MAJOR-B_TILE_J_MAJOR
+build/examples/boostP2P/gemm-boostP2P-MEDIUM-FLOAT-C_TILE_I_MAJOR-A_TILE_K_MAJOR-B_TILE_J_MAJOR
+build/examples/noarr/gemm-noarr-SMALL-FLOAT-C_TILE_J_MAJOR-A_TILE_I_MAJOR-B_TILE_K_MAJOR
+build/examples/noarr/gemm-noarr-MEDIUM-FLOAT-C_TILE_I_MAJOR-A_TILE_K_MAJOR-B_TILE_K_MAJOR
+build/examples/boostP2P/gemm-boostP2P-MEDIUM-FLOAT-C_TILE_I_MAJOR-A_TILE_I_MAJOR-B_TILE_J_MAJOR
+build/examples/noarr/gemm-noarr-LARGE-FLOAT-C_TILE_I_MAJOR-A_TILE_K_MAJOR-B_TILE_J_MAJOR
+build/examples/boost/gemm-boost-SMALL-FLOAT-C_TILE_I_MAJOR-A_TILE_K_MAJOR-B_TILE_K_MAJOR
+build/examples/kokkosComm/gemm-kokkosComm-EXTRALARGE-FLOAT-C_TILE_I_MAJOR-A_TILE_K_MAJOR-B_TILE_K_MAJOR
+build/examples/noarr/gemm-noarr-LARGE-FLOAT-C_TILE_I_MAJOR-A_TILE_I_MAJOR-B_TILE_K_MAJOR
+build/examples/mpi/gemm-mpi-MINI-FLOAT-C_TILE_J_MAJOR-A_TILE_I_MAJOR-B_TILE_J_MAJOR
+build/examples/boost/gemm-boost-LARGE-FLOAT-C_TILE_I_MAJOR-A_TILE_K_MAJOR-B_TILE_K_MAJOR
+build/examples/boostP2P/gemm-boostP2P-SMALL-FLOAT-C_TILE_I_MAJOR-A_TILE_I_MAJOR-B_TILE_J_MAJOR
+build/examples/mpi/gemm-mpi-MEDIUM-FLOAT-C_TILE_J_MAJOR-A_TILE_K_MAJOR-B_TILE_K_MAJOR
+build/examples/mpi/gemm-mpi-MINI-FLOAT-C_TILE_J_MAJOR-A_TILE_I_MAJOR-B_TILE_K_MAJOR
+build/examples/mpi/gemm-mpi-EXTRALARGE-FLOAT-C_TILE_I_MAJOR-A_TILE_K_MAJOR-B_TILE_K_MAJOR
+build/examples/boost/gemm-boost-LARGE-FLOAT-C_TILE_J_MAJOR-A_TILE_I_MAJOR-B_TILE_K_MAJOR
+build/examples/mpi/gemm-mpi-MINI-FLOAT-C_TILE_I_MAJOR-A_TILE_I_MAJOR-B_TILE_J_MAJOR
+build/examples/mpi/gemm-mpi-SMALL-FLOAT-C_TILE_J_MAJOR-A_TILE_K_MAJOR-B_TILE_K_MAJOR
+build/examples/boost/gemm-boost-EXTRALARGE-FLOAT-C_TILE_J_MAJOR-A_TILE_K_MAJOR-B_TILE_K_MAJOR
+build/examples/mpi/gemm-mpi-LARGE-FLOAT-C_TILE_J_MAJOR-A_TILE_I_MAJOR-B_TILE_J_MAJOR
+build/examples/kokkosComm/gemm-kokkosComm-SMALL-FLOAT-C_TILE_I_MAJOR-A_TILE_K_MAJOR-B_TILE_J_MAJOR
+build/examples/noarr/gemm-noarr-EXTRALARGE-FLOAT-C_TILE_I_MAJOR-A_TILE_I_MAJOR-B_TILE_K_MAJOR
+build/examples/boostP2P/gemm-boostP2P-SMALL-FLOAT-C_TILE_J_MAJOR-A_TILE_I_MAJOR-B_TILE_K_MAJOR
+build/examples/kokkosComm/gemm-kokkosComm-LARGE-FLOAT-C_TILE_J_MAJOR-A_TILE_K_MAJOR-B_TILE_K_MAJOR
+build/examples/noarr/gemm-noarr-LARGE-FLOAT-C_TILE_I_MAJOR-A_TILE_I_MAJOR-B_TILE_J_MAJOR
+build/examples/noarr/gemm-noarr-SMALL-FLOAT-C_TILE_I_MAJOR-A_TILE_I_MAJOR-B_TILE_K_MAJOR
+build/examples/boostP2P/gemm-boostP2P-LARGE-FLOAT-C_TILE_I_MAJOR-A_TILE_I_MAJOR-B_TILE_J_MAJOR
+build/examples/boostP2P/gemm-boostP2P-SMALL-FLOAT-C_TILE_J_MAJOR-A_TILE_K_MAJOR-B_TILE_K_MAJOR
+build/examples/boostP2P/gemm-boostP2P-LARGE-FLOAT-C_TILE_J_MAJOR-A_TILE_K_MAJOR-B_TILE_K_MAJOR
+build/examples/kokkosComm/gemm-kokkosComm-LARGE-FLOAT-C_TILE_J_MAJOR-A_TILE_K_MAJOR-B_TILE_J_MAJOR
+build/examples/boostP2P/gemm-boostP2P-MEDIUM-FLOAT-C_TILE_J_MAJOR-A_TILE_I_MAJOR-B_TILE_K_MAJOR
+build/examples/boostP2P/gemm-boostP2P-SMALL-FLOAT-C_TILE_I_MAJOR-A_TILE_K_MAJOR-B_TILE_J_MAJOR
+build/examples/boost/gemm-boost-MEDIUM-FLOAT-C_TILE_J_MAJOR-A_TILE_K_MAJOR-B_TILE_J_MAJOR
+build/examples/boost/gemm-boost-MEDIUM-FLOAT-C_TILE_J_MAJOR-A_TILE_K_MAJOR-B_TILE_K_MAJOR
+build/examples/kokkosComm/gemm-kokkosComm-MEDIUM-FLOAT-C_TILE_J_MAJOR-A_TILE_K_MAJOR-B_TILE_J_MAJOR
+build/examples/kokkosComm/gemm-kokkosComm-EXTRALARGE-FLOAT-C_TILE_I_MAJOR-A_TILE_I_MAJOR-B_TILE_K_MAJOR
+build/examples/boostP2P/gemm-boostP2P-EXTRALARGE-FLOAT-C_TILE_J_MAJOR-A_TILE_I_MAJOR-B_TILE_K_MAJOR
+build/examples/kokkosComm/gemm-kokkosComm-LARGE-FLOAT-C_TILE_J_MAJOR-A_TILE_I_MAJOR-B_TILE_J_MAJOR
+build/examples/noarr/gemm-noarr-EXTRALARGE-FLOAT-C_TILE_I_MAJOR-A_TILE_K_MAJOR-B_TILE_J_MAJOR
+build/examples/noarr/gemm-noarr-SMALL-FLOAT-C_TILE_I_MAJOR-A_TILE_K_MAJOR-B_TILE_J_MAJOR
+build/examples/kokkosComm/gemm-kokkosComm-MEDIUM-FLOAT-C_TILE_J_MAJOR-A_TILE_K_MAJOR-B_TILE_K_MAJOR
+build/examples/boost/gemm-boost-MEDIUM-FLOAT-C_TILE_I_MAJOR-A_TILE_I_MAJOR-B_TILE_J_MAJOR
+build/examples/kokkosComm/gemm-kokkosComm-EXTRALARGE-FLOAT-C_TILE_I_MAJOR-A_TILE_K_MAJOR-B_TILE_J_MAJOR
+build/examples/mpi/gemm-mpi-SMALL-FLOAT-C_TILE_J_MAJOR-A_TILE_I_MAJOR-B_TILE_K_MAJOR
+build/examples/kokkosComm/gemm-kokkosComm-MINI-FLOAT-C_TILE_I_MAJOR-A_TILE_I_MAJOR-B_TILE_K_MAJOR
+build/examples/noarr/gemm-noarr-MINI-FLOAT-C_TILE_I_MAJOR-A_TILE_K_MAJOR-B_TILE_K_MAJOR
+build/examples/noarr/gemm-noarr-MINI-FLOAT-C_TILE_J_MAJOR-A_TILE_K_MAJOR-B_TILE_J_MAJOR
+build/examples/kokkosComm/gemm-kokkosComm-EXTRALARGE-FLOAT-C_TILE_J_MAJOR-A_TILE_I_MAJOR-B_TILE_J_MAJOR
+build/examples/noarr/gemm-noarr-LARGE-FLOAT-C_TILE_I_MAJOR-A_TILE_K_MAJOR-B_TILE_K_MAJOR
+build/examples/mpi/gemm-mpi-MEDIUM-FLOAT-C_TILE_I_MAJOR-A_TILE_K_MAJOR-B_TILE_J_MAJOR
+build/examples/kokkosComm/gemm-kokkosComm-MINI-FLOAT-C_TILE_J_MAJOR-A_TILE_K_MAJOR-B_TILE_K_MAJOR
+build/examples/boostP2P/gemm-boostP2P-EXTRALARGE-FLOAT-C_TILE_I_MAJOR-A_TILE_K_MAJOR-B_TILE_K_MAJOR
+build/examples/boost/gemm-boost-MINI-FLOAT-C_TILE_I_MAJOR-A_TILE_K_MAJOR-B_TILE_K_MAJOR
+build/examples/kokkosComm/gemm-kokkosComm-EXTRALARGE-FLOAT-C_TILE_J_MAJOR-A_TILE_K_MAJOR-B_TILE_J_MAJOR
+build/examples/kokkosComm/gemm-kokkosComm-LARGE-FLOAT-C_TILE_I_MAJOR-A_TILE_I_MAJOR-B_TILE_K_MAJOR
+build/examples/mpi/gemm-mpi-EXTRALARGE-FLOAT-C_TILE_J_MAJOR-A_TILE_K_MAJOR-B_TILE_K_MAJOR
+build/examples/boostP2P/gemm-boostP2P-LARGE-FLOAT-C_TILE_J_MAJOR-A_TILE_K_MAJOR-B_TILE_J_MAJOR
+build/examples/boost/gemm-boost-SMALL-FLOAT-C_TILE_I_MAJOR-A_TILE_I_MAJOR-B_TILE_K_MAJOR
+build/examples/noarr/gemm-noarr-LARGE-FLOAT-C_TILE_J_MAJOR-A_TILE_I_MAJOR-B_TILE_K_MAJOR
+build/examples/kokkosComm/gemm-kokkosComm-MINI-FLOAT-C_TILE_J_MAJOR-A_TILE_K_MAJOR-B_TILE_J_MAJOR
+build/examples/boostP2P/gemm-boostP2P-LARGE-FLOAT-C_TILE_I_MAJOR-A_TILE_K_MAJOR-B_TILE_J_MAJOR
+build/examples/noarr/gemm-noarr-MINI-FLOAT-C_TILE_J_MAJOR-A_TILE_I_MAJOR-B_TILE_K_MAJOR
+build/examples/boost/gemm-boost-SMALL-FLOAT-C_TILE_J_MAJOR-A_TILE_K_MAJOR-B_TILE_K_MAJOR
+build/examples/kokkosComm/gemm-kokkosComm-MEDIUM-FLOAT-C_TILE_J_MAJOR-A_TILE_I_MAJOR-B_TILE_J_MAJOR
+build/examples/mpi/gemm-mpi-EXTRALARGE-FLOAT-C_TILE_J_MAJOR-A_TILE_K_MAJOR-B_TILE_J_MAJOR
+build/examples/mpi/gemm-mpi-MINI-FLOAT-C_TILE_I_MAJOR-A_TILE_I_MAJOR-B_TILE_K_MAJOR
+build/examples/boostP2P/gemm-boostP2P-MEDIUM-FLOAT-C_TILE_J_MAJOR-A_TILE_K_MAJOR-B_TILE_J_MAJOR
+build/examples/noarr/gemm-noarr-MEDIUM-FLOAT-C_TILE_J_MAJOR-A_TILE_I_MAJOR-B_TILE_K_MAJOR
+build/examples/kokkosComm/gemm-kokkosComm-MEDIUM-FLOAT-C_TILE_I_MAJOR-A_TILE_I_MAJOR-B_TILE_J_MAJOR
+build/examples/noarr/gemm-noarr-EXTRALARGE-FLOAT-C_TILE_J_MAJOR-A_TILE_K_MAJOR-B_TILE_K_MAJOR
+build/examples/noarr/gemm-noarr-MEDIUM-FLOAT-C_TILE_I_MAJOR-A_TILE_I_MAJOR-B_TILE_K_MAJOR
+build/examples/boostP2P/gemm-boostP2P-LARGE-FLOAT-C_TILE_J_MAJOR-A_TILE_I_MAJOR-B_TILE_J_MAJOR
+build/examples/boostP2P/gemm-boostP2P-MINI-FLOAT-C_TILE_J_MAJOR-A_TILE_K_MAJOR-B_TILE_J_MAJOR
+build/examples/mpi/gemm-mpi-SMALL-FLOAT-C_TILE_I_MAJOR-A_TILE_K_MAJOR-B_TILE_K_MAJOR
+build/examples/boost/gemm-boost-SMALL-FLOAT-C_TILE_J_MAJOR-A_TILE_I_MAJOR-B_TILE_K_MAJOR
+build/examples/boostP2P/gemm-boostP2P-MINI-FLOAT-C_TILE_I_MAJOR-A_TILE_I_MAJOR-B_TILE_K_MAJOR
+build/examples/kokkosComm/gemm-kokkosComm-SMALL-FLOAT-C_TILE_J_MAJOR-A_TILE_I_MAJOR-B_TILE_K_MAJOR
+build/examples/noarr/gemm-noarr-LARGE-FLOAT-C_TILE_J_MAJOR-A_TILE_K_MAJOR-B_TILE_J_MAJOR
+build/examples/noarr/gemm-noarr-EXTRALARGE-FLOAT-C_TILE_J_MAJOR-A_TILE_I_MAJOR-B_TILE_K_MAJOR
+build/examples/mpi/gemm-mpi-EXTRALARGE-FLOAT-C_TILE_I_MAJOR-A_TILE_I_MAJOR-B_TILE_K_MAJOR
+build/examples/boost/gemm-boost-EXTRALARGE-FLOAT-C_TILE_J_MAJOR-A_TILE_I_MAJOR-B_TILE_J_MAJOR
+build/examples/boost/gemm-boost-MINI-FLOAT-C_TILE_J_MAJOR-A_TILE_I_MAJOR-B_TILE_K_MAJOR
+build/examples/noarr/gemm-noarr-MINI-FLOAT-C_TILE_J_MAJOR-A_TILE_I_MAJOR-B_TILE_J_MAJOR
+build/examples/noarr/gemm-noarr-MINI-FLOAT-C_TILE_I_MAJOR-A_TILE_I_MAJOR-B_TILE_K_MAJOR
+build/examples/mpi/gemm-mpi-LARGE-FLOAT-C_TILE_I_MAJOR-A_TILE_I_MAJOR-B_TILE_J_MAJOR
+build/examples/kokkosComm/gemm-kokkosComm-MEDIUM-FLOAT-C_TILE_I_MAJOR-A_TILE_K_MAJOR-B_TILE_J_MAJOR
+build/examples/boostP2P/gemm-boostP2P-LARGE-FLOAT-C_TILE_I_MAJOR-A_TILE_K_MAJOR-B_TILE_K_MAJOR
+build/examples/boostP2P/gemm-boostP2P-EXTRALARGE-FLOAT-C_TILE_J_MAJOR-A_TILE_I_MAJOR-B_TILE_J_MAJOR
+build/examples/boostP2P/gemm-boostP2P-MINI-FLOAT-C_TILE_J_MAJOR-A_TILE_I_MAJOR-B_TILE_J_MAJOR
+build/examples/boostP2P/gemm-boostP2P-MEDIUM-FLOAT-C_TILE_I_MAJOR-A_TILE_I_MAJOR-B_TILE_K_MAJOR
+build/examples/kokkosComm/gemm-kokkosComm-MEDIUM-FLOAT-C_TILE_J_MAJOR-A_TILE_I_MAJOR-B_TILE_K_MAJOR
+build/examples/boost/gemm-boost-LARGE-FLOAT-C_TILE_I_MAJOR-A_TILE_K_MAJOR-B_TILE_J_MAJOR
+build/examples/boost/gemm-boost-EXTRALARGE-FLOAT-C_TILE_I_MAJOR-A_TILE_K_MAJOR-B_TILE_J_MAJOR
+build/examples/boostP2P/gemm-boostP2P-SMALL-FLOAT-C_TILE_J_MAJOR-A_TILE_I_MAJOR-B_TILE_J_MAJOR
+build/examples/boostP2P/gemm-boostP2P-MINI-FLOAT-C_TILE_J_MAJOR-A_TILE_K_MAJOR-B_TILE_K_MAJOR
+build/examples/mpi/gemm-mpi-EXTRALARGE-FLOAT-C_TILE_J_MAJOR-A_TILE_I_MAJOR-B_TILE_K_MAJOR
+build/examples/noarr/gemm-noarr-SMALL-FLOAT-C_TILE_J_MAJOR-A_TILE_I_MAJOR-B_TILE_J_MAJOR
+build/examples/mpi/gemm-mpi-LARGE-FLOAT-C_TILE_J_MAJOR-A_TILE_K_MAJOR-B_TILE_J_MAJOR
+build/examples/noarr/gemm-noarr-EXTRALARGE-FLOAT-C_TILE_I_MAJOR-A_TILE_I_MAJOR-B_TILE_J_MAJOR
+build/examples/boost/gemm-boost-LARGE-FLOAT-C_TILE_I_MAJOR-A_TILE_I_MAJOR-B_TILE_J_MAJOR
+build/examples/mpi/gemm-mpi-LARGE-FLOAT-C_TILE_I_MAJOR-A_TILE_K_MAJOR-B_TILE_J_MAJOR
+build/examples/noarr/gemm-noarr-SMALL-FLOAT-C_TILE_I_MAJOR-A_TILE_I_MAJOR-B_TILE_J_MAJOR
+build/examples/boost/gemm-boost-LARGE-FLOAT-C_TILE_J_MAJOR-A_TILE_I_MAJOR-B_TILE_J_MAJOR
+build/examples/mpi/gemm-mpi-SMALL-FLOAT-C_TILE_I_MAJOR-A_TILE_K_MAJOR-B_TILE_J_MAJOR
+build/examples/kokkosComm/gemm-kokkosComm-MINI-FLOAT-C_TILE_I_MAJOR-A_TILE_K_MAJOR-B_TILE_K_MAJOR
+build/examples/noarr/gemm-noarr-SMALL-FLOAT-C_TILE_J_MAJOR-A_TILE_K_MAJOR-B_TILE_K_MAJOR
+build/examples/noarr/gemm-noarr-MEDIUM-FLOAT-C_TILE_I_MAJOR-A_TILE_K_MAJOR-B_TILE_J_MAJOR
+build/examples/boostP2P/gemm-boostP2P-EXTRALARGE-FLOAT-C_TILE_J_MAJOR-A_TILE_K_MAJOR-B_TILE_K_MAJOR
+build/examples/mpi/gemm-mpi-SMALL-FLOAT-C_TILE_J_MAJOR-A_TILE_I_MAJOR-B_TILE_J_MAJOR
+build/examples/kokkosComm/gemm-kokkosComm-SMALL-FLOAT-C_TILE_J_MAJOR-A_TILE_K_MAJOR-B_TILE_J_MAJOR
+build/examples/noarr/gemm-noarr-EXTRALARGE-FLOAT-C_TILE_I_MAJOR-A_TILE_K_MAJOR-B_TILE_K_MAJOR
+build/examples/boostP2P/gemm-boostP2P-MEDIUM-FLOAT-C_TILE_I_MAJOR-A_TILE_K_MAJOR-B_TILE_K_MAJOR
+build/examples/noarr/gemm-noarr-LARGE-FLOAT-C_TILE_J_MAJOR-A_TILE_K_MAJOR-B_TILE_K_MAJOR
+build/examples/mpi/gemm-mpi-MEDIUM-FLOAT-C_TILE_J_MAJOR-A_TILE_I_MAJOR-B_TILE_J_MAJOR
+build/examples/boostP2P/gemm-boostP2P-MINI-FLOAT-C_TILE_I_MAJOR-A_TILE_I_MAJOR-B_TILE_J_MAJOR
+build/examples/boost/gemm-boost-MEDIUM-FLOAT-C_TILE_J_MAJOR-A_TILE_I_MAJOR-B_TILE_J_MAJOR
+build/examples/mpi/gemm-mpi-MEDIUM-FLOAT-C_TILE_J_MAJOR-A_TILE_I_MAJOR-B_TILE_K_MAJOR
+build/examples/boostP2P/gemm-boostP2P-EXTRALARGE-FLOAT-C_TILE_I_MAJOR-A_TILE_I_MAJOR-B_TILE_J_MAJOR
+srun: job 116929 queued and waiting for resources
+srun: job 116929 has been allocated resources
+Running with 8 processes
+srun: job 116930 queued and waiting for resources
+srun: job 116930 has been allocated resources
+Running with 8 processes
+srun: job 116931 queued and waiting for resources
+srun: job 116931 has been allocated resources
+Running with 8 processes
+srun: job 116932 queued and waiting for resources
+srun: job 116932 has been allocated resources
+Running with 8 processes
+srun: job 116933 queued and waiting for resources
+srun: job 116933 has been allocated resources
+Running with 8 processes
+srun: job 116934 queued and waiting for resources
+srun: job 116934 has been allocated resources
+Running with 8 processes
+srun: job 116935 queued and waiting for resources
+srun: job 116935 has been allocated resources
+Running with 8 processes
+srun: job 116936 queued and waiting for resources
+srun: job 116936 has been allocated resources
+Running with 8 processes
+srun: job 116937 queued and waiting for resources
+srun: job 116937 has been allocated resources
+Running with 8 processes
+srun: job 116938 queued and waiting for resources
+srun: job 116938 has been allocated resources
+Running with 8 processes
+srun: job 116939 queued and waiting for resources
+srun: job 116939 has been allocated resources
+Running with 8 processes
+srun: job 116940 queued and waiting for resources
+srun: job 116940 has been allocated resources
+Running with 8 processes
+srun: job 116941 queued and waiting for resources
+srun: job 116941 has been allocated resources
+Running with 8 processes
+srun: job 116942 queued and waiting for resources
+srun: job 116942 has been allocated resources
+Running with 8 processes
+srun: job 116943 queued and waiting for resources
+srun: job 116943 has been allocated resources
+Running with 8 processes
+srun: job 116944 queued and waiting for resources
+srun: job 116944 has been allocated resources
+Running with 8 processes
+srun: job 116945 queued and waiting for resources
+srun: job 116945 has been allocated resources
+Running with 8 processes
+srun: job 116946 queued and waiting for resources
+srun: job 116946 has been allocated resources
+Running with 8 processes
+srun: job 116947 queued and waiting for resources
+srun: job 116947 has been allocated resources
+Running with 8 processes
+srun: job 116948 queued and waiting for resources
+srun: job 116948 has been allocated resources
+Running with 8 processes
+srun: job 116949 queued and waiting for resources
+srun: job 116949 has been allocated resources
+Running with 8 processes
+srun: job 116950 queued and waiting for resources
+srun: job 116950 has been allocated resources
+Running with 8 processes
+srun: job 116951 queued and waiting for resources
+srun: job 116951 has been allocated resources
+Running with 8 processes
+srun: job 116952 queued and waiting for resources
+srun: job 116952 has been allocated resources
+Running with 8 processes
+srun: job 116953 queued and waiting for resources
+srun: job 116953 has been allocated resources
+Running with 8 processes
+srun: job 116954 queued and waiting for resources
+srun: job 116954 has been allocated resources
+Running with 8 processes
+srun: job 116955 queued and waiting for resources
+srun: job 116955 has been allocated resources
+Running with 8 processes
+srun: job 116956 queued and waiting for resources
+srun: job 116956 has been allocated resources
+Running with 8 processes
+srun: job 116957 queued and waiting for resources
+srun: job 116957 has been allocated resources
+Running with 8 processes
+srun: job 116958 queued and waiting for resources
+srun: job 116958 has been allocated resources
+Running with 8 processes
+srun: job 116959 queued and waiting for resources
+srun: job 116959 has been allocated resources
+Running with 8 processes
+srun: job 116960 queued and waiting for resources
+srun: job 116960 has been allocated resources
+Running with 8 processes
+srun: job 116961 queued and waiting for resources
+srun: job 116961 has been allocated resources
+Running with 8 processes
+srun: job 116962 queued and waiting for resources
+srun: job 116962 has been allocated resources
+Running with 8 processes
+srun: job 116963 queued and waiting for resources
+srun: job 116963 has been allocated resources
+Running with 8 processes
+srun: job 116964 queued and waiting for resources
+srun: job 116964 has been allocated resources
+Running with 8 processes
+srun: job 116965 queued and waiting for resources
+srun: job 116965 has been allocated resources
+Running with 8 processes
+srun: job 116966 queued and waiting for resources
+srun: job 116966 has been allocated resources
+Running with 8 processes
+srun: job 116967 queued and waiting for resources
+srun: job 116967 has been allocated resources
+Running with 8 processes
+srun: job 116968 queued and waiting for resources
+srun: job 116968 has been allocated resources
+Running with 8 processes
+srun: job 116969 queued and waiting for resources
+srun: job 116969 has been allocated resources
+Running with 8 processes
+srun: job 116970 queued and waiting for resources
+srun: job 116970 has been allocated resources
+Running with 8 processes
+srun: job 116971 queued and waiting for resources
+srun: job 116971 has been allocated resources
+Running with 8 processes
+srun: job 116972 queued and waiting for resources
+srun: job 116972 has been allocated resources
+Running with 8 processes
+srun: job 116973 queued and waiting for resources
+srun: job 116973 has been allocated resources
+Running with 8 processes
+srun: job 116974 queued and waiting for resources
+srun: job 116974 has been allocated resources
+Running with 8 processes
+srun: job 116975 queued and waiting for resources
+srun: job 116975 has been allocated resources
+Running with 8 processes
+srun: job 116976 queued and waiting for resources
+srun: job 116976 has been allocated resources
+Running with 8 processes
+srun: job 116977 queued and waiting for resources
+srun: job 116977 has been allocated resources
+Running with 8 processes
+srun: job 116978 queued and waiting for resources
+srun: job 116978 has been allocated resources
+Running with 8 processes
+srun: job 116979 queued and waiting for resources
+srun: job 116979 has been allocated resources
+Running with 8 processes
+srun: job 116980 queued and waiting for resources
+srun: job 116980 has been allocated resources
+Running with 8 processes
+srun: job 116981 queued and waiting for resources
+srun: job 116981 has been allocated resources
+Running with 8 processes
+srun: job 116982 queued and waiting for resources
+srun: job 116982 has been allocated resources
+Running with 8 processes
+srun: job 116983 queued and waiting for resources
+srun: job 116983 has been allocated resources
+Running with 8 processes
+srun: job 116984 queued and waiting for resources
+srun: job 116984 has been allocated resources
+Running with 8 processes
+srun: job 116985 queued and waiting for resources
+srun: job 116985 has been allocated resources
+Running with 8 processes
+srun: job 116986 queued and waiting for resources
+srun: job 116986 has been allocated resources
+Running with 8 processes
+srun: job 116987 queued and waiting for resources
+srun: job 116987 has been allocated resources
+Running with 8 processes
+srun: job 116988 queued and waiting for resources
+srun: job 116988 has been allocated resources
+Running with 8 processes
+srun: job 116989 queued and waiting for resources
+srun: job 116989 has been allocated resources
+Running with 8 processes
+srun: job 116990 queued and waiting for resources
+srun: job 116990 has been allocated resources
+Running with 8 processes
+srun: job 116991 queued and waiting for resources
+srun: job 116991 has been allocated resources
+Running with 8 processes
+srun: job 116992 queued and waiting for resources
+srun: job 116992 has been allocated resources
+Running with 8 processes
+srun: job 116993 queued and waiting for resources
+srun: job 116993 has been allocated resources
+Running with 8 processes
+srun: job 116994 queued and waiting for resources
+srun: job 116994 has been allocated resources
+Running with 8 processes
+srun: job 116995 queued and waiting for resources
+srun: job 116995 has been allocated resources
+Running with 8 processes
+srun: job 116996 queued and waiting for resources
+srun: job 116996 has been allocated resources
+Running with 8 processes
+srun: job 116997 queued and waiting for resources
+srun: job 116997 has been allocated resources
+Running with 8 processes
+srun: job 116998 queued and waiting for resources
+srun: job 116998 has been allocated resources
+Running with 8 processes
+srun: job 116999 queued and waiting for resources
+srun: job 116999 has been allocated resources
+Running with 8 processes
+srun: job 117000 queued and waiting for resources
+srun: job 117000 has been allocated resources
+Running with 8 processes
+srun: job 117001 queued and waiting for resources
+srun: job 117001 has been allocated resources
+Running with 8 processes
+srun: job 117002 queued and waiting for resources
+srun: job 117002 has been allocated resources
+Running with 8 processes
+srun: job 117003 queued and waiting for resources
+srun: job 117003 has been allocated resources
+Running with 8 processes
+srun: job 117004 queued and waiting for resources
+srun: job 117004 has been allocated resources
+Running with 8 processes
+srun: job 117005 queued and waiting for resources
+srun: job 117005 has been allocated resources
+Running with 8 processes
+srun: job 117006 queued and waiting for resources
+srun: job 117006 has been allocated resources
+Running with 8 processes
+srun: job 117007 queued and waiting for resources
+srun: job 117007 has been allocated resources
+Running with 8 processes
+srun: job 117008 queued and waiting for resources
+srun: job 117008 has been allocated resources
+Running with 8 processes
+srun: job 117009 queued and waiting for resources
+srun: job 117009 has been allocated resources
+Running with 8 processes
+srun: job 117010 queued and waiting for resources
+srun: job 117010 has been allocated resources
+Running with 8 processes
+srun: job 117011 queued and waiting for resources
+srun: job 117011 has been allocated resources
+Running with 8 processes
+srun: job 117012 queued and waiting for resources
+srun: job 117012 has been allocated resources
+Running with 8 processes
+srun: job 117013 queued and waiting for resources
+srun: job 117013 has been allocated resources
+Running with 8 processes
+srun: job 117014 queued and waiting for resources
+srun: job 117014 has been allocated resources
+Running with 8 processes
+srun: job 117015 queued and waiting for resources
+srun: job 117015 has been allocated resources
+Running with 8 processes
+srun: job 117016 queued and waiting for resources
+srun: job 117016 has been allocated resources
+Running with 8 processes
+srun: job 117017 queued and waiting for resources
+srun: job 117017 has been allocated resources
+Running with 8 processes
+srun: job 117018 queued and waiting for resources
+srun: job 117018 has been allocated resources
+Running with 8 processes
+srun: job 117019 queued and waiting for resources
+srun: job 117019 has been allocated resources
+Running with 8 processes
+srun: job 117020 queued and waiting for resources
+srun: job 117020 has been allocated resources
+Running with 8 processes
+srun: job 117021 queued and waiting for resources
+srun: job 117021 has been allocated resources
+Running with 8 processes
+srun: job 117022 queued and waiting for resources
+srun: job 117022 has been allocated resources
+Running with 8 processes
+srun: job 117023 queued and waiting for resources
+srun: job 117023 has been allocated resources
+Running with 8 processes
+srun: job 117024 queued and waiting for resources
+srun: job 117024 has been allocated resources
+Running with 8 processes
+srun: job 117025 queued and waiting for resources
+srun: job 117025 has been allocated resources
+Running with 8 processes
+srun: job 117026 queued and waiting for resources
+srun: job 117026 has been allocated resources
+Running with 8 processes
+srun: job 117027 queued and waiting for resources
+srun: job 117027 has been allocated resources
+Running with 8 processes
+srun: job 117028 queued and waiting for resources
+srun: job 117028 has been allocated resources
+Running with 8 processes
+srun: job 117029 queued and waiting for resources
+srun: job 117029 has been allocated resources
+Running with 8 processes
+srun: job 117030 queued and waiting for resources
+srun: job 117030 has been allocated resources
+Running with 8 processes
+srun: job 117031 queued and waiting for resources
+srun: job 117031 has been allocated resources
+Running with 8 processes
+srun: job 117032 queued and waiting for resources
+srun: job 117032 has been allocated resources
+Running with 8 processes
+srun: job 117033 queued and waiting for resources
+srun: job 117033 has been allocated resources
+Running with 8 processes
+srun: job 117034 queued and waiting for resources
+srun: job 117034 has been allocated resources
+Running with 8 processes
+srun: job 117035 queued and waiting for resources
+srun: job 117035 has been allocated resources
+Running with 8 processes
+srun: job 117036 queued and waiting for resources
+srun: job 117036 has been allocated resources
+Running with 8 processes
+srun: job 117037 queued and waiting for resources
+srun: job 117037 has been allocated resources
+Running with 8 processes
+srun: job 117038 queued and waiting for resources
+srun: job 117038 has been allocated resources
+Running with 8 processes
+srun: job 117039 queued and waiting for resources
+srun: job 117039 has been allocated resources
+Running with 8 processes
+srun: job 117040 queued and waiting for resources
+srun: job 117040 has been allocated resources
+Running with 8 processes
+srun: job 117041 queued and waiting for resources
+srun: job 117041 has been allocated resources
+Running with 8 processes
+srun: job 117042 queued and waiting for resources
+srun: job 117042 has been allocated resources
+Running with 8 processes
+srun: job 117043 queued and waiting for resources
+srun: job 117043 has been allocated resources
+Running with 8 processes
+srun: job 117044 queued and waiting for resources
+srun: job 117044 has been allocated resources
+Running with 8 processes
+srun: job 117045 queued and waiting for resources
+srun: job 117045 has been allocated resources
+Running with 8 processes
+srun: job 117046 queued and waiting for resources
+srun: job 117046 has been allocated resources
+Running with 8 processes
+srun: job 117047 queued and waiting for resources
+srun: job 117047 has been allocated resources
+Running with 8 processes
+srun: job 117048 queued and waiting for resources
+srun: job 117048 has been allocated resources
+Running with 8 processes
+srun: job 117049 queued and waiting for resources
+srun: job 117049 has been allocated resources
+Running with 8 processes
+srun: job 117050 queued and waiting for resources
+srun: job 117050 has been allocated resources
+Running with 8 processes
+srun: job 117051 queued and waiting for resources
+srun: job 117051 has been allocated resources
+Running with 8 processes
+srun: job 117052 queued and waiting for resources
+srun: job 117052 has been allocated resources
+Running with 8 processes
+srun: job 117053 queued and waiting for resources
+srun: job 117053 has been allocated resources
+Running with 8 processes
+srun: job 117054 queued and waiting for resources
+srun: job 117054 has been allocated resources
+Running with 8 processes
+srun: job 117055 queued and waiting for resources
+srun: job 117055 has been allocated resources
+Running with 8 processes
+srun: job 117056 queued and waiting for resources
+srun: job 117056 has been allocated resources
+Running with 8 processes
+srun: job 117057 queued and waiting for resources
+srun: job 117057 has been allocated resources
+Running with 8 processes
+srun: job 117058 queued and waiting for resources
+srun: job 117058 has been allocated resources
+Running with 8 processes
+srun: job 117059 queued and waiting for resources
+srun: job 117059 has been allocated resources
+Running with 8 processes
+srun: job 117060 queued and waiting for resources
+srun: job 117060 has been allocated resources
+Running with 8 processes
+srun: job 117061 queued and waiting for resources
+srun: job 117061 has been allocated resources
+Running with 8 processes
+srun: job 117062 queued and waiting for resources
+srun: job 117062 has been allocated resources
+Running with 8 processes
+srun: job 117063 queued and waiting for resources
+srun: job 117063 has been allocated resources
+Running with 8 processes
+srun: job 117064 queued and waiting for resources
+srun: job 117064 has been allocated resources
+Running with 8 processes
+srun: job 117065 queued and waiting for resources
+srun: job 117065 has been allocated resources
+Running with 8 processes
+srun: job 117066 queued and waiting for resources
+srun: job 117066 has been allocated resources
+Running with 8 processes
+srun: job 117067 queued and waiting for resources
+srun: job 117067 has been allocated resources
+Running with 8 processes
+srun: job 117068 queued and waiting for resources
+srun: job 117068 has been allocated resources
+Running with 8 processes
+srun: job 117069 queued and waiting for resources
+srun: job 117069 has been allocated resources
+Running with 8 processes
+srun: job 117070 queued and waiting for resources
+srun: job 117070 has been allocated resources
+Running with 8 processes
+srun: job 117071 queued and waiting for resources
+srun: job 117071 has been allocated resources
+Running with 8 processes
+srun: job 117072 queued and waiting for resources
+srun: job 117072 has been allocated resources
+Running with 8 processes
+srun: job 117073 queued and waiting for resources
+srun: job 117073 has been allocated resources
+Running with 8 processes
+srun: job 117074 queued and waiting for resources
+srun: job 117074 has been allocated resources
+Running with 8 processes
+srun: job 117075 queued and waiting for resources
+srun: job 117075 has been allocated resources
+Running with 8 processes
+srun: job 117076 queued and waiting for resources
+srun: job 117076 has been allocated resources
+Running with 8 processes
+srun: job 117077 queued and waiting for resources
+srun: job 117077 has been allocated resources
+Running with 8 processes
+srun: job 117078 queued and waiting for resources
+srun: job 117078 has been allocated resources
+Running with 8 processes
+srun: job 117079 queued and waiting for resources
+srun: job 117079 has been allocated resources
+Running with 8 processes
+srun: job 117080 queued and waiting for resources
+srun: job 117080 has been allocated resources
+Running with 8 processes
+srun: job 117081 queued and waiting for resources
+srun: job 117081 has been allocated resources
+Running with 8 processes
+srun: job 117082 queued and waiting for resources
+srun: job 117082 has been allocated resources
+Running with 8 processes
+srun: job 117083 queued and waiting for resources
+srun: job 117083 has been allocated resources
+Running with 8 processes
+srun: job 117084 queued and waiting for resources
+srun: job 117084 has been allocated resources
+Running with 8 processes
+srun: job 117085 queued and waiting for resources
+srun: job 117085 has been allocated resources
+Running with 8 processes
+srun: job 117086 queued and waiting for resources
+srun: job 117086 has been allocated resources
+Running with 8 processes
+srun: job 117087 queued and waiting for resources
+srun: job 117087 has been allocated resources
+Running with 8 processes
+srun: job 117088 queued and waiting for resources
+srun: job 117088 has been allocated resources
+Running with 8 processes
+srun: job 117089 queued and waiting for resources
+srun: job 117089 has been allocated resources
+Running with 8 processes
+srun: job 117090 queued and waiting for resources
+srun: job 117090 has been allocated resources
+Running with 8 processes
+srun: job 117091 queued and waiting for resources
+srun: job 117091 has been allocated resources
+Running with 8 processes
+srun: job 117092 queued and waiting for resources
+srun: job 117092 has been allocated resources
+Running with 8 processes
+srun: job 117093 queued and waiting for resources
+srun: job 117093 has been allocated resources
+Running with 8 processes
+srun: job 117094 queued and waiting for resources
+srun: job 117094 has been allocated resources
+Running with 8 processes
+srun: job 117095 queued and waiting for resources
+srun: job 117095 has been allocated resources
+Running with 8 processes
+srun: job 117096 queued and waiting for resources
+srun: job 117096 has been allocated resources
+Running with 8 processes
+srun: job 117097 queued and waiting for resources
+srun: job 117097 has been allocated resources
+Running with 8 processes
+srun: job 117098 queued and waiting for resources
+srun: job 117098 has been allocated resources
+Running with 8 processes
+srun: job 117099 queued and waiting for resources
+srun: job 117099 has been allocated resources
+Running with 8 processes
+srun: job 117100 queued and waiting for resources
+srun: job 117100 has been allocated resources
+Running with 8 processes
+srun: job 117101 queued and waiting for resources
+srun: job 117101 has been allocated resources
+Running with 8 processes
+srun: job 117102 queued and waiting for resources
+srun: job 117102 has been allocated resources
+Running with 8 processes
+srun: job 117103 queued and waiting for resources
+srun: job 117103 has been allocated resources
+Running with 8 processes
+srun: job 117104 queued and waiting for resources
+srun: job 117104 has been allocated resources
+Running with 8 processes
+srun: job 117105 queued and waiting for resources
+srun: job 117105 has been allocated resources
+Running with 8 processes
+srun: job 117106 queued and waiting for resources
+srun: job 117106 has been allocated resources
+Running with 8 processes
+srun: job 117107 queued and waiting for resources
+srun: job 117107 has been allocated resources
+Running with 8 processes
+srun: job 117108 queued and waiting for resources
+srun: job 117108 has been allocated resources
+Running with 8 processes
+srun: job 117109 queued and waiting for resources
+srun: job 117109 has been allocated resources
+Running with 8 processes
+srun: job 117110 queued and waiting for resources
+srun: job 117110 has been allocated resources
+Running with 8 processes
+srun: job 117111 queued and waiting for resources
+srun: job 117111 has been allocated resources
+Running with 8 processes
+srun: job 117112 queued and waiting for resources
+srun: job 117112 has been allocated resources
+Running with 8 processes
+srun: job 117113 queued and waiting for resources
+srun: job 117113 has been allocated resources
+Running with 8 processes
+srun: job 117114 queued and waiting for resources
+srun: job 117114 has been allocated resources
+Running with 8 processes
+srun: job 117115 queued and waiting for resources
+srun: job 117115 has been allocated resources
+Running with 8 processes
+srun: job 117116 queued and waiting for resources
+srun: job 117116 has been allocated resources
+Running with 8 processes
+srun: job 117117 queued and waiting for resources
+srun: job 117117 has been allocated resources
+Running with 8 processes
+srun: job 117118 queued and waiting for resources
+srun: job 117118 has been allocated resources
+Running with 8 processes
+srun: job 117119 queued and waiting for resources
+srun: job 117119 has been allocated resources
+Running with 8 processes
+srun: job 117120 queued and waiting for resources
+srun: job 117120 has been allocated resources
+Running with 8 processes
+srun: job 117121 queued and waiting for resources
+srun: job 117121 has been allocated resources
+Running with 8 processes
+srun: job 117122 queued and waiting for resources
+srun: job 117122 has been allocated resources
+Running with 8 processes
+srun: job 117123 queued and waiting for resources
+srun: job 117123 has been allocated resources
+Running with 8 processes
+srun: job 117124 queued and waiting for resources
+srun: job 117124 has been allocated resources
+Running with 8 processes
+srun: job 117125 queued and waiting for resources
+srun: job 117125 has been allocated resources
+Running with 8 processes
+srun: job 117126 queued and waiting for resources
+srun: job 117126 has been allocated resources
+Running with 8 processes
+srun: job 117127 queued and waiting for resources
+srun: job 117127 has been allocated resources
+Running with 8 processes
+srun: job 117128 queued and waiting for resources
+srun: job 117128 has been allocated resources
+Running with 8 processes

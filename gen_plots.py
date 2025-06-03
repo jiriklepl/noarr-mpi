@@ -37,9 +37,28 @@ parser.add_argument(
 )
 
 parser.add_argument(
+    '--datasets',
+    nargs='+',
+    default=None, # Default to None to allow automatic detection
+    help='List of datasets to plot (e.g., MINI, MEDIUM, EXTRALARGE). If not specified, all datasets will be used.'
+)
+
+parser.add_argument(
+    '--output',
+    default=None,
+    help='Output file name for the plot (default: plots/<first_csv_file_name>.pdf)'
+)
+
+parser.add_argument(
     'csv_files',
     nargs='+',
     help='Path to the input CSV file(s) containing the benchmark data'
+)
+
+parser.add_argument(
+    '--mark-noarr',
+    action='store_true',
+    help='Mark the Noarr-MPI framework in the plot'
 )
 
 parser.add_argument(
@@ -55,9 +74,9 @@ parser.add_argument(
 )
 
 parser.add_argument(
-    '--no-validation',
+    '--no-validation-legend',
     action='store_true',
-    help='Do not show the validation status'
+    help='Do not show the validation legend'
 )
 
 parser.add_argument(
@@ -125,8 +144,8 @@ df['valid'] = df['valid'].astype(int)
 
 if not args.no_renaming:
     df['framework'] = df['framework'].str.replace('noarr', 'Noarr-MPI', regex=False)
-    df['framework'] = df['framework'].str.replace('boost', 'Boost.MPI', regex=False)
     df['framework'] = df['framework'].str.replace('boostP2P', 'Boost.MPI (P2P)', regex=False)
+    df['framework'] = df['framework'].str.replace('boost', 'Boost.MPI', regex=False)
     df['framework'] = df['framework'].str.replace('mpi', 'MPI', regex=False)
 
 df['tile_label'] = df['c_code'] + '/' + df['a_code'] + '/' + df['b_code']
@@ -150,8 +169,11 @@ elif 'Boost.MPI (P2P)' in frameworks:
 
 datasets   = df['dataset'].unique()
 
-if 'MINI' in datasets and 'MEDIUM' in datasets and 'EXTRALARGE' in datasets:
-    datasets = ['MINI', 'MEDIUM', 'EXTRALARGE'] + [ds for ds in datasets if ds not in ['MINI', 'MEDIUM', 'EXTRALARGE']]
+if args.datasets is not None:
+    datasets = [ds for ds in datasets if ds in args.datasets]
+else:
+    if 'MINI' in datasets and 'MEDIUM' in datasets and 'EXTRALARGE' in datasets:
+        datasets = ['MINI', 'MEDIUM', 'EXTRALARGE'] + [ds for ds in datasets if ds not in ['MINI', 'MEDIUM', 'EXTRALARGE']]
 
 # ─── Build color map ────────────────────────────────────────────────────────────
 palette = sns.color_palette("colorblind", len(frameworks))
@@ -189,7 +211,7 @@ for ax, ds in zip(axes, datasets) if len(datasets) > 1 else [(axes, datasets[0])
     labels = table.index.tolist()
     x      = np.arange(len(labels))
 
-    for i, fw in enumerate(frameworks):
+    for i, fw in reversed([(i, fw) for i, fw in enumerate(frameworks)]):
         offset = (i - (len(frameworks)-1)/2) * bar_width
         for valid in (1, 0):
             col = (fw, valid)
@@ -242,7 +264,7 @@ for ax, ds in zip(axes, datasets) if len(datasets) > 1 else [(axes, datasets[0])
                     color='white',
                     hatch=None,
                     alpha=1.0,
-                    edgecolor='white',
+                    edgecolor=None,
                     label=None,
                     zorder=4
                 )
@@ -253,7 +275,7 @@ for ax, ds in zip(axes, datasets) if len(datasets) > 1 else [(axes, datasets[0])
                 color=colors[fw],
                 hatch=None if valid == 1 else '//',
                 alpha=1.0 if valid == 1 else 0.5,
-                edgecolor='black',
+                edgecolor='black' if args.mark_noarr and fw == 'Noarr-MPI' else None,
                 label=fw if valid == 1 else None,
                 zorder=5
             )
@@ -276,7 +298,12 @@ aq = axes[0] if len(datasets) > 1 else axes
 aq.set_ylabel("Runtime [s]")
 
 # Framework legend (first subplot)
-fw_handles = [plt.Rectangle((0,0),1,1, color=colors[fw]) for fw in frameworks]
+fw_handles = [plt.Rectangle(
+    (0,0), 1, 1,
+    color=None,
+    facecolor=colors[fw],
+    edgecolor='black' if args.mark_noarr and fw == 'Noarr-MPI' else None,
+) for fw in frameworks]
 fig.legend(
     fw_handles, frameworks,
     title="Framework",
@@ -284,7 +311,7 @@ fig.legend(
     bbox_to_anchor=(0.045, 0.94),
 )
 
-if not args.no_validation:
+if not args.no_validation_legend:
     # Valid/Invalid legend (on the rightmost subplot)
     valid_patch   = Patch(facecolor='white', edgecolor='black', label='Valid')
     invalid_patch = Patch(facecolor='white', edgecolor='black', hatch='//', alpha=0.5, label='Invalid')
@@ -305,13 +332,17 @@ if not args.no_validation:
 
 os.makedirs('plots', exist_ok=True)
 
-if args.csv_files[0].endswith('.csv'):
-    FILE_NAME = os.path.splitext(os.path.basename(args.csv_files[0]))[0]
+if args.output is not None:
+    # If an output file name is specified, use it
+    FILE_PATH = args.output
 else:
-    # If the CSV file name is not provided, use a default name
-    FILE_NAME = 'plot'
+    if args.csv_files[0].endswith('.csv'):
+        FILE_NAME = os.path.splitext(os.path.basename(args.csv_files[0]))[0]
+    else:
+        # If the CSV file name is not provided, use a default name
+        FILE_NAME = 'plot'
 
-FILE_PATH = f'plots/{FILE_NAME}.pdf'
+    os.makedirs('plots', exist_ok=True)
+    FILE_PATH = f'plots/{FILE_NAME}.pdf'
 
-# plt.tight_layout(pad=0.2)
 plt.savefig(FILE_PATH, bbox_inches='tight')
