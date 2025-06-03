@@ -185,11 +185,11 @@ shapes = {fw: raw_shapes[i % len(raw_shapes)] for i, fw in enumerate(frameworks)
 # ─── Plot ───────────────────────────────────────────────────────────────────────
 fig, axes = plt.subplots(
     1, len(datasets),
-    figsize=(3.5 * len(datasets), 3),
+    figsize=(3.5 * len(datasets), 2.5),
     sharey=False,
     layout='constrained',
 )
-bar_width = 0.18
+BAR_WIDTH = 0.18
 
 # If multiple records are present for the same algorithm+dataset+tile configuration,
 # take the mean and standard deviation
@@ -212,7 +212,7 @@ for ax, ds in zip(axes, datasets) if len(datasets) > 1 else [(axes, datasets[0])
     x      = np.arange(len(labels))
 
     for i, fw in reversed([(i, fw) for i, fw in enumerate(frameworks)]):
-        offset = (i - (len(frameworks)-1)/2) * bar_width
+        offset = (i - (len(frameworks)-1)/2) * BAR_WIDTH
         for valid in (1, 0):
             col = (fw, valid)
 
@@ -259,7 +259,7 @@ for ax, ds in zip(axes, datasets) if len(datasets) > 1 else [(axes, datasets[0])
 
             if valid == 0:
                 ax.bar(
-                    x + offset, vals, bar_width,
+                    x + offset, vals, BAR_WIDTH,
                     yerr=sdev,
                     color='white',
                     hatch=None,
@@ -270,7 +270,7 @@ for ax, ds in zip(axes, datasets) if len(datasets) > 1 else [(axes, datasets[0])
                 )
 
             ax.bar(
-                x + offset, vals, bar_width,
+                x + offset, vals, BAR_WIDTH,
                 yerr=sdev,
                 color=colors[fw],
                 hatch=None if valid == 1 else '//',
@@ -308,7 +308,7 @@ fig.legend(
     fw_handles, frameworks,
     title="Framework",
     loc='upper left',
-    bbox_to_anchor=(0.045, 0.94),
+    bbox_to_anchor=(0.05, 0.935),
 )
 
 if not args.no_validation_legend:
