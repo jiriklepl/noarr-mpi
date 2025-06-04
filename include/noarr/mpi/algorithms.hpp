@@ -12,6 +12,7 @@
 #include <mpi.h>
 
 #include <noarr/structures/base/contain.hpp>
+#include <noarr/structures/extra/traverser.hpp>
 #include <noarr/structures/extra/shortcuts.hpp>
 
 #include "../mpi/transform.hpp"
@@ -20,11 +21,48 @@
 
 namespace noarr::mpi {
 
-inline void broadcast(const ToStruct auto &has_struct, const IsMpiTraverser auto &trav, int rank) {
+inline void broadcast(const ToStruct auto &has_struct, const IsMpiTraverser auto &trav, int rank) requires ToMPIComm<decltype(trav)> {
 	const auto structure = convert_to_struct(has_struct);
 	auto type = mpi_transform(trav, structure);
 	type.commit();
 	MPICHK(MPI_Bcast(has_struct.data(), 1, convert_to_MPI_Datatype(type), rank, convert_to_MPI_Comm(trav)));
+}
+
+inline void send(const ToStruct auto &has_struct, const IsMpiTraverser auto &trav, int rank, int tag = 0) {
+	const auto structure = convert_to_struct(has_struct);
+	auto type = mpi_transform(trav, structure);
+	type.commit();
+	MPICHK(MPI_Send(has_struct.data(), 1, convert_to_MPI_Datatype(type), rank, tag, convert_to_MPI_Comm(trav)));
+}
+
+
+inline MPI_Status recv(const ToStruct auto &has_struct, const IsMpiTraverser auto &trav, int rank, int tag = 0) {
+	const auto structure = convert_to_struct(has_struct);
+	auto type = mpi_transform(trav, structure);
+	type.commit();
+	MPI_Status status;
+	MPICHK(MPI_Recv(has_struct.data(), 1, convert_to_MPI_Datatype(type), rank, tag, convert_to_MPI_Comm(trav), &status));
+	return status;
+}
+
+inline MPI_Request_guard isend(const ToStruct auto &has_struct, const IsMpiTraverser auto &trav, int rank, int tag = 0) {
+	const auto structure = convert_to_struct(has_struct);
+	auto type = mpi_transform(trav, structure);
+	type.commit();
+	MPI_Request request;
+	MPICHK(MPI_Isend(has_struct.data(), 1, convert_to_MPI_Datatype(type), rank, tag, convert_to_MPI_Comm(trav), &request));
+	return MPI_Request_guard{request};
+}
+
+
+
+inline MPI_Request_guard irecv(const ToStruct auto &has_struct, const IsMpiTraverser auto &trav, int rank, int tag = 0) {
+	const auto structure = convert_to_struct(has_struct);
+	auto type = mpi_transform(trav, structure);
+	type.commit();
+	MPI_Request request;
+	MPICHK(MPI_Irecv(has_struct.data(), 1, convert_to_MPI_Datatype(type), rank, tag, convert_to_MPI_Comm(trav), &request));
+	return MPI_Request_guard{request};
 }
 
 template<class T>

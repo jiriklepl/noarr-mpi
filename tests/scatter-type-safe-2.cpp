@@ -1,5 +1,7 @@
 // This test checks whether the scatter function is sufficiently type-safe.
 
+#include <noarr/traversers.hpp>
+
 #include <noarr/mpi.hpp>
 
 using namespace noarr;

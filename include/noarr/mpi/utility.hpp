@@ -132,6 +132,45 @@ public:
 	constexpr explicit operator MPI_Datatype() const { return value; }
 };
 
+class MPI_Request_guard {
+	MPI_Request value;
+
+public:
+	explicit MPI_Request_guard(MPI_Request value) : value(value) {}
+
+	MPI_Request_guard(const MPI_Request_guard &) = delete;
+	MPI_Request_guard &operator=(const MPI_Request_guard &) = delete;
+
+	MPI_Request_guard(MPI_Request_guard &&other) noexcept : value(other.value) {
+		other.value = MPI_REQUEST_NULL;
+	}
+
+	MPI_Request_guard &operator=(MPI_Request_guard &&other) noexcept {
+		using std::swap;
+		swap(value, other.value);
+		return *this;
+	}
+
+	MPI_Status wait() {
+		MPI_Status status;
+		MPICHK(MPI_Wait(&value, &status));
+		return status;
+	}
+
+	MPI_Request &get() noexcept { return value; }
+
+	const MPI_Request &get() const noexcept { return value; }
+
+	~MPI_Request_guard() noexcept(false) {
+		if (value != MPI_REQUEST_NULL) {
+			MPICHK(MPI_Request_free(&value));
+		}
+	}
+
+	constexpr explicit operator const MPI_Request&() const noexcept { return value; }
+	constexpr explicit operator MPI_Request&() noexcept { return value; }
+};
+
 template<>
 struct to_MPI_Datatype<MPI_custom_type> : std::true_type {
 	using type = MPI_Datatype;

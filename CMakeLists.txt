@@ -150,6 +150,10 @@ foreach(dataset ${DATASET_LIST})
 endforeach()
 
 #tests
+add_executable(auto-permutate tests/auto-permutate.cpp)
+target_link_libraries(auto-permutate PRIVATE MPI::MPI_CXX)
+add_test(NAME auto-permutate COMMAND auto-permutate)
+
 add_executable(scatter-type-safe-1 EXCLUDE_FROM_ALL tests/scatter-type-safe-1.cpp)
 target_link_libraries(scatter-type-safe-1 PRIVATE MPI::MPI_CXX)
 add_test(NAME scatter-type-safe-1 COMMAND ${CMAKE_COMMAND} --build . --target scatter-type-safe-1 WORKING_DIRECTORY ${CMAKE_BINARY_DIR})
