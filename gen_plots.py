@@ -167,6 +167,9 @@ if 'boostP2P' in frameworks:
 elif 'Boost.MPI (P2P)' in frameworks:
     frameworks = [fw for fw in frameworks if fw != 'Boost.MPI (P2P)'] + ['Boost.MPI (P2P)']
 
+if len(frameworks) == 0:
+    raise ValueError("No valid frameworks found in the input data.")
+
 datasets   = df['dataset'].unique()
 
 if args.datasets is not None:
@@ -174,6 +177,9 @@ if args.datasets is not None:
 else:
     if 'MINI' in datasets and 'MEDIUM' in datasets and 'EXTRALARGE' in datasets:
         datasets = ['MINI', 'MEDIUM', 'EXTRALARGE'] + [ds for ds in datasets if ds not in ['MINI', 'MEDIUM', 'EXTRALARGE']]
+
+if len(datasets) == 0:
+    exit()
 
 # ─── Build color map ────────────────────────────────────────────────────────────
 palette = sns.color_palette("colorblind", len(frameworks))
@@ -185,11 +191,11 @@ shapes = {fw: raw_shapes[i % len(raw_shapes)] for i, fw in enumerate(frameworks)
 # ─── Plot ───────────────────────────────────────────────────────────────────────
 fig, axes = plt.subplots(
     1, len(datasets),
-    figsize=(3.5 * len(datasets), 2.5),
+    figsize=(len(frameworks) * len(datasets), 2.5),
     sharey=False,
     layout='constrained',
 )
-BAR_WIDTH = 0.18
+BAR_WIDTH = 1 / (len(frameworks) + .75)
 
 # If multiple records are present for the same algorithm+dataset+tile configuration,
 # take the mean and standard deviation
