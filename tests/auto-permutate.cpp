@@ -17,11 +17,9 @@ int main() {
 
 	const auto from_structure = scalar<int>() ^ vectors<'x', 'y', 'z'>(2, 2, 2);
 	const auto to_structure = scalar<int>() ^ vectors<'z', 'y','x'>(2, 2, 2);
-	const auto grid = into_blocks<'x', 'X'>() ^ into_blocks<'y', 'Y'>() ^ into_blocks<'z', 'Z'>();
-	const auto distr_strategy =
-		set_length<'X', 'Y'>(1, 1) ^ merge_blocks<'X', 'Y', '_'>() ^ merge_blocks<'_', 'Z', 'r'>();
+	const auto distr_strategy = bcast<'r'>();
 
-	const auto trav = traverser(from_structure ^ grid);
+	const auto trav = traverser(from_structure);
 	const auto mpi_trav = mpi::mpi_traverser<'r'>(trav ^ distr_strategy, mpi_session);
 
 	int return_code = EXIT_SUCCESS;
