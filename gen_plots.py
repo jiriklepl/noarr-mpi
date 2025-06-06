@@ -173,7 +173,7 @@ if len(frameworks) == 0:
 datasets   = df['dataset'].unique()
 
 if args.datasets is not None:
-    datasets = [ds for ds in datasets if ds in args.datasets]
+    datasets = [ds for ds in args.datasets if ds in datasets]
 else:
     if 'MINI' in datasets and 'MEDIUM' in datasets and 'EXTRALARGE' in datasets:
         datasets = ['MINI', 'MEDIUM', 'EXTRALARGE'] + [ds for ds in datasets if ds not in ['MINI', 'MEDIUM', 'EXTRALARGE']]
