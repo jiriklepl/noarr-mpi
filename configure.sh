@@ -5,7 +5,7 @@ set -euo pipefail
 BUILD_DIR=${BUILD_DIR:-build}
 NUM_JOBS=${NUM_JOBS:-$(nproc)}
 
-NOARR_MPI_EXAMPLES=${NOARR_MPI_EXAMPLES:-Default}
+NOARR_MPI_EXAMPLES=${NOARR_MPI_EXAMPLES:-AllDatasets}
 
 BUILD_DIR=$(realpath "${BUILD_DIR}")
 

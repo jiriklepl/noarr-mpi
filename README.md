@@ -1,6 +1,6 @@
 # Layout-Agnostic MPI Abstraction for Modern C++
 
-[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](./LICENSE) [![DOI](https://img.shields.io/badge/License-DOI-yellow.svg)]()
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](./LICENSE) [![Zenodo](https://img.shields.io/badge/Zenodo-DOI-yellow.svg)]()
 
 This repository contains the proof of concept implementation of the paper *Layout-Agnostic MPI Abstraction for Modern C++* and the evaluation of the proposed abstraction using a distributed GEMM kernel.
 
@@ -18,7 +18,7 @@ The project contains a header-only extension of the Noarr library that provides 
 
 The library provides a set of abstractions for MPI operations, including:
 
-- `mpi_transform` ([include/noarr/mpi/transform.hpp](include/noarr/mpi/transform.hpp)) - a function that transforms Noarr structures to MPI data types.
+- `mpi_transform` ([include/noarr/mpi/transform.hpp](include/noarr/mpi/transform.hpp)) - a function that transforms Noarr structures to MPI datatypes.
 - `mpi_traverser_t` ([include/noarr/mpi/traverser.hpp](include/noarr/mpi/traverser.hpp)) - a class that associates a Noarr traverser with an MPI communicator.
 - `scatter`, `gather`, `broadcast` ([include/noarr/mpi/algorithms.hpp](include/noarr/mpi/algorithms.hpp)) - functions that implement collective operations for Noarr structures.
 
@@ -71,7 +71,7 @@ algorithm,framework,dataset,datatype,c_tile,a_tile,b_tile,i_tiles,mean_time,sd_t
 - `algorithm` - the name of the algorithm (always `gemm`).
 - `framework` - the name of the framework used (e.g., `noarr`, `boost`, `boostP2P`, `kokkosComm`, `mpi`).
 - `dataset` - the size of the dataset (`MINI`, `MEDIUM`, `EXTRALARGE`).
-- `datatype` - the type of the data used in the GEMM kernel (for the default configuration of the project, it is always `FLOAT`).
+- `datatype` - the scalar datatype used in the GEMM kernel (for the default configuration of the project, it is always `FLOAT`).
 - `c_tile`, `a_tile`, `b_tile` - the major dimensions of the privatized sub-matrices used in the distributed GEMM kernel.
 - `i_tiles` - the number of tiles in the `i` dimension of the `C` matrix; the number of tiles in the `j` dimension is determined by the number of MPI processes.
 - `mean_time` - the average execution time of the GEMM kernel in seconds.
@@ -90,7 +90,7 @@ USE_SLURM=1 NUM_TASKS=8 NUM_NODES=8 I_TILES=2 ACCOUNT=YOUR_ACCOUNT PARTITION=YOU
 
 ## Visualization
 
-Generate virtual Python environment and enter it:
+Generate a virtual Python environment and enter it:
 
 ```bash
 python3 -m venv .venv
@@ -120,23 +120,23 @@ To reproduce the results reported in the paper, run the following sequence of co
 
 mkdir -p data
 
-# May run for over an hour; add USE_SLURM=1 to run on a Slurm cluster
-NUM_TASKS=8 NUM_NODES=8 I_TILES=2 ./compare.sh > data/compare.csv 2> data/compare.err
+# May run for over an hour; add USE_SLURM=1 to run on a Slurm cluster (and specify ACCOUNT and PARTITION)
+NUM_TASKS=8 NUM_NODES=8 I_TILES=2 ./compare.sh > data/compare1.csv 2> data/compare1.err
 
-# Further experiments for more stable results
+# Perform further experiments for more stable results
 NUM_TASKS=8 NUM_NODES=8 I_TILES=2 ./compare.sh > data/compare2.csv 2> data/compare2.err
-NUM_TASKS=8 NUM_NODES=8 I_TILES=2 ./compare.sh > data/compare3.csv 2> data/compare3.err
+# ...
 
-# Generate plots (only one experiment)
-./gen_plots.py --show-sdev --no-validation --no-boostP2P data/compare.csv
+# (Optional) Do the same with the ./compareScatter.sh script that was used to empirically determine the optimal logical dimension ordering
+NUM_TASKS=8 NUM_NODES=8 I_TILES=2 ./compareScatter.sh > data/compareScatter1.csv 2> data/compareScatter1.err
+# ...
 
-# Generate plots (all experiments aggregated)
-./gen_plots.py --show-sdev --no-validation --no-boostP2P data/compare.csv data/compare2.csv data/compare3.csv
+./gen_plots.sh # Requires the Python virtual environment to be set up as described above
 ```
 
 ## Testing
 
-To run the tests that verify the type safety of the Noarr MPI abstraction (requires `ctest`), run the following command:
+To run the tests that verify the type safety and functionality of the Noarr MPI abstraction (requires `ctest`), run the following command:
 
 ```bash
 ./test.sh

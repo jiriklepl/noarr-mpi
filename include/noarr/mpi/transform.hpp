@@ -203,19 +203,19 @@ requires (Structure::signature::template any_accept<Dim>)
 
 		MPI_custom_type sub_transformed = mpi_transform_impl(structure, Branches{}, state.template with<index_in<Dim>>(lb_at));
 
-		if (lb_at != 0) {
+		if (stride < 0) {
 			assert(lb_at == length - 1 && "lower bound is not at the beginning or end of the dimension");
-			assert(stride < 0 && "stride must be negative when lower bound is at the end of the dimension");
-			std::vector<MPI_Aint> offsets(length);
-			const std::vector<int> block_lengths(length, 1);
-			for (std::size_t i = 0; i < length; ++i) {
-				offsets[i] = (length - 1 - i) * -stride;
-			}
+			MPI_Aint offset = (-stride) * (length - 1);
+			const int block_lengths = 1;
 
 			MPI_Datatype new_Datatype = MPI_DATATYPE_NULL;
-			MPICHK(MPI_Type_create_hindexed(length, block_lengths.data(), offsets.data(), (MPI_Datatype)sub_transformed, &new_Datatype));
+			MPICHK(MPI_Type_create_hvector(length, 1, stride, (MPI_Datatype)sub_transformed, &new_Datatype));
 			sub_transformed.reset(new_Datatype);
-		} else if (stride > 0 && length != 1) {
+
+			new_Datatype = MPI_DATATYPE_NULL;
+			MPICHK(MPI_Type_create_hindexed(1, &block_lengths, &offset, (MPI_Datatype)sub_transformed, &new_Datatype));
+			sub_transformed.reset(new_Datatype);
+		} else if (length != 1) {
 			MPI_Datatype new_Datatype = MPI_DATATYPE_NULL;
 			MPICHK(MPI_Type_create_hvector(length, 1, stride, (MPI_Datatype)sub_transformed, &new_Datatype));
 			sub_transformed.reset(new_Datatype);
