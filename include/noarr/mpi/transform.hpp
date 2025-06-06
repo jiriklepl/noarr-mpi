@@ -9,7 +9,6 @@
 #include <stdexcept>
 #include <tuple>
 #include <utility>
-#include <vector>
 
 #include <mpi.h>
 
@@ -159,6 +158,7 @@ private:
 	std::map<key, value> cache;
 };
 
+// type transformation for scalars (leaves in the dimension tree)
 template<class Structure, IsState State>
 inline MPI_custom_type mpi_transform_impl(const Structure &structure, const dim_sequence<> & /*ds*/, State state) {
 	using scalar_type = scalar_t<Structure, State>;
@@ -185,6 +185,7 @@ inline MPI_custom_type mpi_transform_impl(const Structure &structure, const dim_
 	}
 }
 
+// type transformation for a given dimension
 template<class Structure, auto Dim, class Branches, IsState State>
 inline MPI_custom_type mpi_transform_impl(const Structure &structure, const dim_tree<Dim, Branches> & /*dt*/,
                                           State state)
@@ -196,7 +197,6 @@ requires (Structure::signature::template any_accept<Dim>)
 	constexpr bool has_length = Structure::template has_length<Dim, State>();
 
 	if constexpr (has_lower_bound && has_stride_along && is_uniform_along && has_length) {
-		const auto lower_bound = lower_bound_along<Dim>(structure, state);
 		const auto lb_at = lower_bound_at<Dim>(structure, state);
 		const auto stride = stride_along<Dim>(structure, state);
 		const auto length = structure.template length<Dim>(state);
@@ -221,14 +221,6 @@ requires (Structure::signature::template any_accept<Dim>)
 			sub_transformed.reset(new_Datatype);
 		}
 
-		if (lower_bound != 0) {
-			const auto lb = static_cast<MPI_Aint>(lower_bound);
-			MPI_Datatype new_Datatype = MPI_DATATYPE_NULL;
-			const int block_lengths = 1;
-			MPICHK(MPI_Type_create_hindexed(1, &block_lengths, &lb, (MPI_Datatype)sub_transformed, &new_Datatype));
-			sub_transformed.reset(new_Datatype);
-		}
-
 		return sub_transformed;
 	} else {
 		if constexpr (!has_lower_bound) {
@@ -245,6 +237,7 @@ requires (Structure::signature::template any_accept<Dim>)
 	}
 }
 
+// skips unrelated dimensions
 template<class Structure, auto Dim, class Branches, IsState State>
 inline MPI_custom_type mpi_transform_impl(const Structure &structure, const dim_tree<Dim, Branches> & /*dt*/,
                                           State state)
