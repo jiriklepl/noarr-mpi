@@ -52,7 +52,7 @@ cd noarr-mpi
 ./build.sh
 ```
 
-The script `configure.sh` creates a build directory and runs CMake to configure the project. The script `build.sh` builds the executables for all GEMM variants and configurations differing in the major dimensions of the privatized sub-matrices used in the distributed GEMM kernel and the dataset size. For each dataset size, there are eight configurations of the GEMM kernel in total, each named `gemm-<framework>-<dataset-size>-<C-tile-major-dim>-<A-tile-major-dim>-<B-tile-major-dim>`, where `<framework>` is the name of the framework used (e.g., `noarr`, `boost`, `boostP2P`, `kokkosComm`, `mpi`), `<dataset-size>` is the size of the dataset (`MINI`, `MEDIUM`, `EXTRALARGE`). The dataset sizes are defined in [examples/include/gemm.hpp](examples/include/gemm.hpp).
+The script `configure.sh` creates a build directory and runs CMake to configure the project. The script `build.sh` builds the executables for all GEMM variants and configurations differing in the major dimensions of the privatized sub-matrices used in the distributed GEMM kernel and the dataset size. For each dataset size, there are eight configurations of the GEMM kernel in total, each named `gemm-<framework>-<dataset-size>-<C-tile-major-dim>-<A-tile-major-dim>-<B-tile-major-dim>`, where `<framework>` is the name of the framework used (e.g., `noarr`, `boost`, `boostP2P`, `kokkosComm`, `mpi`), `<dataset-size>` is the size of the dataset (`MINI`, `SMALL`, `MEDIUM`, `LARGE`, `EXTRALARGE`). The dataset sizes are defined in [examples/include/gemm.hpp](examples/include/gemm.hpp).
 
 ## How to run
 
@@ -70,7 +70,7 @@ algorithm,framework,dataset,datatype,c_tile,a_tile,b_tile,i_tiles,mean_time,sd_t
 
 - `algorithm` - the name of the algorithm (always `gemm`).
 - `framework` - the name of the framework used (e.g., `noarr`, `boost`, `boostP2P`, `kokkosComm`, `mpi`).
-- `dataset` - the size of the dataset (`MINI`, `MEDIUM`, `EXTRALARGE`).
+- `dataset` - the size of the dataset (`MINI`, `SMALL`, `MEDIUM`, `LARGE`, `EXTRALARGE`).
 - `datatype` - the scalar datatype used in the GEMM kernel (for the default configuration of the project, it is always `FLOAT`).
 - `c_tile`, `a_tile`, `b_tile` - the major dimensions of the privatized sub-matrices used in the distributed GEMM kernel.
 - `i_tiles` - the number of tiles in the `i` dimension of the `C` matrix; the number of tiles in the `j` dimension is determined by the number of MPI processes.
@@ -86,7 +86,7 @@ To run the same experiment on a Slurm cluster (such as <https://gitlab.mff.cuni.
 USE_SLURM=1 NUM_TASKS=8 NUM_NODES=8 I_TILES=2 ACCOUNT=YOUR_ACCOUNT PARTITION=YOUR_PARTITION ./compare.sh
 ```
 
-[data/compare-example-slurm.csv](data/compare-example-slurm.csv) shows a possible output of the script when run on a Slurm cluster with the specified parameters.
+[data/compare1.csv](data/compare1.csv) shows a possible output of the script when run on a Slurm cluster with the specified parameters.
 
 ## Visualization
 
@@ -104,11 +104,11 @@ pip install --upgrade pip
 pip install -r requirements.txt
 ```
 
-To visualize the results of the GEMM kernel execution, run the following command:
-
 ```bash
-python3 gen_plots.py <path_to_csv_file>
+python3 gen_plots.py PATH_TO_CSV_FILE
 ```
+
+where `PATH_TO_CSV_FILE` is the path to the CSV file containing the results of the GEMM kernel execution (e.g., `data/compare1.csv`).
 
 ## Reproducing the results reported in the paper
 
