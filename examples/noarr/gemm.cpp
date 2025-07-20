@@ -119,17 +119,17 @@ void kernel_gemm(auto trav, num_t alpha, auto C, num_t beta, auto A, auto B) {
 }
 
 std::chrono::duration<double> run_experiment(num_t alpha, num_t beta, auto C, auto A, auto B, auto tileC, auto tileA,
-                                             auto tileB, auto &mpi_trav, int root) {
+                                             auto tileB, auto &mpi_trav, int root, auto &type_cache) {
 	const auto start = std::chrono::high_resolution_clock::now();
 
-	mpi::scatter(C, tileC, mpi_trav ^ tuning.c_scatter_order, root);
-	mpi::scatter(A, tileA, mpi_trav ^ tuning.a_scatter_order, root);
-	mpi::scatter(B, tileB, mpi_trav ^ tuning.b_scatter_order, root);
+	mpi::scatter(C, tileC, mpi_trav ^ tuning.c_scatter_order, root, type_cache);
+	mpi::scatter(A, tileA, mpi_trav ^ tuning.a_scatter_order, root, type_cache);
+	mpi::scatter(B, tileB, mpi_trav ^ tuning.b_scatter_order, root, type_cache);
 
 	// run kernel
 	kernel_gemm(mpi_trav, alpha, tileC, beta, tileA, tileB);
 
-	mpi::gather(tileC, C, mpi_trav ^ tuning.c_scatter_order, root);
+	mpi::gather(tileC, C, mpi_trav ^ tuning.c_scatter_order, root, type_cache);
 
 	const auto end = std::chrono::high_resolution_clock::now();
 
@@ -144,6 +144,12 @@ int main(int argc, char *argv[]) {
 	constexpr int num_runs = 20;
 
 	const mpi::MPI_session mpi_session(argc, argv);
+
+#ifndef NO_TYPE_CACHE
+	noarr::mpi::type_cache type_cache;
+#else
+	noarr::mpi::helpers::no_type_cache type_cache;
+#endif
 
 	const int rank = mpi_get_comm_rank(mpi_session);
 	const int size = mpi_get_comm_size(mpi_session);
@@ -199,7 +205,7 @@ int main(int argc, char *argv[]) {
 	mpi::broadcast(beta, mpi_trav, root);
 
 	// Warm up
-	run_experiment(alpha, beta, C, A, B, tileC.get_ref(), tileA.get_ref(), tileB.get_ref(), mpi_trav, root);
+	run_experiment(alpha, beta, C, A, B, tileC.get_ref(), tileA.get_ref(), tileB.get_ref(), mpi_trav, root, type_cache);
 
 	std::vector<double> times(num_runs);
 
@@ -212,7 +218,7 @@ int main(int argc, char *argv[]) {
 		mpi::barrier(mpi_trav);
 
 		times[i] =
-			run_experiment(alpha, beta, C, A, B, tileC.get_ref(), tileA.get_ref(), tileB.get_ref(), mpi_trav, root)
+			run_experiment(alpha, beta, C, A, B, tileC.get_ref(), tileA.get_ref(), tileB.get_ref(), mpi_trav, root, type_cache)
 				.count();
 	}
 

@@ -194,8 +194,6 @@ void kernel_gemm(num_t alpha, auto C, num_t beta, auto A, auto B, std::size_t SI
 std::chrono::duration<double> run_experiment(num_t alpha, num_t beta, auto C, auto A, auto B, std::size_t /*i_tiles*/,
                                              std::size_t j_tiles, auto tileC, auto tileA, auto tileB, std::size_t SI,
                                              std::size_t SJ, MPI_Comm &world, int /*rank*/, int size, int root) {
-	const auto start = std::chrono::high_resolution_clock::now();
-
 	std::vector<decltype(stdex::submdspan(C, std::tuple<std::size_t, std::size_t>{},
 	                                      std::tuple<std::size_t, std::size_t>{}))>
 		c_layouts;
@@ -251,6 +249,8 @@ std::chrono::duration<double> run_experiment(num_t alpha, num_t beta, auto C, au
 	auto cType = create_mpi_datatype(c_layouts[0]);
 	auto aType = create_mpi_datatype(a_layouts[0]);
 	auto bType = create_mpi_datatype(b_layouts[0]);
+
+	const auto start = std::chrono::high_resolution_clock::now();
 
 	MPI_Scatterv(c_layouts[0].data_handle(), send_counts.data(), c_displacements.data(), cType.get(),
 	             tileC.data_handle(), 1, cTileType.get(), root, world);

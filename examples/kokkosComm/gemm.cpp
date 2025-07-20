@@ -139,10 +139,10 @@ std::chrono::duration<double> run_experiment(num_t alpha, num_t beta, auto &C, a
                                              std::size_t /*i_tiles*/, std::size_t j_tiles, auto &tileC, auto &tileA,
                                              auto &tileB, std::size_t SI, std::size_t SJ, KokkosComm::Handle<> &handle,
                                              int rank, int size, int root) {
-	const auto start = std::chrono::high_resolution_clock::now();
-
 	std::vector<KokkosComm::Req<>> reqs;
 	reqs.reserve(rank == root ? (3 * size + 1) : 3);
+
+	const auto start = std::chrono::high_resolution_clock::now();
 
 	if (rank == root) {
 		for (int r = 0; r < size; ++r) {

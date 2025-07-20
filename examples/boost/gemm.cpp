@@ -190,8 +190,6 @@ std::chrono::duration<double> run_experiment(num_t alpha, num_t beta, auto C, au
                                              std::size_t j_tiles, auto tileC, auto tileA, auto tileB, std::size_t SI,
                                              std::size_t SJ, mpi::communicator &world, int /*rank*/, int size,
                                              int root) {
-	const auto start = std::chrono::high_resolution_clock::now();
-
 	std::vector<matrix_holder> c_layouts;
 	std::vector<matrix_holder> a_layouts;
 	std::vector<matrix_holder> b_layouts;
@@ -223,6 +221,8 @@ std::chrono::duration<double> run_experiment(num_t alpha, num_t beta, auto C, au
 	matrix_holder c_holder{tileC};
 	matrix_holder a_holder{tileA};
 	matrix_holder b_holder{tileB};
+
+	const auto start = std::chrono::high_resolution_clock::now();
 
 	mpi::scatter(world, c_layouts, c_holder, root);
 	mpi::scatter(world, a_layouts, a_holder, root);

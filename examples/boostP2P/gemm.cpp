@@ -137,7 +137,7 @@ void kernel_gemm(num_t alpha, auto C, num_t beta, auto A, auto B, std::size_t SI
 std::chrono::duration<double> run_experiment(num_t alpha, num_t beta, auto C, auto A, auto B, std::size_t /*i_tiles*/,
                                              std::size_t j_tiles, auto tileC, auto tileA, auto tileB, std::size_t SI,
                                              std::size_t SJ, mpi::communicator &world, int rank, int size, int root) {
-	const auto start = std::chrono::high_resolution_clock::now();
+	std::chrono::high_resolution_clock::time_point start;
 
 	std::vector<decltype(stdex::submdspan(C, std::tuple<std::size_t, std::size_t>(0, 0),
 										std::tuple<std::size_t, std::size_t>(0, 0)))>
@@ -182,7 +182,12 @@ std::chrono::duration<double> run_experiment(num_t alpha, num_t beta, auto C, au
 				                     /* first dimension */ stdex::full_extent,
 				                     /* second dimension */ std::tuple<std::size_t, std::size_t>{SJ * j, SJ * (j + 1)});
 			}
+		}
 
+		world.barrier();
+		start = std::chrono::high_resolution_clock::now();
+
+		if (rank == root) {
 			for (int r = 0; r < size; ++r) {
 				auto &coarchive =
 					coarchives[r].emplace<mpi::packed_oarchive>(world, c_layouts[r].size() * sizeof(num_t));
