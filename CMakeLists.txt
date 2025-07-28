@@ -8,8 +8,6 @@ project(noarr_mpi
 include(FetchContent)
 include(CTest)
 
-find_package(MPI REQUIRED)
-
 set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
@@ -20,6 +18,14 @@ set_property(CACHE NOARR_MPI_EXAMPLES PROPERTY STRINGS Default AllDatasets All D
 if (NOT DEFINED NOARR_MPI_EXAMPLES)
   set(NOARR_MPI_EXAMPLES "Default")
 endif()
+
+# Fetch Noarr Structures
+FetchContent_Declare(Noarr
+                    GIT_REPOSITORY https://github.com/jiriklepl/noarr-structures.git
+                    GIT_TAG        888bd796955bae9cd2f156b6a5aff250751a5b5e)
+FetchContent_MakeAvailable(Noarr)
+
+find_package(MPI REQUIRED)
 
 if (NOARR_MPI_EXAMPLES STREQUAL "Default")
   message(STATUS "Building the default examples")

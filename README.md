@@ -45,7 +45,7 @@ To build the project, run the following commands:
 git clone https://github.com/jiriklepl/noarr-mpi
 cd noarr-mpi
 
-# Configure the project
+# Configure the project (also retrieves external dependencies)
 ./configure.sh
 
 # Build the project
