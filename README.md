@@ -1,6 +1,7 @@
 # Layout-Agnostic MPI Abstraction for Modern C++
 
-[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](./LICENSE)
+[![LICENSE: MIT](https://img.shields.io/badge/LICENSE-MIT-blue.svg)](./LICENSE) [![DOI](https://img.shields.io/badge/DOI-10.5281/zenodo.16621249-blue.svg)](https://doi.org/10.5281/zenodo.16621249)
+
 
 This repository contains the proof of concept implementation of the paper *Layout-Agnostic MPI Abstraction for Modern C++* and the evaluation of the proposed abstraction using a distributed GEMM kernel.
 
