@@ -1,9 +1,22 @@
 # Layout-Agnostic MPI Abstraction for Modern C++
 
-[![LICENSE: MIT](https://img.shields.io/badge/LICENSE-MIT-blue.svg)](./LICENSE) [![DOI](https://img.shields.io/badge/DOI-10.5281/zenodo.16621249-blue.svg)](https://doi.org/10.5281/zenodo.16621249)
-
+[![LICENSE: MIT](https://img.shields.io/badge/LICENSE-MIT-blue.svg)](./LICENSE) [![DOI](https://img.shields.io/badge/DOI-10.5281/zenodo.14843958-blue.svg)](https://doi.org/10.5281/zenodo.14843958)
 
 This repository contains the proof of concept implementation of the paper *Layout-Agnostic MPI Abstraction for Modern C++* and the evaluation of the proposed abstraction using a distributed GEMM kernel.
+
+When using our work, please cite the paper:
+
+```bibtex
+@inproceedings{klepl2026layout,
+  author="Klepl, Ji{\v{r}}{\'i} and Kruli{\v{s}}, Martin and Brabec, Maty{\'a}{\v{s}}",
+  title="Layout-Agnostic MPI Abstraction for Distributed Computing in Modern C++",
+  booktitle="Recent Advances in the Message Passing Interface",
+  year="2026",
+  publisher="Springer Nature Switzerland",
+  pages="36--53",
+  isbn="978-3-032-07194-1"
+}
+```
 
 ## About
 
