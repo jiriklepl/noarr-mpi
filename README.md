@@ -2,7 +2,7 @@
 
 [![LICENSE: MIT](https://img.shields.io/badge/LICENSE-MIT-blue.svg)](./LICENSE) [![DOI](https://img.shields.io/badge/DOI-10.5281/zenodo.14843958-blue.svg)](https://doi.org/10.5281/zenodo.14843958)
 
-This repository contains the proof of concept implementation of the paper *Layout-Agnostic MPI Abstraction for Modern C++* and the evaluation of the proposed abstraction using a distributed GEMM kernel.
+This repository contains the proof of concept implementation of the paper [Layout-Agnostic MPI Abstraction for Modern C++](https://doi.org/10.1007/978-3-032-07194-1_3) and the evaluation of the proposed abstraction using a distributed GEMM kernel.
 
 When using our work, please cite the paper:
 
@@ -14,6 +14,7 @@ When using our work, please cite the paper:
   year="2026",
   publisher="Springer Nature Switzerland",
   pages="36--53",
+  doi="10.1007/978-3-032-07194-1_3",
   isbn="978-3-032-07194-1"
 }
 ```
