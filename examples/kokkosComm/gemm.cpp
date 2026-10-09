@@ -7,6 +7,7 @@
 #include <iomanip>
 #include <iostream>
 #include <memory>
+#include <type_traits>
 #include <utility>
 #include <vector>
 
@@ -26,33 +27,40 @@ namespace {
 
 template <KokkosComm::KokkosView RecvView, KokkosComm::KokkosExecutionSpace ExecSpace = Kokkos::DefaultExecutionSpace,
           KokkosComm::CommunicationSpace CommSpace = KokkosComm::DefaultCommunicationSpace>
-KokkosComm::Req<KokkosComm::Mpi> layout_agnostic_recv(KokkosComm::Handle<ExecSpace, CommSpace> &h, RecvView &rv, int src) {
+KokkosComm::Request<KokkosComm::MpiSpace> layout_agnostic_recv(KokkosComm::Communicator<CommSpace, ExecSpace> &h, RecvView &rv, int src) {
 	// return KokkosComm::recv(handle, view, r);
-	const ExecSpace &space = h.space();
-	KokkosComm::Req<KokkosComm::Mpi> req;
-	MPI_Datatype rv_type = KokkosComm::Impl::view_mpi_type(rv);
+	const ExecSpace &space = h.exec();
+	KokkosComm::Request<KokkosComm::MpiSpace> req;
+	using Packer = typename KokkosComm::mpi::Impl::PackTraits<RecvView>::packer_type;
+	const auto args = Packer::allocate_packed_for(space, "TODO", rv);
 
 	space.fence("fence before irecv");
 	// no pack and unpack; its current implementation in KokkosComm is no-op
-	MPI_Irecv(KokkosComm::data_handle(rv), 1, rv_type, src, KokkosComm::Impl::POINTTOPOINT_TAG, h.mpi_comm(),
-				&req.mpi_request());
+	MPI_Irecv(KokkosComm::data_handle(args.view), args.count, args.datatype, src, KokkosComm::Impl::POINTTOPOINT_TAG, h.comm(), req.request_ptr());
+	req.add_callback([space, rv, args]() {
+		Packer::unpack_into(space, rv, args.view);
+		space.fence("fence `args` unpacking after MPI call");
+	});
 	req.extend_view_lifetime(rv);
 	return req;
 }
 
 template <KokkosComm::KokkosView SendView, KokkosComm::KokkosExecutionSpace ExecSpace = Kokkos::DefaultExecutionSpace,
 		  KokkosComm::CommunicationSpace CommSpace = KokkosComm::DefaultCommunicationSpace>
-KokkosComm::Req<KokkosComm::Mpi> layout_agnostic_send(KokkosComm::Handle<ExecSpace, CommSpace> &h, SendView &sv, int dest) {
+KokkosComm::Request<KokkosComm::MpiSpace> layout_agnostic_send(KokkosComm::Communicator<CommSpace, ExecSpace> &h, SendView &sv, int dest) {
 	// return KokkosComm::send(handle, view, dest);
-	const ExecSpace &space = h.space();
-	KokkosComm::Req<KokkosComm::Mpi> req;
-	MPI_Datatype sv_type = KokkosComm::Impl::view_mpi_type(sv);
+	const ExecSpace &space = h.exec();
+	KokkosComm::Request<KokkosComm::MpiSpace> req;
+	using Packer = typename KokkosComm::mpi::Impl::PackTraits<SendView>::packer_type;
+	const auto args = Packer::allocate_packed_for(space, "TODO", sv);
 
 	space.fence("fence before isend");
 	// no pack and unpack; its current implementation in KokkosComm is no-op
-	MPI_Isend(KokkosComm::data_handle(sv), 1, sv_type, dest, KokkosComm::Impl::POINTTOPOINT_TAG, h.mpi_comm(),
-			  &req.mpi_request());
-	req.extend_view_lifetime(sv);
+	MPI_Isend(KokkosComm::data_handle(args.view), args.count, args.datatype, dest, KokkosComm::Impl::POINTTOPOINT_TAG, h.comm(), req.request_ptr());
+	req.add_callback([space, sv, args]() {
+		Packer::unpack_into(space, sv, args.view);
+		space.fence("fence `args` unpacking after MPI call");
+	});
 	return req;
 }
 
@@ -137,9 +145,9 @@ void kernel_gemm(num_t alpha, auto C, num_t beta, auto A, auto B, std::size_t SI
 
 std::chrono::duration<double> run_experiment(num_t alpha, num_t beta, auto &C, auto &A, auto &B,
                                              std::size_t /*i_tiles*/, std::size_t j_tiles, auto &tileC, auto &tileA,
-                                             auto &tileB, std::size_t SI, std::size_t SJ, KokkosComm::Handle<> &handle,
+                                             auto &tileB, std::size_t SI, std::size_t SJ, KokkosComm::Communicator<> &handle,
                                              int rank, int size, int root) {
-	std::vector<KokkosComm::Req<>> reqs;
+	std::vector<KokkosComm::Request<>> reqs;
 	reqs.reserve(rank == root ? (3 * size + 1) : 3);
 
 	const auto start = std::chrono::high_resolution_clock::now();
@@ -204,7 +212,8 @@ int run_environment(int argc, char *argv[]) {
 
 	constexpr int num_runs = 20;
 
-	KokkosComm::Handle<> handle;
+	auto space = Kokkos::DefaultExecutionSpace();
+	auto handle = KokkosComm::Communicator<>::from_raw(MPI_COMM_WORLD, space);
 
 	const int rank = handle.rank();
 	const int size = handle.size();
@@ -243,8 +252,8 @@ int run_environment(int argc, char *argv[]) {
 		init_array(alpha, C, beta, A, B);
 	}
 
-	MPI_Bcast(&alpha, 1, KokkosComm::Impl::mpi_type_v<num_t>, root, handle.mpi_comm());
-	MPI_Bcast(&beta, 1, KokkosComm::Impl::mpi_type_v<num_t>, root, handle.mpi_comm());
+	MPI_Bcast(&alpha, 1, KokkosComm::datatype<KokkosComm::MpiSpace, num_t>(), root, handle.comm());
+	MPI_Bcast(& beta, 1, KokkosComm::datatype<KokkosComm::MpiSpace, num_t>(), root, handle.comm());
 
 	// Warm up
 	run_experiment(alpha, beta, C, A, B, i_tiles, j_tiles, tileC, tileA, tileB, SI, SJ, handle, rank, size, root);
@@ -256,7 +265,7 @@ int run_environment(int argc, char *argv[]) {
 			init_array(alpha, C, beta, A, B);
 		}
 
-		KokkosComm::barrier((decltype(handle))handle);
+		KokkosComm::mpi::barrier(handle.comm());
 
 		times[i] = run_experiment(alpha, beta, C, A, B, i_tiles, j_tiles, tileC, tileA, tileB, SI, SJ, handle, rank,
 		                          size, root)
@@ -297,7 +306,7 @@ int run_environment(int argc, char *argv[]) {
 		}
 	}
 
-	MPI_Bcast(&return_code, 1, MPI_INT, root, handle.mpi_comm());
+	MPI_Bcast(&return_code, 1, MPI_INT, root, handle.comm());
 
 	return return_code;
 }
